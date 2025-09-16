@@ -2,9 +2,25 @@
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { db } from "@/lib/firebase";
-import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, Timestamp, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, Timestamp, updateDoc, runTransaction } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import type { Client } from "@/types/lem";
+
+const COUNTRIES: string[] = [
+  'Uruguay','Argentina','United States'
+];
+
+const STATES_BY_COUNTRY: Record<string, string[]> = {
+  Uruguay: [
+    'Artigas','Canelones','Cerro Largo','Colonia','Durazno','Flores','Florida','Lavalleja','Maldonado','Montevideo','Paysandú','Río Negro','Rivera','Rocha','Salto','San José','Soriano','Tacuarembó','Treinta y Tres'
+  ],
+  Argentina: [
+    'Buenos Aires','Catamarca','Chaco','Chubut','Córdoba','Corrientes','Entre Ríos','Formosa','Jujuy','La Pampa','La Rioja','Mendoza','Misiones','Neuquén','Río Negro','Salta','San Juan','San Luis','Santa Cruz','Santa Fe','Santiago del Estero','Tierra del Fuego','Tucumán','CABA'
+  ],
+  'United States': [
+    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'
+  ]
+};
 
 export default function ClientesPage() {
   return (
@@ -16,10 +32,39 @@ export default function ClientesPage() {
 
 function PageInner() {
   const [rows, setRows] = useState<Client[]>([]);
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [country, setCountry] = useState<"UY" | "US" | "AR">("US");
   const [busyId, setBusyId] = useState<string>("");
+
+  // Form fields
+  const [name, setName] = useState("");
+  const [country, setCountry] = useState<string>(""); // free text or pick from datalist
+  const [documentType, setDocumentType] = useState<string>("Cédula");
+  const [documentNumber, setDocumentNumber] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [emailAlt, setEmailAlt] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [stateName, setStateName] = useState<string>("");
+  const [city, setCity] = useState<string>("");
+  const [postalCode, setPostalCode] = useState<string>("");
+  const [contact, setContact] = useState<string>("");
+
+  const [openCreate, setOpenCreate] = useState(false);
+  function resetForm() {
+    setName("");
+    setCountry("");
+    setDocumentType("Cédula");
+    setDocumentNumber("");
+    setEmail("");
+    setPassword("");
+    setEmailAlt("");
+    setPhone("");
+    setAddress("");
+    setStateName("");
+    setCity("");
+    setPostalCode("");
+    setContact("");
+  }
 
   useEffect(() => {
     const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
@@ -33,22 +78,44 @@ function PageInner() {
     );
   }, []);
 
+  async function nextClientCode(): Promise<string> {
+    const counterRef = doc(db, 'counters', 'clients');
+    const n = await runTransaction(db, async (tx) => {
+      const snap = await tx.get(counterRef);
+      const data = snap.data() as { seq?: unknown };
+      const curr = snap.exists() && typeof data.seq === 'number' ? data.seq : 1200;
+      const next = curr + 1;
+      tx.set(counterRef, { seq: next }, { merge: true });
+      return next;
+    });
+    return String(n);
+  }
+
   async function createClient(e: React.FormEvent) {
     e.preventDefault();
-    if (!code || !name) return;
-    const ref = await addDoc(collection(db, "clients"), {
+    if (!name || !country || !email || !password) return;
+    const code = await nextClientCode();
+    const payload: Omit<Client, 'id'> & { documento: { tipo: string; numero: string | null }; emailAlt?: string | null; state?: string | null; city?: string | null; postalCode?: string | null; contact?: string | undefined } = {
       code,
       name,
       country,
+      documento: { tipo: documentType, numero: documentNumber || null },
+      email: email,
+      emailAlt: emailAlt || null,
+      phone: phone || undefined,
+      address: address || undefined,
+      state: stateName || null,
+      city: city || null,
+      postalCode: postalCode || null,
+      contact: contact || undefined,
       activo: true,
       createdAt: Timestamp.now().toMillis(),
-    });
-    setRows([
-      { id: ref.id, code, name, country, activo: true, createdAt: Date.now() } as Client,
-      ...rows,
-    ]);
-    setCode("");
-    setName("");
+    };
+    const sanitized = Object.fromEntries(Object.entries(payload).filter(([, v]) => v !== undefined));
+    const ref = await addDoc(collection(db, 'clients'), sanitized as any);
+    setRows([{ id: ref.id, ...(sanitized as any) }, ...rows]);
+    resetForm();
+    setOpenCreate(false);
   }
 
   async function toggleActivo(id: string, current: boolean) {
@@ -75,35 +142,111 @@ function PageInner() {
 
   return (
     <main className="p-4 md:p-8 space-y-6">
-      <h1 className="text-2xl font-semibold">Clientes</h1>
-      <form onSubmit={createClient} className="grid gap-3 md:grid-cols-4">
-        <input
-          className="border rounded p-3"
-          placeholder="Código (ej: ROD001)"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
-        <input
-          className="border rounded p-3"
-          placeholder="Nombre"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <select
-          className="border rounded p-3"
-          value={country}
-          onChange={(e) => setCountry(e.target.value as "US" | "UY" | "AR")}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Clientes</h1>
+        <button
+          type="button"
+          className="h-10 px-4 rounded-md text-white"
+          style={{ backgroundColor: '#005f40' }}
+          onClick={() => setOpenCreate(true)}
         >
-          <option value="US">US</option>
-          <option value="UY">UY</option>
-          <option value="AR">AR</option>
-        </select>
-        <button className="bg-black text-white rounded p-3">Crear</button>
-      </form>
+          Crear nuevo cliente
+        </button>
+      </div>
+
+      {/* Modal de creación */}
+      {openCreate ? (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40">
+          <div className="bg-white w-[95vw] max-w-3xl rounded-lg shadow-xl p-4 md:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Crear cliente</h2>
+              <button className="text-sm" onClick={() => { resetForm(); setOpenCreate(false); }}>Cerrar</button>
+            </div>
+            <form onSubmit={createClient} className="grid gap-3 md:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-4 md:col-span-4">
+                <div className="md:col-span-2">
+                  <input className="border rounded px-4 h-12 w-full" placeholder="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <div className="md:col-span-2">
+                  <select className="border rounded px-4 h-12 w-full" value={country} onChange={(e) => { setCountry(e.target.value); setStateName(""); }} required>
+                    <option value="" disabled>Seleccionar país…</option>
+                    {COUNTRIES.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <select className="border rounded px-4 h-12 w-full" value={documentType} onChange={(e) => setDocumentType(e.target.value)}>
+                    <option>Cédula</option>
+                    <option>Pasaporte</option>
+                    <option>RUT</option>
+                    <option>DNI</option>
+                    <option>CUIT</option>
+                    <option>CUIL</option>
+                    <option>Otro</option>
+                  </select>
+                </div>
+                <div>
+                  <input className="border rounded px-4 h-12 w-full" placeholder="Nº documento" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <input className="border rounded px-4 h-12 w-full" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                </div>
+                <div className="md:col-span-2">
+                  <input className="border rounded px-4 h-12 w-full" type="password" placeholder="Contraseña (provisional)" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+
+                <div className="md:col-span-3">
+                  <input className="border rounded px-4 h-12 w-full" placeholder="Dirección" value={address} onChange={(e) => setAddress(e.target.value)} />
+                </div>
+                <div>
+                  <input className="border rounded px-4 h-12 w-full" placeholder="Contacto / Referente (ej: Danny, IFS)" value={contact} onChange={(e) => setContact(e.target.value)} />
+                </div>
+                <div>
+                  <input className="border rounded px-4 h-12 w-full" type="email" placeholder="Email adicional (opcional)" value={emailAlt} onChange={(e) => setEmailAlt(e.target.value)} />
+                </div>
+
+                <div>
+                  <select
+                    className="border rounded p-3"
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    hidden={!country || !STATES_BY_COUNTRY[country]}
+                  >
+                    <option value="" disabled>Seleccionar…</option>
+                    {(STATES_BY_COUNTRY[country] || []).map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <input
+                    className="border rounded p-3"
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    hidden={!!(country && STATES_BY_COUNTRY[country])}
+                    placeholder="Estado / Depto / Provincia"
+                  />
+                </div>
+                <div>
+                  <input className="border rounded px-4 h-12 w-full" placeholder="Ciudad" value={city} onChange={(e) => setCity(e.target.value)} />
+                </div>
+                <div>
+                  <input className="border rounded px-4 h-12 w-full" placeholder="Código postal" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+                </div>
+
+                <div className="md:col-span-4 flex justify-end gap-2 mt-2">
+                  <button type="button" onClick={() => { resetForm(); setOpenCreate(false); }} className="h-12 px-4 rounded border">Cancelar</button>
+                  <button className="h-12 px-6 rounded text-white" style={{ backgroundColor: '#005f40' }}>Crear</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       <section className="grid gap-2">
         {rows.map((c) => (
-          <div key={c.id} className="border rounded p-3 flex items-center justify-between gap-3">
+          <div key={c.id} className="border rounded p-4 flex items-center justify-between gap-3">
             <div>
               <div className="text-sm"><b>{c.code}</b> — {c.name}</div>
               <div className="text-xs text-neutral-500">País: {c.country} · Estado: {c.activo ? "Activo" : "Inactivo"}</div>

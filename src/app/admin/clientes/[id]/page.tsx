@@ -14,7 +14,22 @@ import {
 } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import type { Client, Inbound, Box } from "@/types/lem";
+
+
+const COUNTRIES: string[] = [
+  'Uruguay','Argentina','United States'
+];
+
+const STATES_BY_COUNTRY: Record<string, string[]> = {
+  Uruguay: [
+    'Artigas','Canelones','Cerro Largo','Colonia','Durazno','Flores','Florida','Lavalleja','Maldonado','Montevideo','Paysandú','Río Negro','Rivera','Rocha','Salto','San José','Soriano','Tacuarembó','Treinta y Tres'
+  ],
+  'United States': [
+    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'
+  ]
+};
 
 export default function ClientDetailPage() {
   return (
@@ -28,9 +43,9 @@ function PageInner() {
   const params = useParams();
   const id = params?.id as string;
   const [client, setClient] = useState<Client | null>(null);
-  const [form, setForm] = useState<Partial<Client>>({});
+  const [form, setForm] = useState<Partial<Client> & { state?: string; city?: string }>({});
   const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<"datos" | "movimientos">("datos");
+  const [tab, setTab] = useState<"datos" | "trackings">("datos");
   const [inbounds, setInbounds] = useState<Inbound[]>([]);
   const [boxes, setBoxes] = useState<Box[]>([]);
 
@@ -45,32 +60,55 @@ function PageInner() {
         setClient(c);
         setForm(c);
       }
-      // movimientos
-      const qIn = query(
-        collection(db, "inboundPackages"),
-        where("clientId", "==", id),
-        orderBy("receivedAt", "desc")
-      );
-      const inSn = await getDocs(qIn);
-      setInbounds(
-        inSn.docs.map((docSnap) => {
-          const d = docSnap.data() as Omit<Inbound, "id">;
-          return { id: docSnap.id, ...d } as Inbound;
-        })
-      );
+      // Inbounds: try with index; fallback w/o orderBy and sort in-memory
+      try {
+        const qIn = query(
+          collection(db, "inboundPackages"),
+          where("clientId", "==", id),
+          orderBy("receivedAt", "desc")
+        );
+        const inSn = await getDocs(qIn);
+        setInbounds(
+          inSn.docs.map((docSnap) => {
+            const d = docSnap.data() as Omit<Inbound, "id">;
+            return { id: docSnap.id, ...d } as Inbound;
+          })
+        );
+      } catch {
+        const qIn2 = query(
+          collection(db, "inboundPackages"),
+          where("clientId", "==", id)
+        );
+        const inSn2 = await getDocs(qIn2);
+        const list = inSn2.docs.map((s) => ({ id: s.id, ...(s.data() as Omit<Inbound, "id">) })) as Inbound[];
+        list.sort((a, b) => (Number(b.receivedAt || 0) - Number(a.receivedAt || 0)));
+        setInbounds(list);
+      }
 
-      const qBox = query(
-        collection(db, "boxes"),
-        where("clientId", "==", id),
-        orderBy("createdAt", "desc")
-      );
-      const bxSn = await getDocs(qBox);
-      setBoxes(
-        bxSn.docs.map((docSnap) => {
-          const d = docSnap.data() as Omit<Box, "id">;
-          return { id: docSnap.id, ...d } as Box;
-        })
-      );
+      // Boxes: try with index; fallback w/o orderBy and sort in-memory
+      try {
+        const qBox = query(
+          collection(db, "boxes"),
+          where("clientId", "==", id),
+          orderBy("createdAt", "desc")
+        );
+        const bxSn = await getDocs(qBox);
+        setBoxes(
+          bxSn.docs.map((docSnap) => {
+            const d = docSnap.data() as Omit<Box, "id">;
+            return { id: docSnap.id, ...d } as Box;
+          })
+        );
+      } catch {
+        const qBox2 = query(
+          collection(db, "boxes"),
+          where("clientId", "==", id)
+        );
+        const bxSn2 = await getDocs(qBox2);
+        const listB = bxSn2.docs.map((s) => ({ id: s.id, ...(s.data() as Omit<Box, "id">) })) as Box[];
+        listB.sort((a, b) => (Number(b.createdAt || 0) - Number(a.createdAt || 0)));
+        setBoxes(listB);
+      }
     })();
   }, [id]);
 
@@ -80,16 +118,18 @@ function PageInner() {
     if (!client || !canSave) return;
     setSaving(true);
     try {
-      const payload: Partial<Client> = {
+      const payload: Partial<Client> & { state?: string; city?: string } = {
         code: form.code!,
         name: form.name!,
         email: form.email || undefined,
         phone: form.phone || undefined,
         address: form.address || undefined,
         country: form.country!,
+        state: form.state || undefined,
+        city: form.city || undefined,
         activo: form.activo !== false,
       };
-      await updateDoc(doc(db, "clients", client.id), payload as Partial<Client>);
+      await updateDoc(doc(db, "clients", String(client.id)), payload);
       setClient({ ...(client as Client), ...(payload as Partial<Client>) });
     } finally {
       setSaving(false);
@@ -107,7 +147,10 @@ function PageInner() {
   return (
     <main className="p-4 md:p-8 space-y-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Cliente: {client.code} — {client.name}</h1>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/clientes" className="px-3 py-2 text-sm rounded border" aria-label="Volver a clientes">← Volver</Link>
+          <h1 className="text-2xl font-semibold">Cliente: {client.code} — {client.name}</h1>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setTab("datos")}
@@ -116,10 +159,10 @@ function PageInner() {
             Datos personales
           </button>
           <button
-            onClick={() => setTab("movimientos")}
-            className={`px-3 py-2 text-sm rounded border ${tab === "movimientos" ? "bg-black text-white" : ""}`}
+            onClick={() => setTab("trackings")}
+            className={`px-3 py-2 text-sm rounded border ${tab === "trackings" ? "bg-black text-white" : ""}`}
           >
-            Movimientos
+            Trackings
           </button>
         </div>
       </header>
@@ -128,7 +171,7 @@ function PageInner() {
         <section className="grid gap-3 md:max-w-2xl">
           <label className="grid gap-1">
             <span className="text-xs text-neutral-500">Código</span>
-            <input className="border rounded p-3" value={form.code || ""} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} />
+            <input className="border rounded p-3 bg-neutral-100 text-neutral-600" value={form.code || ""} readOnly aria-readonly="true" />
           </label>
           <label className="grid gap-1">
             <span className="text-xs text-neutral-500">Nombre</span>
@@ -148,11 +191,42 @@ function PageInner() {
           </label>
           <label className="grid gap-1">
             <span className="text-xs text-neutral-500">País</span>
-            <select className="border rounded p-3" value={form.country || "US"} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value as "US" | "UY" | "AR" }))}>
-              <option value="US">US</option>
-              <option value="UY">UY</option>
-              <option value="AR">AR</option>
+            <select
+              className="border rounded p-3"
+              value={form.country || ""}
+              onChange={(e) => setForm((f) => ({ ...f, country: e.target.value, state: "" }))}
+            >
+              <option value="" disabled>Seleccionar país…</option>
+              {COUNTRIES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
             </select>
+          </label>
+
+          {/* Estado/Depto/Provincia */}
+          <label className="grid gap-1">
+            <span className="text-xs text-neutral-500">Estado / Depto / Provincia</span>
+            <select
+              className="border rounded p-3"
+              value={form.state || ''}
+              onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
+              disabled={!form.country || !STATES_BY_COUNTRY[form.country as string]}
+            >
+              <option value="" disabled>Seleccionar…</option>
+              {(STATES_BY_COUNTRY[form.country as string] || []).map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </label>
+
+          {/* Ciudad */}
+          <label className="grid gap-1">
+            <span className="text-xs text-neutral-500">Ciudad</span>
+            <input
+              className="border rounded p-3"
+              value={form.city || ''}
+              onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+            />
           </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={form.activo !== false} onChange={(e) => setForm((f) => ({ ...f, activo: e.target.checked }))} />
@@ -165,33 +239,66 @@ function PageInner() {
           </div>
         </section>
       ) : (
-        <section className="grid md:grid-cols-2 gap-6">
+        <section className="space-y-6">
           <div>
-            <h2 className="font-medium mb-2">Paquetes recibidos</h2>
-            <div className="grid gap-2">
-              {inbounds.map((r) => (
-                <div key={r.id} className="border rounded p-3 text-sm flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {r.photoUrl ? <img src={r.photoUrl} alt="" className="w-12 h-12 object-cover rounded" /> : <div className="w-12 h-12 bg-neutral-100 rounded" />}
-                  <div className="flex-1">
-                    <div>#{r.tracking} · {r.carrier} · {r.weightLb} lb</div>
-                    <div className="text-xs text-neutral-500">{new Date(r.receivedAt).toLocaleString()} · estado: {r.status}</div>
-                  </div>
-                </div>
-              ))}
-              {!inbounds.length ? <div className="text-xs text-neutral-500">Sin paquetes aún.</div> : null}
+            <h2 className="font-medium mb-2">Trackings del cliente</h2>
+            <div className="overflow-x-auto border rounded">
+              <table className="w-full text-sm">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="text-left p-2">Fecha de llegada</th>
+                    <th className="text-left p-2">Tracking</th>
+                    <th className="text-left p-2">Peso</th>
+                    <th className="text-left p-2">Estado</th>
+                    <th className="text-left p-2">Factura</th>
+                    <th className="text-left p-2">Warehouse</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inbounds.map((r) => (
+                    <tr key={r.id} className="border-t">
+                      <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : '-'}</td>
+                      <td className="p-2 font-mono">{r.tracking}</td>
+                      <td className="p-2">{Number(r.weightLb || 0).toFixed(2)} lb / {Number(r.weightKg || 0).toFixed(2)} kg</td>
+                      <td className="p-2">{r.status}</td>
+                      <td className="p-2">{r.invoiceUrl ? '✔︎' : '-'}</td>
+                      <td className="p-2">{r.photoUrl ? '🖼️' : '-'}</td>
+                    </tr>
+                  ))}
+                  {!inbounds.length ? (
+                    <tr><td className="p-3 text-neutral-500" colSpan={6}>Sin paquetes aún.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
             </div>
           </div>
+
           <div>
             <h2 className="font-medium mb-2">Cajas del cliente</h2>
-            <div className="grid gap-2">
-              {boxes.map((b) => (
-                <div key={b.id} className="border rounded p-3 text-sm">
-                  <div><b>{b.code}</b> · estado: {b.status} · items: {b.itemIds?.length || 0}</div>
-                  <div className="text-xs text-neutral-500">Creada: {b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "-"}</div>
-                </div>
-              ))}
-              {!boxes.length ? <div className="text-xs text-neutral-500">Sin cajas aún.</div> : null}
+            <div className="overflow-x-auto border rounded">
+              <table className="w-full text-sm">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="text-left p-2">Código</th>
+                    <th className="text-left p-2">Estado</th>
+                    <th className="text-left p-2">Items</th>
+                    <th className="text-left p-2">Creada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {boxes.map((b) => (
+                    <tr key={b.id} className="border-t">
+                      <td className="p-2">{b.code}</td>
+                      <td className="p-2">{b.status}</td>
+                      <td className="p-2">{b.itemIds?.length || 0}</td>
+                      <td className="p-2">{b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '-'}</td>
+                    </tr>
+                  ))}
+                  {!boxes.length ? (
+                    <tr><td className="p-3 text-neutral-500" colSpan={4}>Sin cajas aún.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
             </div>
           </div>
         </section>

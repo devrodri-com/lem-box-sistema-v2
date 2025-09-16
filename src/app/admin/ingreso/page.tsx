@@ -83,6 +83,11 @@ export default function IngresoPage() {
 
 function PageInner() {
   const [clients, setClients] = useState<Client[]>([]);
+  const clientsById = useMemo(() => {
+    const m: Record<string, Client> = {};
+    for (const c of clients) if (c.id) m[c.id] = c as Client;
+    return m;
+  }, [clients]);
   const [form, setForm] = useState<Row>({
     tracking: "",
     carrier: "UPS",
@@ -232,11 +237,11 @@ const [rows, setRows] = useState<InboundRow[]>([]);
     return Number(form.weightLb) > 0 || Number(form.weightKg) > 0;
   }
 
-  function computeWeightLb(): number {
+  const computeWeightLb = useCallback((): number => {
     if (Number(form.weightLb) > 0) return Number(form.weightLb);
     if (Number(form.weightKg) > 0) return Number((Number(form.weightKg) * KG_TO_LB).toFixed(2));
     return 0;
-  }
+  }, [form.weightLb, form.weightKg]);
 
   // Nota: la foto es opcional para todos los carriers.
   const createInbound = useCallback(async (trackingValue: string) => {
@@ -293,138 +298,145 @@ const [rows, setRows] = useState<InboundRow[]>([]);
       ) : null}
       <div className="bg-white text-neutral-900 rounded-lg shadow p-4">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-12 items-start">
-          <div className="md:col-span-5">
+        {/* TRACKING + SCAN + CARRIER */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="md:col-span-2">
             <label className="text-xs font-medium text-neutral-500">Ingreso de tracking</label>
-            <div className="mt-1 flex gap-2">
-              <input
-                className="border rounded-md px-3 h-11 flex-1 bg-white"
-                placeholder="Escanear o escribir tracking"
-                value={form.tracking}
-                onChange={(e) => setForm((f) => ({ ...f, tracking: e.target.value }))}
-              />
+            <input
+              className="border rounded-md px-4 h-12 w-full bg-white text-base"
+              placeholder="Escanear o escribir tracking"
+              value={form.tracking}
+              onChange={(e) => setForm((f) => ({ ...f, tracking: e.target.value }))}
+            />
+          </div>
+          <div className="flex md:block gap-2 md:gap-0">
+            <div className="w-1/2 md:w-full">
+              <label className="text-xs font-medium text-neutral-500">&nbsp;</label>
               <button
                 type="button"
                 onClick={scanning ? stopScan : startScan}
-                className="h-11 px-4 rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm"
+                className="h-12 w-full rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm"
                 aria-pressed={scanning}
               >
                 {scanning ? "Detener" : "Escanear"}
               </button>
             </div>
-            {scanning ? (
-              <div className="mt-2">
-                <video ref={videoRef} className="w-full rounded-md border" autoPlay muted playsInline />
-              </div>
-            ) : null}
-          </div>
-          <div className="md:col-span-3">
-            <label className="text-xs font-medium text-neutral-500">Carrier</label>
-            <select
-              className="mt-1 border rounded-md px-3 h-11 w-full bg-white"
-              value={form.carrier}
-              onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value as Carrier }))}
-            >
-              {carriers.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-4">
-  <label className="text-xs font-medium text-neutral-500">Peso</label>
-
-  </div> {/* ← cierre del bloque Carrier */}
-
-<div className="md:col-span-4">
-  <label className="text-xs font-medium text-neutral-500">Cliente</label>
-  <select
-    className="mt-1 border rounded-md px-3 h-11 w-full bg-white"
-    value={form.clientId}
-    onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
-  >
-    <option value="">Seleccionar…</option>
-    {clients.map((c) => (
-      <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
-    ))}
-  </select>
-</div>
-
-<div className="md:col-span-4">
-  <label className="text-xs font-medium text-neutral-500">Peso</label>
-
-  <div className="mt-1 grid grid-cols-2 gap-2">
-    <div className="flex items-center gap-2">
-      <input
-        className="border rounded-md px-3 h-11 w-full bg-white"
-        type="number" step="0.01" placeholder="0.00"
-        value={form.weightLb || ""}
-        onChange={(e) => {
-          const v = e.target.value;
-          setForm((f) => ({
-            ...f,
-            weightLb: v === "" ? 0 : Number(v),
-            weightKg: v === "" ? 0 : Number((Number(v) * LB_TO_KG).toFixed(2)),
-          }));
-        }}
-      />
-      <span className="text-xs text-neutral-500">lb</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <input
-        className="border rounded-md px-3 h-11 w-full bg-white"
-        type="number" step="0.01" placeholder="0.00"
-        value={form.weightKg || ""}
-        onChange={(e) => {
-          const v = e.target.value;
-          setForm((f) => ({
-            ...f,
-            weightKg: v === "" ? 0 : Number(v),
-            weightLb: v === "" ? 0 : Number((Number(v) * KG_TO_LB).toFixed(2)),
-          }));
-        }}
-      />
-      <span className="text-xs text-neutral-500">kg</span>
-    </div>
-  </div>
-</div>
-          <div className="md:col-span-6">
-            <label className="text-xs font-medium text-neutral-500">Foto del paquete / documento</label>
-            <div className="mt-1 flex flex-wrap gap-2 items-center">
-              <button type="button" onClick={photoActive ? stopPhoto : startPhoto} className="h-11 px-4 rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm">
-                {photoActive ? "Cerrar cámara" : "Tomar foto"}
-              </button>
-              <button type="button" className="h-11 px-4 rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm" onClick={async () => { const f = await capturePhoto(); if (f) setForm((x) => ({ ...x, photo: f })); }} disabled={!photoActive}>
-                Capturar
-              </button>
-              <button type="button" className="h-11 px-4 rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm" onClick={openFilePicker}>
-                Adjuntar
-              </button>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFilePicked} />
+            <div className="w-1/2 md:w-full">
+              <label className="text-xs font-medium text-neutral-500">Carrier</label>
               <select
-                className="h-11 px-3 rounded-md border text-sm bg-white"
-                value={form.imageMode}
-                onChange={(e) => setForm((f) => ({ ...f, imageMode: e.target.value as ImageMode }))}
-                title="Tipo de imagen"
+                className="border rounded-md px-4 h-12 w-full bg-white text-base"
+                value={form.carrier}
+                onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value as Carrier }))}
               >
-                <option value="photo">Foto paquete (comprimir)</option>
-                <option value="doc">Documento nítido</option>
+                {carriers.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
               </select>
-              {photoPreview ? (
-  // eslint-disable-next-line @next/next/no-img-element
-  <img src={photoPreview} alt="preview" className="h-11 w-11 object-cover rounded-md border" />
-) : null}
             </div>
-            {photoActive ? (
-              <div className="mt-2">
-                <video ref={videoRefPhoto} className="w-full rounded-md border" autoPlay muted playsInline />
-              </div>
-            ) : null}
           </div>
         </div>
-        <div className="flex justify-end">
-          <button disabled={saving} className="h-11 px-6 rounded-md text-white" style={{ backgroundColor: saving ? "#3b3b3b" : "#005f40" }}>
-            {saving ? "Guardando…" : "Guardar"}
-          </button>
+        {scanning ? (
+          <div>
+            <video ref={videoRef} className="w-full rounded-md border" autoPlay muted playsInline />
+          </div>
+        ) : null}
+
+        {/* CLIENTE */}
+        <div>
+          <label className="text-xs font-medium text-neutral-500">Cliente</label>
+          <select
+            className="mt-1 border rounded-md px-4 h-12 w-full bg-white text-base"
+            value={form.clientId}
+            onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
+          >
+            <option value="">Seleccionar…</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* PESO */}
+        <div>
+          <label className="text-xs font-medium text-neutral-500">Peso</label>
+          <div className="mt-1 grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <input
+                className="border rounded-md px-4 h-12 w-full bg-white text-base"
+                type="number" step="0.01" placeholder="0.00"
+                value={form.weightLb || ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    weightLb: v === "" ? 0 : Number(v),
+                    weightKg: v === "" ? 0 : Number((Number(v) * LB_TO_KG).toFixed(2)),
+                  }));
+                }}
+              />
+              <span className="text-xs text-neutral-500">lb</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                className="border rounded-md px-4 h-12 w-full bg-white text-base"
+                type="number" step="0.01" placeholder="0.00"
+                value={form.weightKg || ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    weightKg: v === "" ? 0 : Number(v),
+                    weightLb: v === "" ? 0 : Number((Number(v) * KG_TO_LB).toFixed(2)),
+                  }));
+                }}
+              />
+              <span className="text-xs text-neutral-500">kg</span>
+            </div>
+          </div>
+        </div>
+
+        {/* FOTO / DOCUMENTO */}
+        <div>
+          <label className="text-xs font-medium text-neutral-500">Foto del paquete / documento</label>
+          <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+            <button type="button" onClick={photoActive ? stopPhoto : startPhoto} className="h-12 w-full rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm">
+              {photoActive ? "Cerrar cámara" : "Tomar foto"}
+            </button>
+            <button type="button" className="h-12 w-full rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm" onClick={async () => { const f = await capturePhoto(); if (f) setForm((x) => ({ ...x, photo: f })); }} disabled={!photoActive}>
+              Capturar
+            </button>
+            <button type="button" className="h-12 w-full rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm" onClick={openFilePicker}>
+              Adjuntar
+            </button>
+            <select
+              className="h-12 w-full px-4 rounded-md border text-sm bg-white"
+              value={form.imageMode}
+              onChange={(e) => setForm((f) => ({ ...f, imageMode: e.target.value as ImageMode }))}
+              title="Tipo de imagen"
+            >
+              <option value="photo">Foto paquete (comprimir)</option>
+              <option value="doc">Documento nítido</option>
+            </select>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFilePicked} />
+          </div>
+          {photoPreview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoPreview} alt="preview" className="mt-2 h-20 w-20 object-cover rounded-md border" />
+          ) : null}
+          {photoActive ? (
+            <div className="mt-2">
+              <video ref={videoRefPhoto} className="w-full rounded-md border" autoPlay muted playsInline />
+            </div>
+          ) : null}
+        </div>
+
+        {/* BOTÓN GUARDAR sticky en mobile */}
+        <div className="md:static fixed left-0 right-0 bottom-0 bg-white/90 backdrop-blur border-t p-3 z-10">
+          <div className="max-w-3xl mx-auto text-right">
+            <button disabled={saving} className="h-12 px-6 rounded-md text-white text-base" style={{ backgroundColor: saving ? '#3b3b3b' : '#005f40' }}>
+              {saving ? 'Guardando…' : 'Guardar'}
+            </button>
+          </div>
         </div>
       </form>
       </div>
@@ -454,7 +466,7 @@ const [rows, setRows] = useState<InboundRow[]>([]);
                   #{r.tracking} · {r.carrier} · {r.weightLb} lb
                 </div>
                 <div className="text-xs text-neutral-500">
-                  Cliente: {r.clientId}
+                  Cliente: {clientsById[r.clientId]?.code ? `${clientsById[r.clientId]?.code} — ${clientsById[r.clientId]?.name}` : r.clientId}
                 </div>
               </div>
               <span className="text-xs px-2 py-1 rounded bg-emerald-600 text-white">
