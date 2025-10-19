@@ -1,0 +1,1239 @@
+legacyId,code,name,email,phone,address,postal_code,state,city,country,activo,createdAt
+1,1,Admin,admin@mail.com,+598305240344200,"Lorem ipsum dolor sit amet, consectetur adipisicing elit. Labore, suscipit!",33179.0,Montevideo Department,Montevideo,UY,1,1593477159000
+2,2,Cliente,user@mail.com,1234564500,"Lorem ipsum dolor sit amet, consectetur adipisicing elit. Labore, suscipit!",,,,,1,1593477160000
+69,6,moderador1,moderador1@dsadsaasfddsal.com,,,,,,,1,1602854822000
+70,7,Logistica Uruguay,fefo157@gmail.com,+5989423161300,San Isidro 384 entre Yacui e  Itapeby,15900.0,Canelones Department,Las Piedras,UY,1,1602856382000
+81,8,Christian Silveira,christiansilveira@outlook.com,+5989904344600,Juan Cabal 2294,11600.0,Montevideo Department,Montevideo,UY,1,1603295412000
+82,9,Rodrigo Opalo Balog,r.opalo@icloud.com,,,,,,,1,1603296669000
+83,10,Maria Manuela Casco,mancasccam@gmail.com,+5989975827200,Humberto Primero 4074 apto 5,11000.0,Montevideo Department,Montevideo,UY,1,1603298499000
+84,11,Jorge Daniel de Souza Reymundo,tunning_20@hotmail.com,+5989974554900,Jose Francisco Nuñez 1389,37000.0,Cerro Largo Department,Melo,UY,1,1603299293000
+85,12,Emiliano Antonio loza,emiliano90anto@gmail.com,+54116890491200,Río de La Plata 9231,1657.0,Buenos Aires Province,Buenos Aires,AR,1,1603299353000
+86,13,Luis Gastón Gimenez,gastongimenez277@gmail.com,+5989954571900,Buenos Aires 68,70100.0,Colonia Department,Carmelo,UY,1,1603299520000
+87,14,cristhian noble,cristian345@hotmail.com,+5989800107300,JUAN RODRIGUEZ CORREA 1327,11700.0,Montevideo Department,Montevideo,UY,1,1603300286000
+88,15,Dayana González,juan.day15@hotmail.com,+5989249511500,Treinta y tres,33000.0,Treinta y Tres Department,Treinta y Tres,UY,1,1603300543000
+89,16,Manuel Rodrigo Sosa Coronel,Rodrigososa34@hotmail.com,+5989836144500,Chacal s/n,33000.0,Treinta y Tres Department,Treinta y Tres,UY,1,1603300652000
+90,17,BASURA,qwd@asda.com,+598,,,Colonia Department,Nueva Palmira,UY,1,1603300734000
+91,18,Leticia González,Lettyta1977@gmail.com,+5989190785600,Londres 3411 ap 208 block B,11200.0,Montevideo Department,Montevideo,UY,1,1603301838000
+92,19,María Eugenia Hernández,mariaeugeniahernandez1404@gmail.com,+5989262151100,AGENCIA DAC La Paz,99970.0,Canelones Department,La Paz,UY,1,1603302132000
+93,20,Andre Lafon,andyla1@hotmail.com,+5989868580400,Avenida Barbieri 1998,50000.0,Salto Department,Salto,UY,1,1603303259000
+94,21,Claudio Andres Rodríguez,claudioandres630@gmail.com,+5989516667900,Av. Delmira Agustini 1080,11700.0,Montevideo Department,Montevideo,UY,1,1603304115000
+95,22,sin uso,a@aa.com,+598,,,Cerro Largo Department,Melo,UY,1,1603304287000
+96,23,Jorge Juan Tedrós,roncoviejo48@gmail.com,223621138500,Pascuala Mugaburu 4931,7600.0,,,,1,1603306106000
+97,24,Miguel Rumenan - Baynal SA,miguel@baynal.com.uy,+5982711118300,Francisco Garcia Cortinas 2394,11300.0,Montevideo Department,Montevideo,UY,1,1603306542000
+98,25,Mauricio Gabriel Vera Silva,mauriciovera1977@gmail.com,+5989965843600,Francisco Morelli 1382,70000.0,Colonia Department,Colonia del Sacramento,UY,1,1603307142000
+99,26,NO USAR (Emilia Chacon),emiliachacon1@gmail.com,+5983462350991800,SCOSERIA 2512 apto102,80100.0,Montevideo Department,Montevideo,UY,1,1603315975000
+100,27,Martín espinosa,Dakar_150@hotmail.com,9712539000,Chiflet 3642,94000.0,,,,1,1603316798000
+101,28,Roberto Manuel Montesinos,montesinosrm@yahoo.com.ar,+54114435415100,Arregui 3188   Villa del Parque,1417.0,Buenos Aires Province,Buenos Aires,AR,1,1603317873000
+102,29,Marina pascual,mpascual2995@hotmail.com,+5989493599500,Gregorio funes 2915,11615.0,Montevideo Department,Montevideo,UY,1,1603329970000
+103,30,Santiago Sanchez Ortega,sancho1978@gmail.com,+549114027826200,Acassuso 1446,1643.0,Buenos Aires Province,Buenos Aires,AR,1,1603331304000
+104,31,Agustina saravia,Asaravia@vidaestetica.com.uy,+5989584446900,Soca 1319,11300.0,Montevideo Department,Montevideo,UY,1,1603332046000
+105,32,Nicolas Dellepiane,dellepianesportcars@gmail.com,+5989990461900,San francisco y lunas de oro tao gym,20100.0,Maldonado Department,Punta del Este,UY,1,1603368910000
+106,33,INACTIVA,sadsa@fdsfs.com,+5989908715000,Carlos Roxlo 1359,11200.0,Montevideo Department,Montevideo,UY,1,1603398302000
+107,34,Sixto Nuñez,sixton_77@hotmail.com,+5989211112500,Av. Alvariza 926,20400.0,Maldonado Department,San Carlos,UY,1,1603399822000
+108,35,Maximiliano Barreiro Bentancur,maxi_barreiro@hotmail.com,+5989272768800,Massini 16,80000.0,San José Department,San José de Mayo,UY,1,1603401222000
+109,36,miguel dolseis garcia  reyes,dolseis@hotmail.com,+5989610332200,calle iguazu  manz 63  sol 9,15104.0,Canelones Department,Atlántida,UY,1,1603401224000
+110,37,HERNAN ARREDONDO,hear500@hotmail.com,+5989989034600,AGENCIA DAC PIRIAPOLIS,20200.0,Maldonado Department,Piriápolis,UY,1,1603405591000
+111,38,FACUNDO AMBRES,facu.seba92@gmail.com,+5989467646900,"Av. Aigua Entre simon del pino y bvar artigas, comercio ""VIMAR""",20000.0,Maldonado Department,Maldonado,UY,1,1603473947000
+112,39,Marcela Sosa//Daniel Andresovas,todomobiliario.marcela@gmail.com,+5982209647700,Americo vespucio 1386,11700.0,Montevideo Department,Montevideo,UY,1,1603479828000
+113,40,Maria Paula de León,MPauladL@hotmail.com,+598,Neyra,11409.0,Montevideo Department,Montevideo,UY,1,1603494581000
+114,41,Robert Pérez,Robertecora@hotmail.com,+5989940078100,Cerró largo 164,90700.0,Canelones Department,Santa Lucía,UY,1,1603552465000
+115,42,samid angel,samidangel@hotmail.com,+54343549781900,Centenario 901,3150.0,Entre Ríos Province,Nogoyá,AR,1,1603555814000
+116,43,Luis Eduardo Rodriguez,luiseduardo1433@gmai.com,+598948913100,los horneros manzana 1004 casa 22,15000.0,Canelones Department,Colonia Nicolich,UY,1,1603646712000
+117,44,Gabriel Sebastián Acosta,gabi_acosta_22@hotmail.com,+5989905302500,Paysandu casi camino de los gauchos,20000.0,Maldonado Department,Maldonado,UY,1,1603669720000
+118,45,jonathan cardozo,jcardozososa@gmail.com,+5989554563800,20200,20200.0,Maldonado Department,Piriápolis,UY,1,1603671591000
+119,46,Carlos Mariano Marenco,carlos.marenco@alumni.iae.edu.ar,114147535900,V 50,1617.0,,,,1,1603712351000
+120,47,Flavia Caroline Trindade dos Santos,2407.flavia@gmail.com,+554799777666100,"Rua 1451, 187 - ap 902",88330801.0,Santa Catarina,Balneário Camboriú,BR,1,1603720689000
+121,48,Sandra Dinora de León Lombardi,sdlaluminios1@gmail.com,+5989987501200,19 de abril 1122,27200.0,Rocha Department,Castillos,UY,1,1603797706000
+122,49,Diego Perez,diegoperez52@icloud.com,+5989975597700,"Buenos Aires esq rosario, balneario los titanes",45000.0,Canelones Department,La Floresta,UY,1,1603809501000
+123,50,Andres Otero,andresotero1@hotmail.com,+5989912463600,Colombes 1393,11400.0,Montevideo Department,Montevideo,UY,1,1603850915000
+124,51,Ana Eglee Travieso Esteyro,Ruanda.store@gmail.com,+5989517556300,Cufre 2870 bis apto 2,11800.0,Montevideo Department,Montevideo,UY,1,1603855775000
+125,52,Florencia Yamila Lincopaz,Flora_fauna_90@hotmail.com,+54115995574000,Núñez 2271 8 C,1429.0,Buenos Aires Province,Buenos Aires,AR,1,1603875077000
+126,53,Fabricio Baratta,fabriciobaratta@hotmail.com,+5989873556700,DAC Salto,50000.0,Salto Department,Salto,UY,1,1603888482000
+127,54,Maria Andreina Anhalt Sosa,andreina.anhalt97@gmail.com,+5989287358400,"Ciudad de Salto, Larrañaga 409",50000.0,Salto Department,Salto,UY,1,1603891395000
+128,55,IVANA PAOLA CUEVAS,ivanacuevas86@gmail.com,+5989109489400,"RUTA 67 KM 25000, RUTA 67 KM 25000",90200.0,Canelones Department,Las Piedras,UY,1,1603895785000
+129,56,María Lucía Brossard Pérez,lucia.brossard.perez@gmail.com,+5989479408900,Av. San Pablo e Ipanema,20100.0,Maldonado Department,Punta del Este,UY,1,1603915676000
+130,57,Gerardo Bugarin,gerardobugarin@gmail.com,+5989462248500,pilcomayo 4864 esq 18 diciembre,11400.0,Montevideo Department,Montevideo,UY,1,1603916700000
+131,58,Nadia Valentina González Massarino,valegonmassa25@gmail.com,+5989839881900,,50000.0,Salto Department,Salto,UY,1,1603944884000
+132,59,Felipe Martinis Dogliotti,Felipemartinis97@gmail.com,+5989803045100,Maturana 953,11700.0,Montevideo Department,Montevideo,UY,1,1603982212000
+133,60,Martín Urrutia,Urruuu22@gmail.com,+5989876794800,Enviar Por 3 Cruces a Minas,30000.0,Lavalleja Department,Minas,UY,1,1603986351000
+134,61,Anabel Anthonelly,Anabelro1996@gmail.com,+5989544290800,Dr. Javier Barrios amorin 1753,11200.0,Montevideo Department,Montevideo,UY,1,1603996616000
+135,62,CLIENTE SIN ASIGNAR,sinasignar@mail.com,,,,,,,1,1604017779000
+136,63,SILVANA RAFAELA FARIAS VIDAL,fariass989@gmail.com,+5989445745100,Navarrete 439,11700.0,Cerro Largo Department,Melo,UY,1,1604020272000
+137,64,María inés Olid presa,tecsanifo@icloud.com,+5989987122800,Calle 69 manzana 221 solar 11 Solimar ciudad de la costa,15800.0,Canelones Department,Atlántida,UY,1,1604024716000
+138,65,Eugenia Orlando,Orlando.eugenia@gmail.com,+5989878798700,Ponce 1337/401,11300.0,Montevideo Department,Montevideo,UY,1,1604069338000
+139,66,Claudia Hojman Perdomo,claudia.hojman@gmail.com,+5989858004200,Velsen 4575/002,11400.0,Montevideo Department,Montevideo,UY,1,1604112344000
+140,67,Santiago Landoni,santiagolandoni27@gmail.com,+5989829081800,18 de julio 2321 edificio leyendas Iv apto 1010,11800.0,Montevideo Department,Montevideo,UY,1,1604291957000
+141,68,Tomas Duster,tduster@gmail.com,+54155710397500,Av. Maipu 765,1638.0,Buenos Aires Province,Belgrano,AR,1,1604414370000
+142,69,Christian Capucci,christiancapucci@hotmail.com,+54341312113100,Tarragona 437,2000.0,Santa Fe Province,Rosario,AR,1,1604416670000
+143,70,Florencia Bitancur,florenciabm15@gmail.com,+5989987627600,Complejo San Francisco Block F2 apto 203,30000.0,Lavalleja Department,Minas,UY,1,1604417050000
+144,71,Clara Adriana Barduil,clarabarduil23@hotmail.com,153328432600,Oliden 2255 pb b,1824.0,Buenos Aires Province,,,1,1604419662000
+145,72,Gustavo M Carradori,gmcarra@gmail.com,549114051627800,Ugarteche 2853 3er  piso CABA,1425.0,,,,1,1604422077000
+146,73,Ramiro Martinez,rmartinezrossi@gmail.com,+5989180954500,Agencia Dac Piriapolis,20200.0,Maldonado Department,Piriápolis,UY,1,1604423491000
+147,74,Vemax,Vemaximportaciones@gmail.com,+5989541371800,Blandengues 2045,11100.0,Montevideo Department,Montevideo,UY,1,1604438358000
+148,75,Richard Edward Duplech Leites,rochaduplech@gmail.com,+5989822200300,García arocena m242 s43,15000.0,Canelones Department,Colonia Nicolich,UY,1,1604438586000
+149,76,Samyra Basanta,Samyrabasanta@hotmail.com,+5989963700200,Av.Bolivia 2347 /5,11500.0,Montevideo Department,Montevideo,UY,1,1604451456000
+150,77,Erikh Soukharev,s.erikh@gmail.com,+54113934801800,Donado 2853 Depto. 2B,1430.0,Buenos Aires Province,Belgrano,AR,1,1604455311000
+151,78,Juan Manuel Longeau Arrigoni,juanmalongeauarrigoni@outlook.es,+5989806550100,Hermanos Ruiz C/ Andres Cheveste S/N,27000.0,Rocha Department,Rocha,UY,1,1604528395000
+152,79,Pablo Curley,trescatorce.pro@gmail.com,+5989929254000,sevilla M52 S2 San Jose de Carrasco,15002.0,Canelones Department,Barra de Carrasco,UY,1,1604588822000
+153,80,Bryan Belsterli,bryanbelsterli21@gmail.com,9795278600,"Migues, Canelones",90003.0,Canelones Department,,,1,1604611059000
+154,81,Mauro saint schiavone,lanasaint52@icloud.com,+5989518617900,"Queguay 8031, entre delmira aguatini y cesar vallejos (parque de miramar)",15000.0,Canelones Department,Barra de Carrasco,UY,1,1604615431000
+155,82,Grow La Teja,a@a.com,+5989221011000,,,Montevideo Department,Montevideo,UY,1,1604623519000
+156,83,Viviana Soca,vivi@mail.com,+5989430019900,ENTREGAR A MI VIEJO EN PORTERIA,11100.0,Montevideo Department,Montevideo,UY,1,1604628668000
+157,84,Magela Felipe Martinez,magelafelipe7@gmail.com,+5989512655800,ENTREGAR A LA MADRE DE MAGELA EN LOS TECHITOS VERDES,11100.0,Montevideo Department,Montevideo,UY,1,1604629213000
+158,85,Leonardo Esteban Burgos Techera,amooncladreflection@gmail.com,+5989981216300,Santa Lucia 4665,11900.0,Montevideo Department,Montevideo,UY,1,1604711660000
+159,86,Camila Victoria De Leon Díaz,cami.dld@hotmail.com,9966665700,Carlos Anaya 533 bis,20000.0,Maldonado Department,,,1,1604808067000
+160,87,Rafaela,rafaelavz@hotmail.com,+5989905570400,Setembrino Pereda 821,60000.0,Paysandú Department,Paysandú,UY,1,1604923947000
+161,88,BORRAR,Javiergarre@hotmail.com,+5989925585100,Mancebo 6512bis,12400.0,Montevideo Department,Montevideo,UY,1,1604954584000
+162,89,Jonathan Damián Dionigi Gómez,damiandionigi@gmail.com,+5989124611600,comercio 1923 apto 203,11400.0,Montevideo Department,Montevideo,UY,1,1604957762000
+163,90,Marcel Bernardo Correa Sanchez,importauruguay@hotmail.com,+5989942499200,Herrera 382,30000.0,Lavalleja Department,Minas,UY,1,1604965838000
+164,91,Valentín Porley,valentin.porley@gmail.com,9449811100,Garibaldi 2525 - apto 101,11700.0,Montevideo Department,,,1,1604973600000
+165,92,María Paula Fernández,Paulafernandez9023@gmail.com,+5989129234500,Cavia 2640,11300.0,Montevideo Department,Montevideo,UY,1,1605005226000
+166,93,Santiago Mozzo Acosta,santiago.1997.mozzo@hotmail.com,+5989335627500,Ruta 48 km 7.800 camino santos,90200.0,Canelones Department,Las Piedras,UY,1,1605032439000
+167,94,Celia Maria Firpo Appratto,Info@celiafirpo.com.uy,9916512100,Francisco Solano López 1441,11411.0,Montevideo Department,,,1,1605103164000
+168,95,Juan Cesarotti,juanchocesarotti@gmail.com,+5989144549100,Calle 71 m10 s8,11005.0,Canelones Department,Barra de Carrasco,UY,1,1605111855000
+169,96,Sofia Beisso Figari,sofibeisso@hotmail.com,+5989913664900,Julio César 1208,11300.0,Montevideo Department,Montevideo,UY,1,1605214672000
+170,97,Diego Garcia,elmeca.-@live.it,+5989831615200,comodoro coe 3381,11600.0,Montevideo Department,Montevideo,UY,1,1605542628000
+171,98,Federico Opalo balog,Fefo157@gmail.co,+5989852186400,Vázquez sagastume 423,,Montevideo Department,Montevideo,UY,1,1605628729000
+172,99,Jorge Tulio Idiarte Borda,iborda@gmail.com,+5989960777100,"Héctor Gutierrez Ruiz, 1270 / 501",11100.0,Montevideo Department,Montevideo,UY,1,1605632936000
+173,100,Mathias,rojasvieramathias@gmail.com,+5989563869100,Plutarco 3864,11000.0,Montevideo Department,Montevideo,UY,1,1605728581000
+174,101,jaime josé nin uría,pokynin@gmail.com,+598549113138308700,juan I Cardozo 3752,94000.0,Florida Department,Florida,UY,1,1605739183000
+175,102,Leonardo izquierdo,Adabolso100@gmail.com,+5989281683100,Artigas y laureles,9000.0,Canelones Department,Canelones,UY,1,1605808996000
+176,103,juan larregui,juan_da1000@hotmail.com,+5989255942600,herrera 434,37000.0,Cerro Largo Department,Melo,UY,1,1605809758000
+177,104,Agustin Maximiliano Guerra Rand,nitsuga_022@hotmail.com,+5989160004300,Joaquin Suare y Almagro casa 43,60000.0,Paysandú Department,Paysandú,UY,1,1605851343000
+178,105,Sebastián Sierig,sebasierig25@gmail.com,+5989821881400,Aparicio Saravia 1245,37000.0,Cerro Largo Department,Melo,UY,1,1605898692000
+179,106,Mauricio Francisco franco torena,mauriciof68@hotmail.con,+5989993381900,Covinuvi 02,97000.0,Durazno Department,Durazno,UY,1,1606048834000
+180,107,Matias Péres,matiasperes23@gmail.com,+5989430304300,Rio Branco 1385 Piso 4,11100.0,Montevideo Department,Montevideo,UY,1,1606077487000
+181,108,Etienne Delsy,dolbyjoab@gmail.com,+5989747430400,Manuel Vicente Pagola 3164 203,11300.0,Montevideo Department,Montevideo,UY,1,1606097866000
+182,109,María Inés Chiacchio,mineschiacchio@gmail.com,+5989990536300,Orinoco 5141/402,11400.0,Montevideo Department,Montevideo,UY,1,1606104048000
+183,110,Oscar Daniel Sosa Olivo,danysosa62@hotmail.com,+5989750112300,Francisco Soca casi Basabilbaso,20200.0,Maldonado Department,Piriápolis,UY,1,1606166388000
+184,111,Alan Quimey Besada,alanqbesada@gmail.com,113773309400,Hornero y carpintero,27004.0,Rocha Department,,,1,1606177352000
+185,112,Alvaro Cardozo,alvaroca22@hotmail.com,+5989961258400,Re Pereira viv 10,11600.0,Canelones Department,Canelones,UY,1,1606184589000
+186,113,Julio Alexis Moncalvo Gorostiaga,alexismoncalvo3@gmail.com,+5989922387200,Tomas Villalba casi Alimundy,75100.0,Soriano Department,Dolores,UY,1,1606233375000
+187,114,Diego Caruso,dcaruso@urudata.com,+5989743750600,24 de abril 4704,12300.0,Montevideo Department,Montevideo,UY,1,1606305172000
+188,115,RAFAEL LEJTREGER,rafa.lejtreger@gmail.com,+5989969940900,21 de Setiembre 2733 apto 701,11300.0,Montevideo Department,Montevideo,UY,1,1606355509000
+189,116,Jose Luis Cattaneo,becka_03@hotmail.com,+5989841359900,Cuareim 1898,50000.0,Salto Department,Salto,UY,1,1606428839000
+190,117,Cecilia Verónica Pérez Nievas,ceciliavero24@hotmail.com,+5989850639000,Ruta 5 km 27 /500 calle los perales esquina bolivia,90300.0,Canelones Department,Progreso,UY,1,1606429092000
+191,118,Jose Luis Cattaneo,esther.cruz16@hotmail.com,+5989841359900,Cuareim 1898,50000.0,Salto Department,Salto,UY,1,1606429133000
+192,119,Jose pedro fuentes,Pfuentes919@gmail.com,+5989130763700,Ceres 4178,12300.0,Montevideo Department,Montevideo,UY,1,1606433329000
+193,120,Marianela Chocho Ramírez,marianelachochoramirez@gmail.com,+5989872744200,18 de julio 765,20400.0,Maldonado Department,San Carlos,UY,1,1606496011000
+194,121,FERNANDO RODRIGUEZ,mecatronic@outlook.com,+598989446419300,Juan Manuel Espinosa 1588,11400.0,Montevideo Department,Montevideo,UY,1,1606497094000
+195,122,dahiana elizabeth  martinez alvez,dahypitin2008@gmail.com,+1598561506942000,607sw 1stct,33435.0,Florida,Boynton Beach,US,1,1606502417000
+196,123,Rafa,Bebidasrnuy@gmail.com,+5410101999000,Tucuman,11771.0,Corrientes,Corrientes,AR,1,1606522473000
+197,124,Ana Paula Correa Gimenez,rojofluo@gmail.com,+5989977228200,Buenos Aires esquina Rondeau,20200.0,Maldonado Department,Piriápolis,UY,1,1606537225000
+198,125,Rosario Birriel,rosariobirrieltransportes@gmail.com,9356147500,Super San Fuentes / Ciudad San Luis,16300.0,Canelones Department,,,1,1606611421000
+199,126,Pablo elgart,Pabloelgart27@gmail.com,+5989255366000,Misisipi 1380,11900.0,Montevideo Department,Montevideo,UY,1,1606654562000
+200,127,Liliana Aguirrezabala,liliana23011610@gmail.com,+5989232050300,"Ventura Alegre 717 local 04,entreSarandi y Roman Guerra",20000.0,Maldonado Department,Maldonado,UY,1,1606701933000
+201,128,Waldemar Dominguez,aa@a.com,+5989479861400,Punta Del Este 1429,50000.0,Salto Department,Salto,UY,1,1606841140000
+202,129,Waldemar Dominguez Velazquez,wjdominguezv@gmail.com,+5989479861400,Punta del este 1429,50000.0,Salto Department,Salto,UY,1,1606848385000
+203,130,Graciela Gómez,egomez1954@icloud.com,+598,,,Maldonado Department,Punta del Este,UY,1,1606849614000
+204,131,Ricardo Caraballo Festa,rcaraballo@massaferroh.com.uy,+5989744430000,General Flores 2870,11800.0,Montevideo Department,Montevideo,UY,1,1606853615000
+205,132,Daniel cito Ureta piñeyro,Rpmgaragepiriapolis@gmail.com,+5989431729600,Calle misiones entre calles 2y3 (playa grande),20200.0,Maldonado Department,Piriápolis,UY,1,1606863043000
+206,133,Elias Walter Siutto Alcina,uruamerica@yahoo.com,+5989557053200,Bartolomé Hidalgo 2919,11800.0,Montevideo Department,Montevideo,UY,1,1606922316000
+207,134,Reynaldo Villabona,vilabong@gmail.com,+5989810124700,Jacinto Trapani 1315,33000.0,Treinta y Tres Department,Treinta y Tres,UY,1,1606929982000
+208,135,Katerin Ferreira,katerins-ferreira@hotmail.com,+5989834430600,Cuareim 1898,50000.0,Salto Department,Salto,UY,1,1607020899000
+209,136,Carlos Andres Presa Cabrera,automoviles.ap1@gmail.com,9516082400,"Wilson ferreira aldunate y cervantes, Maldonado.",20000.0,,,,1,1607348664000
+210,137,Yessica Betina Alvez Pereira,yessica.alvez@gmail.com,+5989205067700,Camino Apoquitos 226 esq Jardines de Campisteguy,90200.0,Canelones Department,Las Piedras,UY,1,1607362448000
+211,138,Guillermo Biatturi,gbiatturi@gmail.com,+5989879471100,Guillermo Tell 4064,11700.0,Montevideo Department,Montevideo,UY,1,1607477471000
+212,139,Gustavo González Della fortuna,tavito0505@gmail.com,+5989866629000,José Enrique rodo 1677 apt 803,11200.0,Montevideo Department,Montevideo,UY,1,1607544180000
+213,140,Eduardo Pígola Acosta,elpigola11@hotmail.com,+5989928757600,Rodo 373,30000.0,Lavalleja Department,Minas,UY,1,1607607645000
+214,141,Ricardo Aguerre,ricardo.aguerre1968@gmail.com,+598,Av Francisco Soca 1213/801,11300.0,Montevideo Department,Montevideo,UY,1,1607614609000
+215,142,Sebastian Perdomo,sebaper24@live.com,+5989423161300,San Isidro 384,111111.0,Canelones Department,Las Piedras,UY,1,1607642158000
+216,143,José luis Antúnez Tonelli,Amezagasanitaria@hotmail.com,+5989468550700,Machies 5103,12300.0,Montevideo Department,Montevideo,UY,1,1607968585000
+217,144,Flavia Daniela Alsina Puglia,flavia2021@hotmail.es,+5989898546800,Ellauri 741 esquina Espínola,15900.0,Canelones Department,Las Piedras,UY,1,1608051214000
+218,145,Juan,juan.marfia@gmail.com,+5989597336300,gaboto 1112 apto 6,11200.0,Montevideo Department,Montevideo,UY,1,1608051995000
+219,146,Romina Somi,rominasomi@yahoo.com,249437907000,"Ruta 74 , Kilómetro 231, TANDIL, Provincia de Buenos Aires",7000.0,,,,1,1608089014000
+220,147,Gustavo Umpierrez,umpjardines@gmail.com,+5989991234900,TERMINAL MALDONADO,20000.0,Maldonado Department,Maldonado,UY,1,1608254848000
+221,148,Beatriz Morales,Aly_mora22@hotmail.com,+5989431489900,Cabildo de 1815n 2346,,Montevideo Department,Montevideo,UY,1,1608435109000
+222,149,gonzalo gomez aramburu,ggaramburu@gmail.com,+54291462938900,castelli 1873,8000.0,Buenos Aires Province,Buenos Aires,AR,1,1608477197000
+223,150,Jorge Gabriel Hernandez Castillo,lic.g.hernandez10@gmail.com,+5989492262700,Turquesa entre amatista y turmalina (enviar por de Punta retiro en agencia maldonado SIEMPRE),20000.0,Maldonado Department,Maldonado,UY,1,1608566447000
+224,151,Raúl Alejandro Bentancor Díaz,herreriabentancorehijos@gmail.com,+5989812767600,Lc9 apto 34 real San Carlos,70000.0,Colonia Department,Colonia del Sacramento,UY,1,1608659724000
+225,152,Nicolas Bota,tropiguayo@gmail.com,+5989268717200,Luis batlle berres 6401,12700.0,Montevideo Department,Montevideo,UY,1,1608762585000
+226,153,Pablo Sanchez,pablos10381@gmail.com,9514401300,A. Zubiria 1154 apto D Block 4 COVIMT9,12700.0,Montevideo Department,,,1,1608769664000
+227,154,Martin Gordienko,magordienko@hotmail.com,+5989100532000,Calle 11 o Los Aromos Manzana 163 Solar 9,15100.0,Canelones Department,La Floresta,UY,1,1608776749000
+228,155,Marcello Palermo,chelopalermo@hotmail.com,+5989245589800,Carlos Maria Morales 944 / Apto. 603,11200.0,Montevideo Department,Montevideo,UY,1,1608808016000
+229,156,Rodrigo Andres Navarro Sosa,rodrigonavarro4@icloud.com,+5989621268300,28 de Febrero 171,75000.0,Soriano Department,Mercedes,UY,1,1608808141000
+230,157,Rodrigo Cruz Estala,rodricruz13@icloud.com,+5989175708100,Ruta 75 km 33 calle servidumbre esq 17 metros(Cabaña de madera),91000.0,Canelones Department,Pando,UY,1,1609265777000
+231,158,Maygualida Bo0101,maybo080@gmail.com,+5989238069900,Nicaragua 2034,11800.0,Montevideo Department,Montevideo,UY,1,1609377990000
+232,159,Maria Magdalena secadas jorge,mariasecadasjorge@gmail.com,+5989135467800,Solimar casi lusich villa delia,20000.0,Maldonado Department,Maldonado,UY,1,1609704539000
+233,160,matias javier venis lapaz,elmatti_92@hotmail.com,+5989120599200,Florencio Sanchez 48001,15000.0,Canelones Department,Paso de Carrasco,UY,1,1609708633000
+234,161,Cristian Safie,cristian@senderosdeltannat.com,+5989706600000,san jose 1226 103,11000.0,Montevideo Department,Montevideo,UY,1,1609715415000
+235,162,Victoria Pereira,vicpereira1122@gmail.com,+5989219280900,San Isidro 385,90200.0,Canelones Department,Las Piedras,UY,1,1609784908000
+236,163,Maria Victoria Pereira,vitto.pereira@gmail.com,+5989219280900,San Isidro 385,90200.0,Canelones Department,Las Piedras,UY,1,1609785979000
+237,164,Emmanuel Chevalier,emmanuel.chevalier@hotmail.com,+5989709119600,Avenida Artigas 162,70000.0,Colonia Department,Colonia del Sacramento,UY,1,1609812651000
+238,165,Cinthia milena lamela alderete,renci007@hotmail.com,+5989916594700,Zorrilla 1931 casi numero 5,60000.0,Paysandú Department,Paysandú,UY,1,1609876108000
+239,166,Marcelo Rodriguez,Marcee_1982@hotmail.com,+5989895287900,Atanasio sierra 655,,Canelones Department,Las Piedras,UY,1,1609881436000
+240,167,Jorge Laureano,cromadosypulidos@hotmail.com,+5989545514400,Camino Maldonado 7306,13000.0,Montevideo Department,Montevideo,UY,1,1609971042000
+241,168,Jacinto Larraechea,jlarraechea@hotmail.com,+5989995017000,Av presidente Jorge Batlle 986,45000.0,Tacuarembó Department,Tacuarembó,UY,1,1610074371000
+242,169,Lucas martinez etcheverry,lucasmar93@hotmail.com,+5989719495200,Lamartine 1676,12900.0,Montevideo Department,Montevideo,UY,1,1610377670000
+243,170,Paula Arrieta,parrieta@adinet.con.uy,+5989961885100,Av del Mar y Pasó de la Cadena-Br La Arbolada,,Maldonado Department,Punta del Este,UY,1,1610450296000
+244,171,Ramon Alfredo  Aguirre,ramonalfredoa44@gmail.com,+54351530118500,Emilio Olmos 516 dto 9,5000.0,Córdoba Province,Córdoba,AR,1,1610466138000
+245,172,Denis Ezequiel Annone,denisannone1@gmail.com,+54354443000700,San Luis 2173,5889.0,Córdoba Province,Mina Clavero,AR,1,1610469166000
+246,173,Álvaro Sevrini,sevrinialvaro@hotmail.com,9905300400,Ruta 107km33.800,,,,,1,1610469820000
+247,174,Pablo Javier Alsina Lopez,pablo@mail.com,+5989982364900,Ventura Piriz 574,,Rivera Department,Rivera,UY,1,1610482320000
+248,175,Enrique Russi Roverano,info@outletclub.tv,+5989799671400,Yaguaron 1378,11100.0,Montevideo Department,Montevideo,UY,1,1610547903000
+249,176,Federico lopez,Vitoderbi@hotmail.com,+5989947216300,Oribe,492746.0,Montevideo Department,Montevideo,UY,1,1610575178000
+250,177,Vivián Danila Barú Lacoius,Vivibaru@hotmail.com,+5989925287600,Mercedes 1298/602,11100.0,Montevideo Department,Montevideo,UY,1,1610639517000
+251,178,María Dolores Álvarez,Lolialvarez1997@gmail.com,9571799900,Viña del mar,11500.0,,,,1,1610639898000
+252,179,Andrea López,andie2201@hotmail.com,+5989484139900,Av. Becu m47 s25,15000.0,Canelones Department,Canelones,UY,1,1610643052000
+253,180,Osvaldo Martín Rochon Zunín,teddychico@gmail.com,+598994214000,Viera y Bemavidez 20,75200.0,Soriano Department,Cardona,UY,1,1610742795000
+254,181,Maria jose sapelli,Majosapelli_10@hotmail.com,9878659800,Blanco acevedo 1927,11500.0,Montevideo Department,,,1,1610919949000
+255,182,Andres Isola,andresisola@gmail.com,+598,,,Montevideo Department,Montevideo,UY,1,1610989635000
+256,183,lucas chambon,lucaschambon2016@gmail.com,9214413500,Valdense,70200.0,,,,1,1610995284000
+257,184,Richard Ignacio Acosta Pérez,richimusico@hotmail.com,+5989816284600,Artigas 1433,75200.0,Soriano Department,Cardona,UY,1,1610997979000
+258,185,Facundo Manuel Rodriguez Lenú,facu_2394@hotmail.com,+5989245767900,Parque del Plata calle 14 m457 s22 apto 2,15000.0,Canelones Department,Las Toscas,UY,1,1611007541000
+259,186,Mario Albin,mario.albin@gmail.com,+5989755737000,Pablo Zufriategui 374,70000.0,Colonia Department,Colonia del Sacramento,UY,1,1611065699000
+260,187,Manuel perini,manuelperini@hotmail.com,+5989137657500,Artigas 1364,70101.0,Colonia Department,Nueva Palmira,UY,1,1611169614000
+261,188,Diego Mateos,diegomg1997@gmail.com,9427910100,"Gestido M14 S2 esquina calle 70 , Solymar",15800.0,Canelones Department,,,1,1611258232000
+262,189,Fabio Daniel Fernandez Vargas,fabio.fd1989_@hotmail.com,+5989396800300,Yaguarón 1573,11100.0,Montevideo Department,Montevideo,UY,1,1611266005000
+263,190,Gerardo Lasalvia Alza,gerardoflight@gmail.com,+5989967555000,Zelmar michelini 1130,11100.0,Montevideo Department,Montevideo,UY,1,1611266423000
+264,191,Alexis Guzmán Silvera Revello,Silveraalexis57@gmail.com,+5989515146500,Caicobe 3390,11700.0,Montevideo Department,Montevideo,UY,1,1611520014000
+265,192,Carlos Méndez,Carlos29mendez@hotmail.com,+58414841674300,Ciudad bahía residencia bahía blanca,6001.0,Anzoátegui,Barcelona,VE,1,1611586870000
+266,193,Fabián Carballo,fcarballo@ctrlz.com.uy,+5989542571700,Pick Up MVD,11200.0,Montevideo Department,Montevideo,UY,1,1611590928000
+267,194,Cristian Schneider,crsch94@gmail.com,+5989912561500,Venezuela 1350,60000.0,Paysandú Department,Paysandú,UY,1,1611622211000
+268,195,Gonzalo Enrique De Souza Favale,generique23@hotmail.com,+5989908715000,Carlos Roxlo 1359,11200.0,Montevideo Department,Montevideo,UY,1,1611806865000
+269,196,Fernando Martin German Galeano,ffergerman77@gmail.com,+5989373510300,Emilio andreon 114,15900.0,Canelones Department,La Paz,UY,1,1611852004000
+270,197,Cristian Schneider,crsch94@gmail.con,+5989912561500,Venezuela 1350,6000.0,Paysandú Department,Paysandú,UY,1,1611854203000
+271,198,nicolas olmedo,elgato41@hotmail.com,+5989986177300,lavalleja 1098,30000.0,Lavalleja Department,Minas,UY,1,1611884300000
+272,199,Daniel Ichusti,smart.ichusti@gmail.com,+5989995033000,Dalmiro Costa 4161,11400.0,Montevideo Department,Montevideo,UY,1,1611923793000
+273,200,Verónica Bernial,veronica.vb771@gmail.com,+5989567421400,Calle 3. 2694 esquina avenida de las Américas,15005.0,Canelones Department,Barra de Carrasco,UY,1,1611964090000
+274,201,Maximiliano tons ramirez,maxitons93@gmail.com,+5989889543600,Bianchi altuna 376,90100.0,Canelones Department,La Paz,UY,1,1612013266000
+275,202,Carlos-Desirello,desdent2001@yahoo.com,+5989732636000,Verocay 876,60000.0,Paysandú Department,Paysandú,UY,1,1612035508000
+276,203,Roberto opalo,robchiche2@gmail.com,+5989900335000,luis batlle berres 4094,11900.0,Montevideo Department,Montevideo,UY,1,1612110164000
+277,204,Piero Rebufello,info@peloloco.com.uy,+5989458669300,Eduardo Acevedo 1239 esquina charrua,11400.0,Montevideo Department,Montevideo,UY,1,1612122292000
+278,205,Fernando Casal,picote2829@gmail.com,9833488100,Calle Q entre 10 y 12,16500.0,Canelones Department,,,1,1612128647000
+279,206,Rosana acosta,rosanagep@hotmail.com,9859895800,Berisso y ordoñez m263 s18,,Canelones Department,,,1,1612183148000
+280,207,uriel noria,Urielmvdink@gmail.com,9968919200,Br artigas 1907 esquina goes,,,,,1,1612183351000
+281,208,Alejandra Ortega,alejandra.ortega2012@gmail.com,+5989577563000,Av del Mar y Guanábana para de 10 playa Brava,20100.0,Maldonado Department,Maldonado,UY,1,1612215301000
+282,209,Francisco García Ferreiro,fgstudio@adinet.com.uy,9932587000,Areguatí 3259,12100.0,,,,1,1612389249000
+283,210,BRUNO MADERA,wtrmotos@gmail.com,+5989523621300,Dr.Pouey 645,90200.0,Canelones Department,Las Piedras,UY,1,1612472754000
+284,211,Manuel Copello/Leticia Darino,copelloman@hotmail.com,+5989510822200,timote 5404,11900.0,Montevideo Department,Montevideo,UY,1,1612545005000
+285,212,Mario Esteban Logiurato Quindt,mariologiurato@hotmail.com,+5989974872100,RUTA 3 km 371 # 1623,60000.0,Paysandú Department,Paysandú,UY,1,1612663088000
+286,213,Carlos Sebastián Ceriani,austro42@icloud.com,+5989941707100,J. E. Rodó 544,90000.0,Canelones Department,Canelones,UY,1,1612784849000
+287,214,Carlos Regalado,Minumero-666-@hotmail.com,+5989730326600,Calcagno  N 35. Esq. San cono.,15000.0,Canelones Department,Paso de Carrasco,UY,1,1612885970000
+288,215,Federico Etchamendi,f.etchamendkkoi@gmail.com,+598,,,Montevideo Department,Montevideo,UY,1,1612888915000
+289,216,Mauricio Andres Fabiani Marin,mauriciofabianimarin@gmail.com,+5989866355700,Lisandro Garcia S/N,91600.0,Canelones Department,San Jacinto,UY,1,1612896040000
+290,217,Tomas Federico Scampini Ferreira,tomasbolsohastalamuerte@gmail.com,+5989846828000,Carmelo González 1176,11800.0,Canelones Department,Sauce,UY,1,1612903405000
+291,218,Aquimar mariño abad,luisakil1422@gmail.com,+5989621091100,Carlos de la Vega 4952,11900.0,Montevideo Department,Montevideo,UY,1,1612955877000
+292,219,Alejandro Daniel Valdez,dvaldez@vera.com.uy,+5989911857800,Nelson 3347,11400.0,Montevideo Department,Montevideo,UY,1,1612965991000
+293,220,victor manuel lopez ortega,victoramg013@gmail.com,+5989937713600,avenida san martin 851,45000.0,Tacuarembó Department,Tacuarembó,UY,1,1612984833000
+294,221,Chelo Serve,marchelo2006@hotmail.com,+5989201715000,Camino De La Paz Mendoza 3547,12400.0,Montevideo Department,Montevideo,UY,1,1612985420000
+295,222,Victor Dario Reinosa Piedras,darioreinosa@hotmail.com,+5989837699300,Calle 3 Manz 4 Solar 32,15102.0,Canelones Department,Atlántida,UY,1,1613002157000
+296,223,Enrique Antonio Álvarez Mesa,enrique.alvarez.ea4@gmail.com,+5982292525200,Piovene 722,91000.0,Canelones Department,Pando,UY,1,1613096975000
+297,224,Natalia Suárez,nataliasuarezminas@gmail.com,+5984443173800,Del Puerto y Rodo,30000.0,Lavalleja Department,Minas,UY,1,1613149770000
+298,225,Giulia Stefania Nocito,giulia.nocito@hotmail.com,+598113381792300,Marco Bruto 1222 apto 206,11300.0,Montevideo Department,Montevideo,UY,1,1613246345000
+299,226,Jordany perez,Perezjordany.210@gmail.com,+1631303213400,1222 53rd,7407.0,New Jersey,North Bergen,US,1,1613526336000
+300,227,Marcos Correa Marquez,marcoscorreamarquez@gmail.com,+5989280221000,Calle 6 entre central y b las toscas,16002.0,Canelones Department,Las Toscas,UY,1,1613550496000
+301,228,Gustavo Fasanello,torfas-w@hotmail.com,+5989887945600,Luis alberto de herrera 393,50000.0,Salto Department,Salto,UY,1,1613582878000
+302,229,Pablo degado,Pablochessare@gmail.com,+5989580483700,Gutiérrez Ruiz,20000.0,Maldonado Department,Maldonado,UY,1,1613583031000
+303,230,Florencia Brambillasca,flobr_1309@hotmail.com,+5989939347800,Av Zenón Burgueño esq a. Saravia,19006.0,Canelones Department,Soca,UY,1,1613644110000
+304,231,Maicol Ricci,Maicolricci123@gmail.com,9566556400,San José esquina brasil,90000.0,,,,1,1613694235000
+305,232,Matías Landoni,landonimatias@gmail.com,+5989338047200,Brasil 621,50000.0,Salto Department,Salto,UY,1,1613699605000
+306,233,Nestor Alejandro Rebollo Sosa,Lacatrera@hotmail.com,+5989394493800,Heredia 4466,11900.0,Montevideo Department,Montevideo,UY,1,1613822835000
+307,234,Alberto Damián Bermolen Bado,damianbermolen@gmail.com,+5989233593900,gral. de la llana,20500.0,Maldonado Department,Aiguá,UY,1,1613957610000
+308,235,Ángel Palomeque,leonelpalomeque@icloud.com,+5989592925000,Juan paullier 1843,11800.0,Montevideo Department,Montevideo,UY,1,1613968618000
+309,236,Cecilia Soria,cecisoria86@gmail.com,+5989264894600,,30000.0,Lavalleja Department,Minas,UY,1,1614006853000
+310,237,Matías viurra,matiasviurra@gmail.com,+5989129234500,Cavia 2640 portería,11200.0,Montevideo Department,Montevideo,UY,1,1614029316000
+311,238,Juan Ignacio Acosta Hernandorena,Jacosta@dropper.com.uy,+5989533224700,18 de Julio 1325 Local 8,,Montevideo Department,Montevideo,UY,1,1614035028000
+312,239,Marie Poumayrac de Masredon,thyca12@hotmail.com,+5989922515700,La niña esquina carabelas,20100.0,Maldonado Department,Punta del Este,UY,1,1614044198000
+313,240,Diego Sebastián Gularte Martínez,elgamer1@gmail.com,+5989616144800,Primero de Marzo 4281,12310.0,Montevideo Department,Montevideo,UY,1,1614102529000
+314,241,Martín Piegas,piegasmartin1986@gmail.com,+5989938112500,Washington marroche manzana 127 solar 14 esquina Cerrito,90000.0,Canelones Department,Colonia Nicolich,UY,1,1614105227000
+315,242,Lucas laforia,Lucaslaforia08@gmail.com,+5989129431600,Barrio obrero proyectada 85,60000.0,Paysandú Department,Paysandú,UY,1,1614125440000
+316,243,Damián César Robaina Da Silva,damianrobaina@gmail.com,+5989398177000,Cerrito 643 Ap. 103 Esq. B.Mitre,11000.0,Montevideo Department,Montevideo,UY,1,1614510341000
+317,244,Yvo Gabriel Pérez Ferre,ivogabrielperes@gmail.com,+5989427778600,Río Branco 1385 4to piso,11100.0,Montevideo Department,Montevideo,UY,1,1614549625000
+318,245,Fernando Sosa,fisercan@gmail.com,+5989934402900,Eliceo Marzol 233,27000.0,Rocha Department,Rocha,UY,1,1614808072000
+319,246,Arturo Eguren,arturoeguren@mac.com,9429771100,Bulevar Artigas 302/702,11300.0,Montevideo Department,,,1,1614824865000
+320,247,Juan Manuel Salgueiro,jm.salgueiro.m@gmail.com,+5989906882900,JUAN SPIKERMAN 2281,11600.0,Montevideo Department,Montevideo,UY,1,1614862602000
+321,248,Juan Pablo gomez,juanjuanpablo79@gmail.com,+5989841122100,Roldán 2351,,Paysandú Department,Paysandú,UY,1,1614875179000
+322,249,Carlos Daniel Beletzky,beletzky@iscar.com.ar,114479977700,Avenida Libertador 1265  depto 1404 Vicente Lopez,1638.0,Buenos Aires Province,,,1,1614971104000
+323,250,Mayra Montero,Mayramontero05@gmail.com,+5989402405300,La diligencia 7411,12700.0,Montevideo Department,Montevideo,UY,1,1615061948000
+324,251,Ethel Ibarguren,Ethelibarguren@gmail.com,+5989943754800,Rivera,75100.0,Soriano Department,Dolores,UY,1,1615063785000
+325,252,Renata Gadea luque,rluque_1@hotmail.com,+5989936802800,Jose batlle y Ordóñez 776,40000.0,Rivera Department,Rivera,UY,1,1615119391000
+326,253,Matías Andrés Guerrero Provera,colog97@gmail.com,+5989446227800,San Martin y Dr Felippone,60000.0,Paysandú Department,Paysandú,UY,1,1615128173000
+327,254,Emilio Nessi,enessi69@hotmail.com,+5989973480100,Amorim 641,50000.0,Salto Department,Salto,UY,1,1615210699000
+328,255,Jhonatan Andres Carbajal Gasso,Jhonacarbajal@hotmail.com,+5989810563100,Chile 284,90700.0,Canelones Department,Santa Lucía,UY,1,1615223163000
+329,256,Andrea corri,andygus1611@adinet.com.uy,9741781500,Camino corrales 3730,11300.0,Montevideo Department,,,1,1615230354000
+330,257,Maria Pia sanguinetti,Piasangui@hotmail.com,+5989955559500,Gral santander 2383,11500.0,Montevideo Department,Montevideo,UY,1,1615258535000
+331,258,Rodrigo Valdez,rokoovaldez@gmail.com,+5989100259700,San miguel 1330,90800.0,Canelones Department,Sauce,UY,1,1615315440000
+332,259,Gaston Roland gonzalez,Gastonrol@hotmail.com,+5989917227900,Lavalleja s/n CIUDAD MIGUELETE,70005.0,Colonia Department,Florencio Sánchez,UY,1,1615485468000
+333,260,Nestor Adrian Saavedra,dj_nas77@yahoo.com.ar,+54156743623200,9 de Julio 4468 / LANUS ESTE,1824.0,Buenos Aires Province,Buenos Aires,AR,1,1615576917000
+334,261,Gustavo Urrutia,gustavourrutia89@gmail.com,+5989190396900,Ramón Anador 3625,11600.0,Montevideo Department,Montevideo,UY,1,1615593370000
+335,262,Nehemias Villagran,erikaynemi1989@gmail.com,+5989436444800,Gambia 3073 bis,12800.0,Montevideo Department,Montevideo,UY,1,1615602184000
+336,263,María Campi,angelica531561@gmail.com,+5989149307200,Zorrilla de San Martín 453,11800.0,Canelones Department,La Paz,UY,1,1615604562000
+337,264,Santiago Obelar,santiobelar@gmail.com,+5989133211500,Ruta 12,91100.0,Canelones Department,San Ramón,UY,1,1615627419000
+338,265,Luis Gustavo Jarrin,luiggig@gmail.com,+5989870774100,"Republica 1612, 202",11200.0,Montevideo Department,Montevideo,UY,1,1615637993000
+339,266,Esther de Jesus Herrera Guapuriche de Moraes,estherherrerag@hotmail.com,+5989746082900,Dr. Luis Alberto de Herrera 3355,11600.0,Montevideo Department,Montevideo,UY,1,1615658440000
+340,267,Marianela Sangenis,c.valdezz2002@gmail.com,+5989158742700,Micenas 1326 BIS,11700.0,Montevideo Department,Montevideo,UY,1,1615680704000
+341,268,Silvina Provera Azurica,silvinaprovera@gmail.com,+5989914664400,25 de mayo 1635,60000.0,Paysandú Department,Paysandú,UY,1,1615840141000
+342,269,Camilo ductter vera,fragger1s1k@hotmail.com,+5989254663000,Vicente basagoity 4117,11900.0,Montevideo Department,Montevideo,UY,1,1615850830000
+343,270,Carlos Pérez,carlos.perez9225@hotmail.com,+5989331379500,18 De Julio 899,20400.0,Maldonado Department,San Carlos,UY,1,1615890388000
+344,271,Leonardo Primerano,lemaran44@hotmail.com,+54116561598400,Araujo 950,1440.0,Buenos Aires Province,Buenos Aires,AR,1,1616086415000
+345,272,Marcelo Semblat,adasdsadas@aa.com,786355454100,a,40000.0,,,,1,1616120333000
+346,273,Javier Marcelo Chiste,javier.chiste@gmail.com,+5989177662900,Cno Los Horneros S/N - Cno Eduardo perez S/N - Barrio Privado Cumbres de Carrasco (Lote 72),15670.0,Canelones Department,Barros Blancos,UY,1,1616189200000
+347,274,Carlos Adrian Garcìa Caches,carlosadrian153@gmail.com,+5989448799100,18 de julio 1978 Apto 1303,,Montevideo Department,Montevideo,UY,1,1616238753000
+348,275,Martina Moreira,martinarabosto@gmail.com,+5989746827500,Av Gonzalo Ramirez 1329,11100.0,Montevideo Department,Montevideo,UY,1,1616265333000
+349,276,Marcelo Gaston Luttringer da rosa,Luttringer35@gmail.com,+5989722440000,Juan agazzi 2716,12100.0,Montevideo Department,Montevideo,UY,1,1616270750000
+350,277,Sergio aguirre,marrerofernando2452@gmail.com,+5989280155200,Ramon anador 3927/5,11600.0,Montevideo Department,Montevideo,UY,1,1616271451000
+351,278,Ora Grady,Blanca54@gmail.com,1960590348900,904 Jeanne Ville,,,,,1,1616350414000
+352,279,Florencia Urdangarin,craflorencia@hotmail.com,+5989953545900,Detomasi 725,75000.0,Soriano Department,Mercedes,UY,1,1616363012000
+353,280,Matías Menoni Remedi,arquimatimeno@gmail.com,+5989874431600,Agraciada 2548,50000.0,Salto Department,Salto,UY,1,1616383831000
+354,281,Tarsis Medina,tarsismedina8@gmail.com,9349845200,Felipe Sanguinetti 2183,11400.0,Montevideo Department,,,1,1616446204000
+355,282,Cristian omar Rodríguez Curbelo,Chirola4536@hotmail.com,+5989968864300,Santander 2012,11600.0,Montevideo Department,Montevideo,UY,1,1616473531000
+356,283,Lautaro santos,lauta19981031@gmail.com,+5989102673900,Minas 1118,11200.0,Montevideo Department,Montevideo,UY,1,1616513500000
+357,284,María Victoria Muñoz García,mavimuga160388@gmail.com,+5989613100500,Camino Aymará 6230 esquina Varzi.,15100.0,Montevideo Department,Montevideo,UY,1,1616529543000
+358,285,Franco Luca Posse Yarwa,Francoposse@gmail.com,9675067000,Sancho Panza 3014/ 401,11600.0,Montevideo Department,,,1,1616617445000
+359,286,Eduardo Franco de Sosa Zeballos,Francodesosa1@gmail.com,9641386600,Ariosto Gonzales 4979 bis,,Montevideo Department,,,1,1616640006000
+360,287,Luciano Palmieri,lucianopalmieri07@gmail.com,+5989708531300,Francisco Vidal 617 apto 701,11800.0,Montevideo Department,Montevideo,UY,1,1616652722000
+361,288,Alejandro Dutra,adutra@escritoriodutra.com,9961120000,Jamaica 3132,11500.0,Montevideo Department,,,1,1616669349000
+362,289,Matias Migues,el_matimi@hotmail.com,+5989582824700,Ferreira 1332,91000.0,Canelones Department,Pando,UY,1,1616689302000
+363,290,Fabián Pécora,fabianpeco@gmail.com,+549341327612300,Ovidio Lagos 550,2000.0,Santa Fe Province,Rosario,AR,1,1616696593000
+364,291,Bruno Spada,bruno.spada@hotmail.com,+5989122398300,San Antonio,11900.0,Canelones Department,Las Piedras,UY,1,1616766298000
+365,292,Valentina Rivero,Valentiinarivero@outlook.com,+5989769722700,Yaros solar 6,,Canelones Department,Atlántida,UY,1,1616770718000
+366,293,Ramiro Esteva,estevacheleri@gmail.com,+5989872598600,Blandengues 792,50000.0,Salto Department,Salto,UY,1,1616771494000
+367,294,BORRAR,l@l.com,+598,,,Montevideo Department,Montevideo,UY,1,1616797407000
+368,295,Eduardo Fabio caprani Mendez,Efcm@adinet.com.uy,+5989944132000,Av. BOLIVIA 2179,11400.0,Montevideo Department,Montevideo,UY,1,1616850457000
+369,296,VERONICA RODRIGUEZ,verorro1@hotmail.com,+5989861915800,Tala 005 (Ciudad VILLA MARIA),80005.0,San José Department,Rafael Perazza,UY,1,1616860918000
+370,297,Lucas Medeiros,lucas2002medeiros@gmail.com,9502632900,Pinos M12 S11,15005.0,Canelones Department,,,1,1616970208000
+371,298,Carolina Olivera,carolina2611@vera.com.uy,+5989365180000,calle Patria M234 S 1B,15008.0,Canelones Department,Atlántida,UY,1,1617037717000
+372,299,María Sofía Rodríguez Viera,Sofiarodriguezviera@gmail.com,+5989860760100,"Avenida aigua, casi paravis",20000.0,Maldonado Department,Maldonado,UY,1,1617171015000
+373,300,José Luis Carro,jlcarro.uy@gmail.com,+5989501848400,Caramuru 6036,11000.0,Montevideo Department,Montevideo,UY,1,1617237456000
+374,301,Alberto Giménez Carbajal,soffiacril@gmail.com,9250916800,Mevir 1 vivienda 17446 San Bautista,90604.0,Canelones Department,,,1,1617393768000
+375,302,Marcelo Daniel Oyhenard Soto,marceoyhe@gmail.com,+5989862620100,General Flores 584,85000.0,Flores Department,Trinidad,UY,1,1617507477000
+376,303,Lidia Lorena Cloc,lorecloc@gmail.com,+5989530710300,Francisco Gómez 771,11700.0,Montevideo Department,Montevideo,UY,1,1617581028000
+377,304,Agustina,Agustinaaguerre@hotmail.com,+5989836387900,Rodo manzana 31,15200.0,Canelones Department,Barra de Carrasco,UY,1,1617581970000
+378,305,Cinthia Yanina Pedraja Pistón,sebalugo36@gmail.com,+5989504288700,Ruta 11 km 87,9700.0,Canelones Department,Santa Lucía,UY,1,1617582634000
+379,306,Sergio Añasco,sergioseba1988@gmail.com,+5989202347300,25 de mayo 1635,60000.0,Paysandú Department,Paysandú,UY,1,1617583708000
+380,307,Santiago Pedro Parris Jones,santiiparris@gmail.com,+5989108105300,Pilcomayo 5429 apt 201,11400.0,Montevideo Department,Montevideo,UY,1,1617590803000
+381,308,Carlos Mariano Marenco,cmarenco@fratelli-branca.com.ar,114147535900,V 50,1617.0,Buenos Aires Province,,,1,1617636706000
+382,309,Pablo Alexis Suarez Imaz,pabloalexissuarezimaz@gmail.com,+5989734255100,Portugal 3514,12800.0,Montevideo Department,Montevideo,UY,1,1617674617000
+383,310,Marco Lorenzo Rampoldi Robaina,malora1221@hotmail.es,+5989191282200,Lisandro Garcia esq Wilson ferreira,91300.0,Canelones Department,San Jacinto,UY,1,1617970129000
+384,311,Gonzalo Moran(duna),gonzaattack@gmail.com,+5989189121600,Danton 755,90200.0,Canelones Department,Las Piedras,UY,1,1618007085000
+385,312,Agustin,agustin.mzfa@hotmail.com,+5989920522400,Acevedo Diaz 1115,11300.0,Montevideo Department,Montevideo,UY,1,1618242611000
+386,313,Jorge Ramos,jorggeandres@hotmail.com,+5989817726200,Av Artigas 1763,80002.0,San José Department,Ecilda Paullier,UY,1,1618246647000
+387,314,Lucia Rodriguez,luciarodalva@gmail.com,+5989497285300,Orinoco 4866 apto. 301,11400.0,Montevideo Department,Montevideo,UY,1,1618249881000
+388,315,Javier Constancio falliu putchalver,javifa1@hotmail.com,+5989126562600,César mayo Gutiérrez esquina 17m,90200.0,Canelones Department,La Paz,UY,1,1618265771000
+389,316,Emiliano Rodriguez,hola@dosmangos.con.uy,9190936100,Río Branco 1477,11100.0,,,,1,1618662566000
+390,317,BORRAR,a@fgjhdjsdkals.com,+598,,,Montevideo Department,Montevideo,UY,1,1618692368000
+391,318,Gustavo Gabriel Vassile Flores,gustavovassile@gmail.com,+5989994796600,Artigas 586,80100.0,San José Department,Libertad,UY,1,1618839756000
+392,319,Belen Del Gaudio,belendelgaudio@gmail.com,+5989412015800,"Nancy 4331, esquina resistencia, buceo",11600.0,Montevideo Department,Montevideo,UY,1,1618881993000
+393,320,Vittorio Fabricio Berti Pereda,vittoriocacciatore@gmail.com,+5989131072000,Gonzalo Ramirez 2017/203,11200.0,Montevideo Department,Montevideo,UY,1,1618976195000
+394,321,Gloria Analhi Müller Lima,seryana2007@hotmail.com,+5989987241500,Av. Paraguay 696,50000.0,Salto Department,Salto,UY,1,1619004381000
+395,322,Federico Zavadszky Santos,elfedess@hotmail.com,+5989924802900,Constituyente 1959 Apto 19,11200.0,Montevideo Department,Montevideo,UY,1,1619045149000
+396,323,Martin Verde,pipishi2008@gmail.com,+5989829122400,Hocquart 2241,11600.0,Montevideo Department,Montevideo,UY,1,1619117000000
+397,324,Eduardo Alejandro Añasco Villarino,alejandroaniasco@gmail.com,+5989550744200,Argentina 3236,65000.0,Río Negro Department,Fray Bentos,UY,1,1619135733000
+398,325,Nicolás schevzov,schevzovnicolas@gmail.com,+5989370282800,Ciudad del plata m38 s 27,80500.0,San José Department,Delta del Tigre,UY,1,1619142932000
+399,326,Valentin Berretta,vberretta@bbva.com,+5989520887900,Uruguay 1273,50000.0,Salto Department,Salto,UY,1,1619293362000
+400,327,Maria Albertina Lavigne,albertina.lavigne@gmail.com,+5989297717100,Hibiscos 2845,11500.0,Montevideo Department,Montevideo,UY,1,1619302251000
+401,328,Nestor Perez,pereznestor776@gmail.com,+5989500348800,Km29.500 me s4,80500.0,San José Department,Delta del Tigre,UY,1,1619319144000
+402,329,Magela Ramírez Moreira,magelaramirez0104@gmail.com,+5989489653600,San Fuentes 3970,12800.0,Montevideo Department,Pajas Blancas,UY,1,1619327738000
+403,330,Santiago César Pintos Díaz,santiagopintos852@gmail.com,+5989486175700,Fauquet6247esq santa María,598.0,Montevideo Department,Montevideo,UY,1,1619471568000
+404,331,Dayron Lopez Perez,lopezdayron990@gmail.com,+5989659238200,Yaguarón 1533,11100.0,Montevideo Department,Montevideo,UY,1,1619487449000
+405,332,Macarena González,macagonzavaz@gmail.com,9265617000,R 6 km 85,90602.0,Florida Department,,,1,1619523452000
+406,333,José Pablo Bao Fontes,jpablo35@adinet.com.uy,+5989497255700,Osiris Rodríguez Castillo 6100,12400.0,Montevideo Department,Montevideo,UY,1,1619529774000
+407,334,Alfredo Ignacio Erramún Pozzo,alfrerramun@gmail.com,+5989912200100,Avenida Italia 5134 Ap. 202,11400.0,Montevideo Department,Montevideo,UY,1,1619662085000
+408,335,Fernando Agustín Arbelo,afer2003@hotmail.com,+549116919823400,"Méjico 48, Avellaneda. Provincia de Buenos Aires",1870.0,Buenos Aires Province,Buenos Aires,AR,1,1619663266000
+409,336,Camila Larrosa,camilalarrosa@hotmail.es,+5989403408700,Porongos M.239 S.18 R.74 Km.25,91001.0,Canelones Department,Barros Blancos,UY,1,1619707983000
+410,337,Javier constancio falliu putchalver,javifa1@hotmail.com.uy,+5989126562600,César mayo Gutiérrez,90200.0,Canelones Department,La Paz,UY,1,1619743769000
+411,338,Pablo Velloso,pvellozo@gmail.com,+5989438113700,San Salvador 2185,11200.0,Montevideo Department,Montevideo,UY,1,1619797132000
+412,339,Leonardo Perez,Leonardo.pp621@hotmail.com,+5989672319800,Camino Repetto 3587,12200.0,Montevideo Department,Montevideo,UY,1,1619869623000
+413,340,Pablo meilach hauret,pablomeilach@gmail.com,+5989932055400,Mirlo 272 casa 2,15000.0,Canelones Department,Barra de Carrasco,UY,1,1619894958000
+414,341,Gaston Telfeyan,gaston.telfeyan@gmail.com,+5989960671100,Obligado 880 apto 403,11300.0,Montevideo Department,Montevideo,UY,1,1620093979000
+415,342,Fabricio Clavijo,el-piedra666@hotmail.com,+5989610688700,Ruta32 km 43,90000.0,Canelones Department,Canelones,UY,1,1620106414000
+416,343,Andrés del Arca,andresdelarc@gmail.com,9936158700,Joaquín Pereyra 1021,11700.0,,,,1,1620168166000
+417,344,Matias Moliné Tato,Matiasmoline@hotmail.com,+5989423630700,Joaquín Requena 2809,11000.0,Montevideo Department,Montevideo,UY,1,1620180556000
+418,345,Alvaro Nin,a_nin1@hotmail.com,+5989872612400,Juan o Cardozo 3752,94000.0,Florida Department,Florida,UY,1,1620327528000
+419,346,Juan Huamán,el_perrohc@hotmail.com,+5989438530400,Jose Llupes 5212,11900.0,Montevideo Department,Montevideo,UY,1,1620349836000
+420,347,Fabiana Gonzalez,fabianagonzalez@adinet.com.uy,+5989885732600,Tiburcio gomez 1557,11700.0,Montevideo Department,Montevideo,UY,1,1620596790000
+421,348,BORRAR,gabimore1995@hotmail.com,+5989191599200,sevilla 1941,1400.0,Montevideo Department,Montevideo,UY,1,1620696946000
+422,349,Damián Ulises Vega Morgades,damian4.vega@gmail.com,+5989614374900,"Jose maria penco 3615, Roberto Koch y propios",11700.0,Montevideo Department,Montevideo,UY,1,1620779051000
+423,350,Fáti Romero,Romerofatima83@gmail.com,+5989622119200,Humberto mignone S/N,70000.0,Colonia Department,Colonia del Sacramento,UY,1,1620840437000
+424,351,Frenado Rodriguez,Ferodriguez@gmail.con,+598,,,Montevideo Department,Montevideo,UY,1,1620934666000
+425,352,Lucía Sueiro,lucia_sueiro@hotmail.com,+5982220193700,Matilde Pacheco 4670 esquina Mendoza,12300.0,Montevideo Department,Montevideo,UY,1,1621090450000
+426,353,Iñaki Julen Arambillete Ferreyra,kakijulen@gmail.com,+5989524963500,Carlos María Ramírez,11900.0,Montevideo Department,Montevideo,UY,1,1621114180000
+427,354,Martin Lisandro Toledo Thern,martin.toledo@ponsse.com,+5989955913000,Varela 1213,60000.0,Paysandú Department,Paysandú,UY,1,1621135830000
+428,355,Cecilia Ribeiro Pérez,Creativecakeuruguay@gmail.com,+5989433136100,"Comercio 2160, Apto 301",11400.0,Montevideo Department,Montevideo,UY,1,1621276721000
+429,356,Jonathan Risso,Jonathanrisso69@gmail.com,+5989371081200,Coraceros 3724,12000.0,Montevideo Department,Montevideo,UY,1,1621304080000
+430,357,Hipolito Ovejero,hipo22@hotmail.com,+54261503218000,Godoy Cruz 5747,5521.0,Mendoza,Departamento de Guaymallén,AR,1,1621429028000
+431,358,Rafael Machala,rafael.machalatome@gmail.com,+5989973305300,26 de Marzo 1297 apto 302,11200.0,Montevideo Department,Montevideo,UY,1,1621536674000
+432,359,NICOLAS VALLADARES,nico.vrd@gmail.com,+54381467312900,"Benjamin villafañe 1577, Villa 9 de julio",4000.0,Tucumán Province,San Miguel de Tucumán,AR,1,1621552750000
+433,360,Alejandro Nahuel Peñaloza Milan,nhlpenaloza@gmail.com,+5989194688300,Olimar 3047,6500.0,Río Negro Department,Fray Bentos,UY,1,1621642731000
+434,361,Brian Diaz Cervigni,brian_diaz510@hotmail.com,+5435371559997500,"Bv Chacabuco 432, 10 A",5000.0,Córdoba Province,Córdoba,AR,1,1621690590000
+435,362,Michael fernandez,maicolfernandez970@gmail.com,+5989355030600,Arazati entre abayuba y achiras neptunia sur,15101.0,Canelones Department,Atlántida,UY,1,1621781825000
+436,363,Luca Gioia Fernández,lucagioiafernandez13@gmail.com,+5989992854200,Ansina 1119,75000.0,Soriano Department,Mercedes,UY,1,1621894825000
+437,364,Adela Fernández Laborda,adelafernandezlaborda@gmail.com,+5989952905900,"Ansina, 1119",75000.0,Soriano Department,Mercedes,UY,1,1621895920000
+438,365,María Belen Anhalt,losanhalt@hotmail.com,9995883500,Ituzaingo 1065,50000.0,Salto Department,,,1,1622078731000
+439,366,Micaela Moreira,micaelam379@gmail.com,+5989266764400,Juan Pablo Laguna 3373 / Apto 305,11300.0,Montevideo Department,Montevideo,UY,1,1622140459000
+440,367,MARTIN PIREZ LOPEZ,martin_pirez@hotmail.com,+5989993941100,BRASIL 801,50000.0,Salto Department,Salto,UY,1,1622141042000
+441,368,Javier Francisco Lusby Gonzalez,hypnos.dw@gmail.com,+5989974057900,"Matias Alvarez 3866 Apt. 808, Parque Posadas",11800.0,Montevideo Department,Montevideo,UY,1,1622141312000
+442,369,Luis Alberto nuñez cecilio,Manubb5050@gmail.com,+5989743297400,Camino guerra 6883,13000.0,Montevideo Department,Montevideo,UY,1,1622407347000
+443,370,Jose ignacio borghini perez,borghinijose@hotmai.com,+5989984245800,Calle 29 y calle 16 vivienda 19537,20000.0,Maldonado Department,Maldonado,UY,1,1622418271000
+444,371,Victoria Milagros Ferreira Sequeira,victoria2014ferreira@gmail.com,9103457700,"Las piedras, san isidro 397",,,,,1,1622512335000
+445,372,Miguel Plá,miguelpla04@gmail.com,+5989120420400,W beltran 429,30000.0,Lavalleja Department,Minas,UY,1,1622583710000
+446,373,Ronald,ronaldm7@hotmail.com,+5989841981100,18 de julio 209,270000.0,Rocha Department,Rocha,UY,1,1622603793000
+447,374,Pedro Lopez,pedrolopeztecnoit@gmail.com,+5989366450000,Badajoz  1761,12500.0,Montevideo Department,Montevideo,UY,1,1622676952000
+448,375,Luis Ismael Umpierrez,ismael.umpierrez@gmail.com,+5989869318600,"18 de Julio 2202, 3",11200.0,Montevideo Department,Montevideo,UY,1,1622732315000
+449,376,Cruz Heaney,Laurel.Blick54@gmail.com,1363153338700,132 Ted Mission,,,,,1,1622874250000
+450,377,Germán Emilio Tabó Callero,germantabocallero@gmail.com,+5989921521200,Joaquín Suárez 168,90700.0,Canelones Department,Santa Lucía,UY,1,1623106293000
+451,378,Jose Ignacio Cayaffa,ignaciocayaffa6@gmail.com,+5989972691200,Jacaranda S/n,15900.0,Canelones Department,Progreso,UY,1,1623469748000
+452,379,Ignacio Suaya,nachosuaya@hotmail.com,9962322200,Gregorio Suárez 2716,11300.0,Montevideo Department,,,1,1623533695000
+453,380,Ana Inés Bergamali,abergamali@gmail.com,+5989826569000,"Orleans 2445, casa",11500.0,Montevideo Department,Montevideo,UY,1,1623704360000
+454,381,Nicholas Prevett,nicholas.prevett@gmail.com,+5989451686800,paysandu 1379 - ap. 703,11000.0,Montevideo Department,Montevideo,UY,1,1623782068000
+455,382,David Leonel Perez Perez,davidlpp92@gmail.com,+5989558491600,av lezica 6680,12500.0,Montevideo Department,Montevideo,UY,1,1624025851000
+456,383,Federco Golpe,regueiro.mlz@gmail.com,+54112341715600,French 287,1828.0,Buenos Aires Province,Buenos Aires,AR,1,1624039897000
+457,384,Marco Barone,mbaro1989@gmail.com,+54341652222000,Teniente Agneta 1320,2000.0,Santa Fe Province,Rosario,AR,1,1624410042000
+458,385,Carzone 300,carzone3001@gmail.com,+5989955463300,W Beltran 30,90700.0,Canelones Department,Santa Lucía,UY,1,1624484708000
+459,386,Damyan Villagrán,damysmite@gmail.com,+5989686126800,Soca 585,15900.0,Canelones Department,Las Piedras,UY,1,1624500598000
+460,387,fabricio aldecosea,fabricio_aldecosea@hotmail.com,+5989549582400,gabriel pereira 3271,11300.0,Montevideo Department,Montevideo,UY,1,1624541212000
+461,388,Manuel Vera Young,leneriacarrasco@gmail.com,+5989964841200,Martin Usabiaga Sala 2928,11500.0,Montevideo Department,Montevideo,UY,1,1624722759000
+462,389,Valentin Baeque,valentinbaeque@gmail.com,+5989646174700,M61 S12,80101.0,San José Department,Delta del Tigre,UY,1,1624746190000
+463,390,Melisa Morán (gonza duna),07melisa.m@gmail.com,+5989185823800,Danton 755 entre Ellauri y Senen Rodriguez,90200.0,Canelones Department,Las Piedras,UY,1,1624895864000
+464,391,Eduardo Paradiso,pepo682@hotmail.com,+5989753591300,Comodoro coe 3714 pasillo al fondo,11300.0,Montevideo Department,Montevideo,UY,1,1624925701000
+465,392,Franco Freire,fra_20_91@hotmail.com,+5989945438500,Ruta 7 Km 67,91800.0,Canelones Department,Tala,UY,1,1624939481000
+466,393,Yhonatan Cabral,yhonatancabral36@gmail.com,+5989173643700,"Calle Maldonado, 769",30000.0,Lavalleja Department,Minas,UY,1,1624968353000
+467,394,Gustavo Mayor,dalegas2013@gmail.com,+5989100259700,ENTREGAR A Rodrigo Valdez,90800.0,Canelones Department,Sauce,UY,1,1624981183000
+468,395,Bryan Ezequiel Machado Peralta,bmachado98@outlook.com,+5989401549900,Juan p López 601bis entre Paraguay chico y brasil,15900.0,Canelones Department,Las Piedras,UY,1,1625003277000
+469,396,Luca Tomas Frodella,frodellaluca40@gmail.com,+5989850243800,"Chana 1823, apto 301",11200.0,Montevideo Department,Montevideo,UY,1,1625009546000
+470,397,Wilson Sandro Tejera,wilsonstejera@hotmail.com,+5989652316600,Avenida España esquina Danubio,91000.0,Canelones Department,Pando,UY,1,1625015223000
+471,398,Daniel Cirilo,blacklogisticsusa@gmail.com,,,,,,,1,1625015247000
+472,399,Jhonatan Adrián Farías Sannino,jhonattanffarias@gmail.com,+5989555449600,Miguel estevez 3320,13000.0,Montevideo Department,Montevideo,UY,1,1625165107000
+473,400,Lpi,lapiz@lapiz.com,+598,,,Artigas Department,Baltasar Brum,UY,1,1625176348000
+474,401,Javier Gerardo Garre Curbelo,jgarre@adinet.com.uy,+5989925585100,Av. Artigas 685 L. 05,90200.0,Canelones Department,Las Piedras,UY,1,1625280601000
+475,402,NO USAR Alexis Gelpi NO USAR,gelpi.alexis@gmail.com,+5989632835500,Garibaldi 36,15000.0,Canelones Department,Paso de Carrasco,UY,1,1625597449000
+476,403,Nicolás castillo,niko98336@gmail.com,+5989246132400,Agracida2727,12900.0,Montevideo Department,Montevideo,UY,1,1625835067000
+477,404,Rodrigo Opalo,r.opalo1987@gmail.com,+5982305488800,Luis Batlle Berres 4094,11900.0,Montevideo Department,Montevideo,UY,1,1625877330000
+478,405,Odey Garcia,juliangarciasilvera@gmail.com,+5989106801800,11200,11200.0,Montevideo Department,Montevideo,UY,1,1626188574000
+479,406,Matias Young Duran,matiasyoungduran@gmail.com,9964841200,Martin Usabiaga sala 2928,11500.0,,,,1,1626370558000
+480,407,Francesco Tagliani,Fran.tm@icloud.com,+5989378509700,Maldonado 2341 apartamento 703,11200.0,Montevideo Department,Montevideo,UY,1,1626390329000
+481,408,Mario Freitas,M.Mathiasfreitas@gmail.com,+5989432905400,A. Muñoz 4482,11900.0,Montevideo Department,Montevideo,UY,1,1626392292000
+482,409,Natalia Martínez,ntl37.nm@gmail.com,+5989969690300,Ponce 1463,1200.0,Montevideo Department,Montevideo,UY,1,1626827404000
+483,410,Yvonne macedo,Yvoms@hotmail.com,+5989900870600,Leandro gomez 3133,12200.0,Montevideo Department,Montevideo,UY,1,1626867092000
+484,411,Maximiliano Miguez,maximiliano.miguez@gmail.com,+54113214180200,España 1060,1611.0,Buenos Aires Province,Buenos Aires,AR,1,1626884983000
+485,412,María Cristina gonzalez,Mateomamane@adinet.com.uy,9962270300,Pedro Fco. Berro 1206,11300.0,Montevideo Department,,,1,1626891625000
+486,413,suarez nestor nazareno,opticaexpressushuaia@gmail.com,+54296452604300,Juan manuel de rosas 170,9410.0,Tierra del Fuego Province,Ushuaia,AR,1,1627006413000
+487,414,Adriana Cappone,adrianacappone@gmail.com,+54341449020600,Pellegrini 2584,2000.0,Santa Fe Province,Rosario,AR,1,1627052629000
+488,415,Jorge Bussinger,jvbussi@hotmail.com,+54280427057200,Marcelo T de Alvear 1325,9120.0,Chubut Province,Puerto Madryn,AR,1,1627091493000
+489,416,Néstor riveros,Nestorrivero062@gmail.com,+54115334359400,Costa,1846.0,Buenos Aires Province,Buenos Aires,AR,1,1627147532000
+490,417,Christian ivacachi,caxe24cool@gmail.com,+54298465702900,Aquiles lamfre 129,8328.0,Río Negro Province,Allen,AR,1,1627244140000
+491,418,José María Franco,oficomtand@gmail.com,+54249435204400,Pinto 250 Departamento 25,7000.0,Buenos Aires Province,Buenos Aires,AR,1,1627244521000
+492,419,Eliana Soledad Ríos,rioselianasoledad25@gmail.com,+54362454252500,Mz21 Pc3 Ch39 barrio 506 viviendas,3514.0,Chaco Province,Fontana,AR,1,1627266010000
+493,420,Cristian Espinosa,ca-espinosa@hotmail.com,376423126200,R. Vidal 625,9000.0,Chubut Province,,,1,1627414690000
+494,421,Yainery Blondin Hernández,yaineryblondin@gmail.com,+5989745751200,"Paso Carrasco, Garibaldi 36",15000.0,Montevideo Department,Montevideo,UY,1,1627427064000
+495,422,Cristian Emiliano Villegas,Cristianemilianov@gmail.com,+54264488935300,España 2823,5425.0,San Juan Province,Departamento de Rawson,AR,1,1627445683000
+496,423,Horacio. Jose Massa,horaciojmassa@gmail.com,228153142400,Mitre 644 Azul,7300.0,Buenos Aires Province,,,1,1627557169000
+497,424,María Carolina Buffoni,Carobuffoni74@hotmail.com,+54156286941000,Hernando de Magallanes,1619.0,Buenos Aires Province,Buenos Aires,AR,1,1627612996000
+498,425,11819479,vigecha@gmail.com,+54351595058100,Celso Barrios 1502,5014.0,Córdoba Province,Córdoba,AR,1,1627644679000
+499,426,Esteban Firpo,a@asasda.com,+598,,,Paysandú Department,Paysandú,UY,1,1627656634000
+500,427,Aldo Federico Sellanes Garcia,fedesel@gmail.com,+5989233399500,"Horacio Santos, 1039",80000.0,San José Department,San José de Mayo,UY,1,1627691216000
+501,428,Paulo Rodriguez BORRAR,paulo147@gmail.com,+5989939520000,Soriano 787,20000.0,Maldonado Department,Maldonado,UY,1,1627935671000
+502,429,Yessica dahiana  Rodríguez viera,palomamami17@icloud.com,+5989165656300,Hudson 5328,90200.0,Montevideo Department,Montevideo,UY,1,1628099153000
+503,430,Gloria Collazo Spinelli,gloriamariacollazo@gmail.com,+5989431262400,"Baltasar Brum L 12 B001, Isabelino Arocena",70200.0,Colonia Department,Rosario,UY,1,1628128176000
+504,431,Federico Bruzzone,federico1891@gmail.com,+5989806783000,Amazonas 1691,11400.0,Montevideo Department,Montevideo,UY,1,1628179492000
+505,432,Hernán Agustín Alanís Caballero,halaniscaballero@gmail.com,+5989937310700,Defensa entre Sarmiento y Moreno,20200.0,Maldonado Department,Piriápolis,UY,1,1628207213000
+506,433,Maria Rosales,maruja856@hotmail.com,+5989100926600,17 metros manzana B17 solar4 El Pinar,,Canelones Department,Canelones,UY,1,1628214234000
+507,434,Astrid Guevara,psi.astridguevara@gmail.com,+598,,13800.0,Canelones Department,Barra de Carrasco,UY,1,1628342966000
+508,435,Milagros Kidd,milagroskidd@gmail.com,+5989915679800,Av. Gral. José Garibaldi 2479,11600.0,Montevideo Department,Montevideo,UY,1,1628357016000
+509,436,nicolás Briccola,nicolasbriccola@gmail.com,+5989952079000,Santiago rodriguez 915,80001.0,San José Department,Rodríguez,UY,1,1628373132000
+510,437,Sebastian Olivera,sebastianolivera20182018@gmail.con,9901360500,18 de Julio 1268 Galería del Virrey,11100.0,,,,1,1628377493000
+511,438,Sergio Ismael Hernandez Garcia,ismanan@gmail.com,9916029000,"Carlos Sole, 3297",11700.0,Montevideo Department,,,1,1628381885000
+512,439,Claudia Perez,claudiayanet70@gmail.com,+5989917414900,Avenida Artigas 1442,80002.0,San José Department,Ecilda Paullier,UY,1,1628419228000
+513,440,Gabriel Moretto,gabimore1995@gmail.com,+5989191599200,sevilla 1941,1400.0,Montevideo Department,Montevideo,UY,1,1628521766000
+514,441,Patrick Garrone,patrickgt2011@gmail.com,+5989501393400,Lauro Muller 1908 esquina Eduardo Acevedo,11200.0,Montevideo Department,Montevideo,UY,1,1628522279000
+515,442,Jorge Espino,itsjoetime@gmail.com,+5989713948600,Rambla Republica Argentina 1225 apto 606,111000.0,Montevideo Department,Montevideo,UY,1,1628532472000
+516,443,Pablo Manduca,pmanduca@gmail.com,+5989928799000,Yaguarí 2132,11208.0,Montevideo Department,Montevideo,UY,1,1628532854000
+517,444,roberto perez,rapa4415@gmail.com,+5989401070100,canelones 942 apartamento 501,11100.0,Montevideo Department,Montevideo,UY,1,1628584450000
+518,445,Facundo Sagasti,facusl18@gmail.com,+5989816459000,General rivera 1859,55100.0,Artigas Department,Bella Unión,UY,1,1628589956000
+519,446,Damián Ulises Vega Morgades,vegauli0@gmail.com,+5989614374900,"Jose maria penco 3615, Roberto Koch y propios",11700.0,Montevideo Department,Montevideo,UY,1,1628630220000
+520,447,Julio Alamancos,jab@usermail.com,9508464900,pantaleon artigas 3774-3776,11700.0,Montevideo Department,,,1,1628634692000
+521,448,Nicolas Rodriguez Casanova,nicobolso_9@hotmail.com,+5989810897200,21 de setiembre 2769 / 805,112000.0,Montevideo Department,Montevideo,UY,1,1628717145000
+522,449,Andrés Correa Morosoles,Andresmorosoles@gmail.com,9537956400,Complejo america BLOCK L1 apartamento 003 entre calle Yegros y Andres 5916D,12500.0,Montevideo Department,,,1,1628735583000
+523,450,Andrés Correa Morosoles,Morosolesandres@gmail.com,+5989537956400,Complejo America BLOCK L1 apartamento 003 entre calle Yegros y Andres 5916D,12500.0,Montevideo Department,Montevideo,UY,1,1628735825000
+524,451,BORRAR,hgrfgff@dfsdgsf.com,+5989971332800,Costa Rica 1965,11500.0,Montevideo Department,Montevideo,UY,1,1628788287000
+525,452,Florencia Borgato,florborgato@gmail.com,+5989892909900,Nicolas Piaggio 1168 apto 801,11600.0,Montevideo Department,Montevideo,UY,1,1628790000000
+526,453,Delfina Foucault,delfifoucault@gmail.com,+5989643561200,Ana Monterroso 2168,11200.0,Montevideo Department,Montevideo,UY,1,1628811721000
+527,454,Emilio Fernández,Gabboo17@hotmail.com,+5989973925000,Yatay 1812,50000.0,Salto Department,Salto,UY,1,1628889962000
+528,455,Javier Cousillas,javier_cousillas@hotmail.com,+5989218202800,Mata 622,37000.0,Cerro Largo Department,Melo,UY,1,1628912125000
+529,456,Irene Azambuja,irene.azambuja@hotmail.com,+5989971332800,Costa Rica 1965,11500.0,Montevideo Department,Montevideo,UY,1,1628961625000
+530,457,Rodolfo Riedel,rariedel@gmail.com,+54,,8400.0,Río Negro Province,San Carlos de Bariloche,AR,1,1629048339000
+531,458,adrian Alejandro gazzia,adriaan189@gmail.com,+54354441098400,Juan b bustos,5870.0,Córdoba Province,Villa Dolores,AR,1,1629129325000
+532,459,Laura redelico,lareir@yahoo.com,+5989211751900,Regidores 1297,11700.0,Montevideo Department,Montevideo,UY,1,1629173790000
+533,460,Mathias Casavieja,mathidelmanya@hotmail.com,+5989853069900,manuel herrera y obes 4742,11900.0,Montevideo Department,Montevideo,UY,1,1629213430000
+534,461,Ignacio Silva,ignaciosilvap11@gmail.com,+5989556670800,Av. Lezica 5773,12500.0,Montevideo Department,Montevideo,UY,1,1629246277000
+535,462,Julio Besio,julkmb@gmail.com,+598,Sarandi,90700.0,Canelones Department,Santa Lucía,UY,1,1629466108000
+536,463,AlbaAnalista,avillamarin@teamlimonbyte.com,,,,,,,1,1629468613000
+537,464,Jorge Posadas,posadasj@adinet.com.uy,+5989851243900,Alberto zum felde 2090 blokc 4C apto. 101,11400.0,Montevideo Department,Montevideo,UY,1,1629476914000
+538,465,Ana Laura Vera Martinez,anaveraamc@gmail.com,+5989754477100,Leyenda Patria 3070/801 esquina Carace,11300.0,Montevideo Department,Montevideo,UY,1,1629567469000
+539,466,Ana Patricia Arcel Roble,patoarcel@hotmail.com,+5989806130100,San Martin 1432,60000.0,Paysandú Department,Paysandú,UY,1,1629573036000
+540,467,Alvaro Lemmo,alvarolemmo@iCloud.com,+5989814098300,Acevedo diaz 2245,11600.0,Montevideo Department,Montevideo,UY,1,1629592166000
+541,468,Franco Bares,francobaresbolso110@gmail.com,+5989246329900,Pasó quincho 04 camino de las tropas,70200.0,Colonia Department,Rosario,UY,1,1629633776000
+542,469,Manuel Vázquez,manuvazquezginzo@gmail.com,+5989660764600,Santiago Gadea 3543,11600.0,Montevideo Department,Montevideo,UY,1,1629693158000
+543,470,Dina Rezende,dinaaylen05@gmail.com,+5989559509100,Camino a paso del bote sin número,90100.0,Canelones Department,Los Cerrillos,UY,1,1629758080000
+544,471,María Susana vignola carreras,susanacarreras@hotmail.com,+5989701827900,Baltimore 1650,11400.0,Montevideo Department,Montevideo,UY,1,1629766402000
+545,472,Ezequiel Calderón Guerrero,ezequielcalderonguerrero@gmail.com,+5989948284600,Soriano y Joaquin Suárez Casa 48,60000.0,Paysandú Department,Paysandú,UY,1,1629767587000
+546,473,Adriana Díaz,adive1961@gmail.com,+5984222914300,Manuel Melendez y Ortiz sec P viv 048°,20000.0,Maldonado Department,Maldonado,UY,1,1629847937000
+547,474,Silvio Roberto Graces Brochi,shopmym@hormail.com,+5984623989400,Juaquin Suárez 351,400000.0,Rivera Department,Rivera,UY,1,1629878024000
+548,475,Silvio Roberto Graces Brochi,shopmym@hotmail.com,+5984623989400,Joaquín Suárez 351,400000.0,Rivera Department,Rivera,UY,1,1629914211000
+549,476,Victor Benavides,Benavides@miami-box.com,+5982628100000,Solano Garcia 2476,11000.0,Montevideo Department,Montevideo,UY,1,1629927095000
+550,477,Ivan vaz perez,Yosoyyo_ivan@hotmail.com,+5989505223000,Islas canarias 5276 apartamento 3A,,Montevideo Department,Montevideo,UY,1,1629938591000
+551,478,Eduardo Tokos,eduardotokos@gmail.com,+54116374189900,"Blanco Encalada 2477, Piso 1, Depto B",1428.0,Buenos Aires Province,Belgrano,AR,1,1629981903000
+552,479,Karen Willebald,karenwih@hotmail.com,+5989936688000,Antonio J. Caorsi 1645,85000.0,Flores Department,Trinidad,UY,1,1629990389000
+553,480,Santiago Vidal,vidartwork@gmail.com,+5989843568700,Charruas 436,,Durazno Department,Durazno,UY,1,1630003084000
+554,481,Guillermina Chavez,guilleesgenial@gmail.com,+5989854928000,Enrque Martinez 1267,11800.0,Montevideo Department,Montevideo,UY,1,1630005036000
+555,482,Leonardo Matías borba abreu,leomb2.0.1.8@gmail.com,+5989953103000,Jose belloni 2071,,Cerro Largo Department,Melo,UY,1,1630049098000
+556,483,Juan Diego Martínez Mazzulla,juandi1836@gmail.com,+5989768470600,Monzón 1836,11400.0,Montevideo Department,Montevideo,UY,1,1630089159000
+557,484,Tifany,ty25pa@gmail.com,+5989752363300,Rita8 kilómetro 22,91001.0,Canelones Department,Barros Blancos,UY,1,1630095259000
+558,485,Antoni Monzon,antonitff@yahoo.com,+5989204069100,"Carmelo Colman, 498",45000.0,Tacuarembó Department,Tacuarembó,UY,1,1630152442000
+559,486,Santiago Ezequiel Suárez Ortiz,Cubixman77@gmail.com,+5989188692000,atanasio sierra 913,15900.0,Canelones Department,Las Piedras,UY,1,1630281052000
+560,487,Britny Abril del Puerto Piriz,abbypiriz18@gmail.com,+5989597864900,Barrio Lavagnia,20400.0,Maldonado Department,San Carlos,UY,1,1630327066000
+561,488,Facundo Medina,medinafacuu17@gmail.com,+5989823657600,Norberto Ortiz 4330,12300.0,Montevideo Department,Montevideo,UY,1,1630366756000
+562,489,Gonzalo Rodríguez,gonchirv@gmail.com,+5989275382000,Eduardo Marquez Castro Mz 1019 sol 13,15800.0,Canelones Department,Paso de Carrasco,UY,1,1630382542000
+563,490,Veronica Carina Silva Fernandez,verosilva@protonmail.com,+5989874651400,Dr. Lauro Müller 1963,11200.0,Montevideo Department,Montevideo,UY,1,1630437250000
+564,491,Giorella Merola,giome6@hotmail.com,+5989851358900,Julia Arevalo 310,30000.0,Lavalleja Department,Minas,UY,1,1630465699000
+565,492,Ana González,luismarcelo23@hotmsil.com,+5989940356400,18 de julio 341,,Colonia Department,Rosario,UY,1,1630545832000
+566,493,Luis rodriguez,Luisem000@hotmail.com,+5989817989000,Luis alberto de Herrera 1478,70201.0,Colonia Department,Nueva Helvecia,UY,1,1630618894000
+567,494,Aldana Evelyn Bueno Vázquez,aevebueno@hotmail.com,+5989235564100,Guayabos s/n,60004.0,Paysandú Department,Paysandú,UY,1,1630628033000
+568,495,Maximiliano Fabián Castro Casanova,maxfabcascas@gmail.com,+5989984473000,Gonzalo Ramirez 1803,11300.0,Montevideo Department,Montevideo,UY,1,1630702704000
+569,496,Justino Borges osorio,borgesjus07@gmail.com,+5989829913500,Manuel lobo 659/501,70000.0,Colonia Department,Colonia del Sacramento,UY,1,1630702946000
+570,497,Alvaro Gustavo Solari Fernandez,agsolari@gmail.com,+5989584445100,RICAURTE 935,11800.0,Montevideo Department,Montevideo,UY,1,1630729025000
+571,498,Joaquin Bertelli,bertelli@adinet.com.uy,+5982622979700,Julio Cesar 1616,11600.0,Montevideo Department,Montevideo,UY,1,1630777219000
+572,499,Margot Gadea,dejomar2011@hotmail.com,+5989979179600,Ecuador casi Chile   Pda 24. DEJOMAR,20000.0,Maldonado Department,Maldonado,UY,1,1630864456000
+573,500,Maria Pucurull,pucurullmaria@gmail.com,+5989861409900,Emilio Castelar 4530 torre X apto 102,11400.0,Montevideo Department,Montevideo,UY,1,1630877910000
+574,501,Shirley Costa,Shi.guada@hotmail.com,+5989725487100,Bernardo Susviela 4745,11900.0,Montevideo Department,Montevideo,UY,1,1630885756000
+575,502,Juan Lapitz,juanpablolapitz@gmail.com,+5989939135100,Loedel 613,30000.0,Lavalleja Department,Minas,UY,1,1630889603000
+576,503,Isabel Sosa,isabel30sosa@gmail.com,+5989605096600,Antonio Días 4399,,Montevideo Department,Montevideo,UY,1,1630962494000
+577,504,Luis Gonzalez,nayleag@hotmail.com,+5989917654000,50000,50000.0,Salto Department,Salto,UY,1,1630977828000
+578,505,Warehouse,info@lem-box.com,,,,,,,1,1631022651000
+579,506,Winston Gorgal,gorgal244@gmail.com,+5989578161700,Vigia 5515,13500.0,Montevideo Department,Montevideo,UY,1,1631032683000
+580,507,Laura Carolina Sánchez Moreira,laurasan271@hotmail.com,+5989886601100,Montevideo 1817,55100.0,Artigas Department,Bella Unión,UY,1,1631057513000
+581,508,Gabriela Mabel Winterhalter Tapia,gamawinter@hotmail.com,+5989426412200,Varela s/n,90500.0,Canelones Department,Santa Rosa,UY,1,1631097324000
+582,509,Miriam Gainett,gainettb@gmail.com,+5989929089200,Garibaldi 2334,11800.0,Montevideo Department,Montevideo,UY,1,1631126926000
+583,510,Florencia Paolino Ingold,flopa89@gmail.com,+5989550313600,Basilio pereira de la luz 1232 apto 4,11300.0,Montevideo Department,Montevideo,UY,1,1631130638000
+584,511,Marcos alejandro Streccia maciel,marcosstreccia65@gmail.com,+5989866372500,Gestido 895,40000.0,Rivera Department,Rivera,UY,1,1631145042000
+585,512,Enrique Daniel Zárate Romero,zhtranscarga@hotmail.com,+5989923507000,18 de Julio 1272,75000.0,Soriano Department,Mercedes,UY,1,1631211795000
+586,513,Silvana García,silvanagblanchet@gmail.com,9849420900,Av. Artigas s/n edificio LUCANIA apto 302,16000.0,,,,1,1631234596000
+587,514,Ana Laura Rivero Morales,rulito232@hotmail.com,+5989845690000,Melchor Pacheco y Francisco de los Santos,75200.0,Soriano Department,Cardona,UY,1,1631234687000
+588,515,Oscar Matias Mazza,osamabinmazza@gmail.com,+5989234613000,Susana Pintos 2583,13000.0,Montevideo Department,Montevideo,UY,1,1631235068000
+589,516,Mariana Noel Texeira Corletto,luchodesirello28@gmail.com,+5989164288600,,60000.0,Paysandú Department,Paysandú,UY,1,1631235787000
+590,517,Diana Márquez,dilore85@hotmail.com,+5989805157100,Rincón de Pando,,Canelones Department,Pando,UY,1,1631240107000
+591,518,Diego Eduardo Ibañez Cairus,diego-ibarus@hotmail.com,+5989852515400,Maldonado 2243 Ap5,11200.0,Montevideo Department,Montevideo,UY,1,1631531362000
+592,519,Sergio Damian Lasso Gonzalez,lass-dam@hotmail.com,+5989907859200,Av Brasil  351,27100.0,Rocha Department,Chui,UY,1,1631562801000
+593,520,Jessica marchan,Jessmarchand69@gmail.com,+5989279121100,Lavalleja 1439 bis,75100.0,Soriano Department,Dolores,UY,1,1631563324000
+594,521,Elías Isaac Fleitas Lucian,fleitaselias7@gmail.com,+5989862066700,Isabel Quesada 569,80100.0,San José Department,Libertad,UY,1,1631565781000
+595,522,Alejandro Roberto Pérez Manzi,arpm1965@hotmail.com,+5989213147800,Florencio Sánchez 815,75000.0,Soriano Department,Mercedes,UY,1,1631589228000
+596,523,Maria Leticia De Leon,leticiadeleon03@hotmail.com,+5989416560400,Presbitero José Nicolas barrales 2475,1115.0,Montevideo Department,Montevideo,UY,1,1631626602000
+597,524,Luis Alfredo Correa Rodriguez,Pro.car.esteticaautomotriz@gmail.com,+5989812319100,Rafael P. del Puerto y Matías Lazarte,30000.0,Lavalleja Department,Minas,UY,1,1631644179000
+598,525,Karen Beatriz Gonzalez Rosa,Beatrizgonzalez3116@gmail.com,+5989245684400,Calle 33 orientales. Mevir 4 vivienda 50,40100.0,Rivera Department,Tranqueras,UY,1,1631730388000
+599,526,Vanessa correa,vanebolso4@gmail.com,+5989459285400,Rafael Peres del puerto casi matiaz Lasarte,2000.0,Lavalleja Department,Minas,UY,1,1631749486000
+600,527,Mario1234,sxfly54@hotmail.com,+5989974872100,Ruta 3 km 371 # 1623,60000.0,Paysandú Department,Paysandú,UY,1,1631799878000
+601,528,Lucas Echave,echave39@hotmail.com,+5989556841800,Calle C 229 esquina Pasaje C (San Martin esq Bertani),12100.0,Montevideo Department,Montevideo,UY,1,1631806590000
+602,529,Franco Ximenez Caetano,francoximenez93@gmail.com,+5989804442800,"Barrio la sonrisa ,Maldonado. Calle Juan Giménez entre anfuso y Sarabia, cabaña de quincho con portón verde",20000.0,Maldonado Department,Maldonado,UY,1,1631809535000
+603,530,Nataly Sabrina Suárez De los Santos,Natalydelosantos101@gmail.com,+598,Raffo 1448,50000.0,Salto Department,Salto,UY,1,1631815356000
+604,531,Rubén Darío Fernández zacheo,sudaca18@hotmail.com,+5989551738400,San Salvador 1478,11800.0,Montevideo Department,Montevideo,UY,1,1631830871000
+605,532,Benjamín Hernández,benjaha13@hotmail.com,+5989280024500,Rincón 410,50000.0,Salto Department,Salto,UY,1,1631841703000
+606,533,Francisco Walpert,franciscowalpert@gmail.com,9174137500,Solis 1466,60000.0,Paysandú Department,,,1,1631856448000
+607,534,Paola Rodríguez,paoorodriguez14@gmail.com,+5989880580500,25 de mayo 636 Comercio Tu Celular,80000.0,San José Department,San José de Mayo,UY,1,1631927276000
+608,535,Alejandro Dadomo,alejandrodadomo@hotmail.com,+5989521415700,Timote 4466,11900.0,Montevideo Department,Montevideo,UY,1,1631980468000
+609,536,María Soledad Izquierdo Chiacchio,msoledad.izquierdo@gmail.com,+5989555205200,Camino de los Horneros 172. Viñedos de La Tahona. Lote Q3,15800.0,Canelones Department,Colonia Nicolich,UY,1,1632012481000
+610,537,Tatiana Loreley de Olivera Duarte,tatoduarte18@gmail.com,9503914100,Maldonado Uruguay,20000.0,Maldonado Department,,,1,1632092075000
+611,538,Teresita Souza,teresouza@hotmail.es,+5989897878800,Magallanes 1252apto 801,11200.0,Montevideo Department,Montevideo,UY,1,1632095327000
+612,539,María Natalia,Nataliavazquezvarela87@gmail.com,9719369600,Morelli 3928,11400.0,Montevideo Department,,,1,1632105085000
+613,540,Sofia Consuelo Carvallo Mello,carballos992@gmail.com,+5989152124200,Lavalleja 987,40000.0,Rivera Department,Rivera,UY,1,1632107003000
+614,541,Pablo Gerez,Pablogerez9@outlook.com,+5989885578600,Av Uruguay 1628,11300.0,Montevideo Department,Montevideo,UY,1,1632179124000
+615,542,Dahiana flores,Maripoos@gmail.com,+5989503076900,Sanabria 926,20200.0,Maldonado Department,Piriápolis,UY,1,1632185295000
+616,543,Dahiana flores,maripoosa@gmail.com,+5989503076900,Sanabria 926,20200.0,Maldonado Department,Piriápolis,UY,1,1632185507000
+617,544,Maria Elida Martinez Zapata,dramariamartinez@hotmail.com,9413671900,Vitoria 220 bis,11900.0,Montevideo Department,,,1,1632205392000
+618,545,Bruno ibarburu amarillo,Brunoibarburu@gimail.com,+5989946136000,Guayabos 1449,,Paysandú Department,Paysandú,UY,1,1632263187000
+619,546,Martín José perdomo cetrulo,martinperdomo8@gmail.com,+598,Julio herrera y obes 1521,,Montevideo Department,Montevideo,UY,1,1632264703000
+620,547,Belgica Natalia Lema Vazquez,belgicalema@gmail.com,+5989915258600,Amatista y Citrino La Fortuna,20000.0,Maldonado Department,Maldonado,UY,1,1632273353000
+621,548,Álvaro PARODI,segperimetral@gmail.com,9476880300,José monegal 5962,11200.0,Montevideo Department,,,1,1632308010000
+622,549,Favio Calabuig Rodríguez,Favcala@yahoo.com,+5989964306000,Gustavo Gallinal 2178,11800.0,Montevideo Department,Montevideo,UY,1,1632347124000
+623,550,Karina pi,karinapi4815@gmail.com,+5989548644800,Caminó Antares 4353 esquina instrucciones,12300.0,Montevideo Department,Montevideo,UY,1,1632403505000
+624,551,María Lourdes laureiro,Sandy19601989@gmail.com,+5989211180500,República de chile mamzana105 solar 4 SOLYMARolar4r,150005.0,Canelones Department,Juanicó,UY,1,1632421447000
+625,552,Lucas Menyou Rodriguez,lucasmenyou29@gmail.com,+5989965421500,18 de julio 783,80100.0,San José Department,Libertad,UY,1,1632538669000
+626,553,Matias Figueron,mfrcompeticion@hotmail.com,+5989358637300,Araucana M117S18,,Canelones Department,Atlántida,UY,1,1632761868000
+627,554,Franco De Luca,francotomas.dl@gmail.com,+5989522239300,Av Pedragosa Sierra edificio Sunrise Tower apto 203,20100.0,Maldonado Department,Punta del Este,UY,1,1632847046000
+628,555,Marianela Ramos,selemaga_14@hotmail.com,+5989589590500,Camino Mauricio,80100.0,San José Department,Libertad,UY,1,1632956983000
+629,556,Federico Luque,elprofede@hotmail.com,+5989954185300,La Paz 2296 Bis,11800.0,Montevideo Department,Montevideo,UY,1,1633031438000
+630,557,Mariana Salgueiro,Mariana.salgueiro.m@gmail.com,+5989933954400,Pedro Berro 666/704,11300.0,Montevideo Department,Montevideo,UY,1,1633279326000
+631,558,Santiago Bao,baosantiago48@gmail.com,+5989732530000,Osiris Rodríguez castillos 3790,,Montevideo Department,Montevideo,UY,1,1633282247000
+632,559,Wiliam Pedetti,wpedetti@gmail.com,+5989973794000,Avda. Gobernador de Viana 1450 / 14 Cooperativa COVIN,50000.0,Salto Department,Salto,UY,1,1633550002000
+633,560,José Luis Seijas Fernández,jluisseijas@outlook.com,+5989914264400,Gral Timoteo Aparicio 3994 apto 06,11400.0,Montevideo Department,Montevideo,UY,1,1633635174000
+634,561,Richard Allende,bichos4@adinet.com.uy,+5989992213900,Dr Sánchez 561,85000.0,Flores Department,Trinidad,UY,1,1633645699000
+635,562,Carolina Rabel Amaro Nieves,Karonievesverdias@gmail.com,+5989945619600,Gral flores 3041,94000.0,Florida Department,Florida,UY,1,1633648119000
+636,563,Gabriela Díaz,gabyagusmoyi@gmail.com,+5989349408700,Juan B morelli 3966,11400.0,Montevideo Department,Montevideo,UY,1,1633699753000
+637,564,Franco Sebastián Stazione Carle,relativofrank@gmail.com,+5989108530000,Florencio Ottonelli 1387,75100.0,Soriano Department,Dolores,UY,1,1633746007000
+638,565,Marisa Pirunsinki,pirosinkimarisa@gmail.com,9916943500,Oribe1858,,,,,1,1633751418000
+639,566,Veronica Vaucher,verovaucher38@gmail.com,+5989974093500,Montecaseros 738,60000.0,Paysandú Department,Paysandú,UY,1,1633777032000
+640,567,Carlos Larregui,olidepapa2017@gmail.com,+5989141943600,Herrera 434,37000.0,Cerro Largo Department,Melo,UY,1,1633824394000
+641,568,Gerardo Gabriel Milan Torres,gabrielmilantorres415@gmail.com,+5989587098300,Barcelona 1943,12800.0,Montevideo Department,Montevideo,UY,1,1633836728000
+642,569,Luis Miki Gatti Perez,gattimiki@gmail.com,+598,Parque del Plata,16300.0,Canelones Department,Atlántida,UY,1,1633838332000
+643,570,Enrique Sandro Correa Sosa,sandrocorrea@hotmail.es,+5989915320700,Maestra María cepi entre lussich y Fermín landa,20000.0,Maldonado Department,Maldonado,UY,1,1633903709000
+644,571,Fernando gonzalez,33fergon@gmail.com,+5989933156800,Carlos rebufelo s/n,91300.0,Canelones Department,San Jacinto,UY,1,1633920785000
+645,572,Norman Exzequiel Rodriguez Olivera,Norman1998.nr@gmail.com,+5989712569200,Hugo mendez esq palmitas de Toledo bro 455,91100.0,Canelones Department,Toledo,UY,1,1634052323000
+646,573,Paola Beatriz Zamora clavijo,paozamora1@hotmail.com,+5989234920200,Boiso lanza 4093,12300.0,Montevideo Department,Montevideo,UY,1,1634061141000
+647,574,Lurdes mesa,peke2004_4@hotmail.com,+5989610465900,Ruta 8 k 20700,13000.0,Montevideo Department,Montevideo,UY,1,1634155642000
+648,575,Bryan Formento,bryanformento9@gmail.com,+5989332417700,Avenida Millan 3143 apto 1,11300.0,Montevideo Department,Montevideo,UY,1,1634156265000
+649,576,vivian gonda,raquelperisse64@gmail.com,+5989402957400,Justino Zavala Muniz 5690 portones de Carrasco,11400.0,Montevideo Department,Montevideo,UY,1,1634168650000
+650,577,Betina Atrat,Betiatrat@hotmail.com,+5989424060500,Pedro Murillo 6276,11500.0,Montevideo Department,Montevideo,UY,1,1634175356000
+651,578,Yenny Gómez Larzábal,loreleylarzabal26@gmail.com,+5989713149700,Avenida Fabini 1096,3000.0,Lavalleja Department,Minas,UY,1,1634207550000
+652,579,Ramiro Viera,ramiroav73@gmail.com,+23355843696600,P.o.Box VV95 Valley View,,Greater Accra Region,Tema,GH,1,1634259426000
+653,580,Virginia Picun,virgipicun@hotmail.com,+5989573144200,Milton Winants manzana A solar17,15800.0,Canelones Department,Montes,UY,1,1634388310000
+654,581,Agustin Jose Frega,afrega@gmail.com,+5989612746500,Barrio colinas de carrasco lote h12,15500.0,Canelones Department,Barros Blancos,UY,1,1634414345000
+655,582,Mathias Puleri,cibercondor1@hotmail.com,+5989625575800,Leandro Gomez 1223,60000.0,Paysandú Department,Paysandú,UY,1,1634582698000
+656,583,Alicia Vecino,alivec@hotmail.com,+5989289600300,Joanico 3108 ap 203,11600.0,Montevideo Department,Montevideo,UY,1,1634772031000
+657,584,Fernando Rodriguez,fernando-rodriguez19@adinet.com.uy,+5989408344900,Paraguay 1033,11100.0,Montevideo Department,Montevideo,UY,1,1634834276000
+658,585,Victoria Valentina Laumann,Valelau25@gmail.com,+5989924737100,Camino Edison 5149 5107a,11200.0,Montevideo Department,Montevideo,UY,1,1634846284000
+659,586,andres nusspaumer,andres.nusspaumer23@gmail.com,+5989121215800,1717,70000.0,Colonia Department,Colonia del Sacramento,UY,1,1634868028000
+660,587,jimena florencia cano farias,jimecano5512@gmjail.com,+5989411244600,de la fe y ciudad de las piedras M19 S21,90000.0,Canelones Department,Canelones,UY,1,1634924595000
+661,588,Carlos Tolentino,carlostolen11@gmail.com,+5989859725500,Plaza independencia 838 apto 206,11800.0,Montevideo Department,Montevideo,UY,1,1634961845000
+662,589,Freddy oscar iribarne saracho,Freddyiribarne@hotmail.com,+5989732103800,Samuel blixen 4261,,Montevideo Department,Montevideo,UY,1,1634989615000
+663,590,Vilma Raquel Sosa Arancet,vsosaarancet@gmail.com,+5989935561700,Juan Guzmán 3222,11600.0,Montevideo Department,Montevideo,UY,1,1635104873000
+664,591,Rosana Méndez,rmlamas@montevideo.com.uy,+5989917823300,Martín García 1282,17000.0,Montevideo Department,Montevideo,UY,1,1635133141000
+665,592,Cecilia Negreyra Lago,ceci.negreyra@gmail.com,9350222100,Gestido M217 S10,15800.0,,,,1,1635181252000
+666,593,Diano Virginia,virginiadianolucas@gmail.com,9958465600,Congreso Manz 151C Sol 13,,Canelones Department,,,1,1635516158000
+667,594,Diego Sandoval,pastypan@gmail.com,+5989292337800,salto M71 S1,9100.0,Canelones Department,Toledo,UY,1,1635864933000
+668,595,Angelina Quintana,angelina9703@hotmail.com,+5989980466200,Vilardebo1329,50000.0,Salto Department,Salto,UY,1,1636048659000
+669,596,Gabriela Bartora,gabybart@hotmail.com,+5989359710300,Cmno Perugorria 61611,9200.0,Canelones Department,Las Piedras,UY,1,1636054981000
+670,597,Rita San Martin,ritayjulio23@gmail.com,+5984453367900,Av Brasil 891,33000.0,Treinta y Tres Department,Treinta y Tres,UY,1,1636089955000
+671,598,Beatriz Bittencourt,beatrizbitte@hotmail.com,+5989836438300,Bulevar Francisco Mata 993,37000.0,Cerro Largo Department,Melo,UY,1,1636149542000
+672,599,Florencia Luz Sosa Zecchini,florluz2014@gmail.com,+5989975713400,Pozzolo 445,75000.0,Soriano Department,Mercedes,UY,1,1636211337000
+673,600,Juan Eduardo sosa,Jsosarosconi2016@gmail.com,+5989973121800,Artigas 1994,50000.0,Salto Department,Salto,UY,1,1636234054000
+674,601,Nicolás Bergara,Nicolasbergara8@gmail.com,+5989404387200,Heredia 4030,11900.0,Montevideo Department,Montevideo,UY,1,1636297079000
+675,602,sergey botryakov,bobr59@ya.ru,+5989427699700,san jose 981 apt 101,111000.0,Montevideo Department,Montevideo,UY,1,1636330824000
+676,603,Diego Álvarez,diegoseiy@hotmail.com,+5989732068000,Bº Los Ciruelos viv.69 calle Wilson Ferreira Aldunate S/N,20000.0,Maldonado Department,Maldonado,UY,1,1636377442000
+677,604,Helena Benedictti,anelehb68@gmail.com,+5989525170600,Santiago Nievas 2139,11600.0,Montevideo Department,Montevideo,UY,1,1636587725000
+678,605,María Gabriela Forner,gabyforner@hotmail.com,+5989950707100,"Avenida Camacho y Rbla. Williman, Edificio Galeon parada 19 La Mansa  (apto 1302)",,Maldonado Department,Maldonado,UY,1,1636603716000
+679,606,Daniel Esteban Maneiro Mendez,danielmaneiro963@gmail.com,+5989174226500,Zapican 791 bis,75000.0,Soriano Department,Mercedes,UY,1,1636604998000
+680,607,Alma Elaine Tabarez Valdenegro,sonymamamalo@gmail.com,+5989587573600,Valdenegro solar 6,90200.0,Canelones Department,Canelones,UY,1,1636737804000
+681,608,Silvana García,verito_2526@hotmail.com,9849420900,Av artigas s/n edificio LUCANIA apto 302,16000.0,,,,1,1636754028000
+682,609,María Laura,www.lauraborlinkez08@gmail.com,+5989807725800,Celiar Ortiz 235,4500.0,Tacuarembó Department,Tacuarembó,UY,1,1636768909000
+683,610,María Alejandra Fajardo Criado,alitafajardo@gmail.com,9120673500,Figueroa 638,80000.0,,,,1,1636811388000
+684,611,Leo de la puente,leoelsipadobe212014@hotmail.com,+5989178845000,Roman guerra 736 entre Rafael Pérez del puerto,20000.0,Maldonado Department,Maldonado,UY,1,1636822159000
+685,612,Néstor Alejandro Rebollo Sosa,alejanrebollo@hotmail.com,+5989394493800,Heredia 4466,11900.0,Montevideo Department,Montevideo,UY,1,1636897051000
+686,613,Daniel Nicolás Acevedo Pena,danielnicolasacevedopena@gmail.com,+5989895694600,Calle 4,20100.0,Maldonado Department,Maldonado,UY,1,1637069759000
+687,614,jonathan rafael blanco martinez,jonablanco19@hotmail.com,+5989367949100,Feliberto hernandez 3523,13000.0,Montevideo Department,Montevideo,UY,1,1637160468000
+688,615,Mariana Pacheco,marianapdt@gmail.com,+5989953985400,Trabal 4590 entre Mendoza y belloni - Toledo Chico,,Montevideo Department,Montevideo,UY,1,1637195585000
+689,616,Martin Brun Espinosa,martinbrun1989@hotmail.com,+5989551940300,Mendoza 4063 esquina aparicio saravia,12300.0,Montevideo Department,Montevideo,UY,1,1637345800000
+690,617,Pedro Lampertti Serron,pedrolampertti@gmail.com,+5989169976600,"Rincón 1038, Pasillo fondo",20000.0,Maldonado Department,Maldonado,UY,1,1637750050000
+691,618,Ana Laura Cabrera,lalicabrera1983@gmail.com,+5989740604400,Camino Rigel solar 63 bis esquina José belloni,12400.0,Montevideo Department,Montevideo,UY,1,1637753344000
+692,619,Sergio Daniel,danielbarboza2021@gmail.com,9797573900,Av San martin,45000.0,Tacuarembó Department,,,1,1637859403000
+693,620,Annemarie Pérez,annesanto1990@gmail.com,+539840018100,Abel Santamaría #2 entre RamonaIdavoy y Eduardo R Chivas,33016.0,Ciego de Ávila Province,Ciro Redondo,CU,1,1637963352000
+694,621,Fredyy Javier Mederos González,freddymederos30@gmail.com,+5989971445800,Miguel bramon 239,45000.0,Tacuarembó Department,Tacuarembó,UY,1,1637970507000
+695,622,Gabriel   José Aguilera Machado,gabriel.maggabo012@gmail.com,+5989589412300,Colorado 1839 y José L Terra,11800.0,Montevideo Department,Montevideo,UY,1,1638159309000
+696,623,Micaela Elisabet Blanco,blancomicaa@gmail.com,+5989163499600,"Pirincho y turquesa, enviar por UES a LA PEDRERA",27004.0,Rocha Department,La Paloma,UY,1,1638286537000
+697,624,Gabriel Tajes,gabrieltajes@gmail.com,+5989801304700,26 de Marzo 1006,,Montevideo Department,Montevideo,UY,1,1638364387000
+698,625,Danilo Silveira Figueroa,dansilv64@gmail.com,+1901273353900,4793 Bowen Ave.,38122.0,Tennessee,Memphis,US,1,1638368766000
+699,626,alejandro isac lopez menchaca,alejandroisaclopezmenchaca@gmail.com,+5989766554100,dodge brother 132,80500.0,San José Department,San José de Mayo,UY,1,1638461498000
+700,627,Sandra beatriz sigales miraballes,argentoseguros@gmail.com.uy,9842598300,Santiago Gadea 939,33000.0,Treinta y Tres Department,,,1,1638646396000
+701,628,Carlos Alfredo Sosa-Costa,sigmabaca@gmail.com,+5989996768200,Yamandú 7834,15000.0,Canelones Department,Barra de Carrasco,UY,1,1638714427000
+702,629,Santiago Méndez,santmendez15@gmail.com,+5989529719300,"Juan Ortiz 3153, Apto 602",11600.0,Montevideo Department,Montevideo,UY,1,1638994533000
+703,630,Daniela Ferreta Padilla,dferreta1996@gmail.com,+5989836338200,ZAPICAN 791 BIS,75000.0,Soriano Department,Mercedes,UY,1,1639679188000
+704,631,Alvaro Rocha,lvare022@fiu.edu,+5989855997200,Roosvelt parada 18 Edificio parquemar R apt 1902,20000.0,Maldonado Department,Maldonado,UY,1,1640023844000
+705,632,Rodrigo  negreyra,rodrigonegreyra@gmail.com,+5989597882200,Gestido m217 s10,15005.0,Canelones Department,Canelones,UY,1,1641090737000
+706,633,Alicia Silvera,aliciasilvera27@gmail.com,4642674800,Batlle y Ordóñez 770,37000.0,,,,1,1641406758000
+707,634,Adriana Pereyra da Terra,nanapdat@gmail.com,+5989844384000,Gonzalez Viv BHU 013,27200.0,Rocha Department,Castillos,UY,1,1641481885000
+708,635,Mariana Zamit Suárez,maruzamsu@hotmail.com,9973653500,Jose P Varela 335,70000.0,,,,1,1641658535000
+709,636,Enrique Ernst,Kiketct@gmail.com,9178680500,Convención s22 B9,18500.0,,,,1,1641750249000
+710,637,Isamar Santamaria,isawooman76@gmail.com,+5989998922700,Camino Moreira 322,20900.0,Canelones Department,Las Piedras,UY,1,1641866390000
+711,638,Natalia Modesto Leal,natalialeal2603@gmail.com,+5982513948900,Susana Pintos 3262,12000.0,Montevideo Department,Montevideo,UY,1,1641927205000
+712,639,Marcela Valdivia,mvaldivia0@hotmail.com,+5989989492600,Barreiro 3006 apto 103,11300.0,Montevideo Department,Montevideo,UY,1,1641958195000
+713,640,Tania Gabriela Acuña Pereira,acunatania2@gmail.com,+5989246076400,Montevideo número 22 más 44,15900.0,Canelones Department,Las Piedras,UY,1,1642007824000
+714,641,Gonzalo Herrera,herreragonza535@gmail.com,+5989200190300,Ruta 1 km 27,80500.0,San José Department,Delta del Tigre,UY,1,1642010057000
+715,642,Oscar Daniel,danieldj2306@gmail.com,+5989910592800,Constitución s/n,90800.0,Canelones Department,Sauce,UY,1,1642040916000
+716,643,Yohana Borges,yohanaborges1984@gmail.com,+5989889013900,Av Varela 855,30000.0,Lavalleja Department,Minas,UY,1,1642097526000
+717,644,Ana karen,karenfiles098@gmail.com,+5989414891200,Capitan tula 4814 c,11200.0,Montevideo Department,Montevideo,UY,1,1642106099000
+718,645,Natalia Alvez,naty-alvez@hotmail.com,9815505200,Andalucia 3934,12300.0,Montevideo Department,,,1,1642174570000
+719,646,Diana Lucía Morales Ardaya,dianamoralesardaya@gmail.com,+5989804831600,"Calle Rafael Pérez del Puerto, #975, escaleras abajo a la izquierda, PB975",20000.0,Maldonado Department,Maldonado,UY,1,1642193200000
+720,647,Yemaila Melissa Guzmán Gil,melissaguzmangil@gmail.com,+5989992608600,Cayetano Gutiérrez 399,85000.0,Flores Department,Trinidad,UY,1,1642278216000
+721,648,Daniel Stonek,bancodefotos@gmail.com,+5989966174100,Magariños Cervantes 2174,11600.0,Montevideo Department,Montevideo,UY,1,1642433611000
+722,649,Fernando Rafael Diaz Bernardi,elgalleta72@hotmail.com,+5989926753600,Lope de Vega 1631,12400.0,Montevideo Department,Montevideo,UY,1,1642454280000
+723,650,Alba Cabrera,albac510@hotmail.com,+5989874533400,Espinillo 1362/101,11800.0,Montevideo Department,Montevideo,UY,1,1642598549000
+724,651,Agustín Sellera,agustinsellera@gmail.com,+5989449861600,Juan Pablo Laguna 3318/3,11300.0,Montevideo Department,Montevideo,UY,1,1642599896000
+725,652,Diego,diegosebaacu@hotmail.com,+5989541677400,Espínola 107,80000.0,San José Department,San José de Mayo,UY,1,1642652115000
+726,653,Jose Bruno Hornos,brunoh75@gmail.com,+5989576746200,Juan bentancourtt 1529,70000.0,Colonia Department,Colonia del Sacramento,UY,1,1642670002000
+727,654,Yael Filipiak,yael.filipiak@gmail.com,+5989520759200,Pedro F. Berro 1184,11300.0,Montevideo Department,Montevideo,UY,1,1642688397000
+728,655,Brian Vila García,brianvila7@gmail.com,+5989968036800,Las Rosas 941,70300.0,Colonia Department,Nueva Helvecia,UY,1,1642707563000
+729,656,Brenda Rigoli,brigoli16@hotmail.com,9958936700,Acevedo Díaz 1226,11200.0,,,,1,1642942737000
+730,657,Elbio Mauricio Malvasio Fagundez,emmalvasio@hotmail.com,+5989934581800,8 de Octubre 1318,50000.0,Salto Department,Salto,UY,1,1642984749000
+731,658,Estrella Noemí Maciel Sturla,estrellamaciel@hotmail.com,+5989913126700,Noruega y Silvestre Blanco,20200.0,Maldonado Department,Piriápolis,UY,1,1642988694000
+732,659,Fernando Daniel Crocco lopez,dany150582@gmail.com,+5989867472600,Cuchilla del cuareim y cerro San Antonio viv03 manzana 25,20000.0,Maldonado Department,Maldonado,UY,1,1643028487000
+733,660,Salvatore Giardino,sgiardino@libero.it,+5989825115400,Quiebrayugos 4717 ap. 008,11400.0,Montevideo Department,Montevideo,UY,1,1643162187000
+734,661,Facundo Silva,facusilvamermot@gmail.com,9841935900,Yamandu Rodriguez 1271 (carrasco),11500.0,Montevideo Department,,,1,1643235584000
+735,662,Yamila argote hechavarria,yamilaargotehechavarria@gmail.com,+1598786872653500,17440 sw 103 rd ave fl 33157,33157.0,Florida,Miami,US,1,1643296680000
+736,663,Luciano Varela,machinesfromhell@gmail.com,+5989855997200,MVDO,20000.0,Maldonado Department,Maldonado,UY,1,1643297956000
+737,664,María Eugenia Viera Acquistapace,euge2708@gmail.com,+598298044500,Careaga 1113 esquina Lavalleja,75000.0,Soriano Department,Mercedes,UY,1,1643323705000
+738,665,María Luisa Neves Chaparro,lula_neves@hotmail.com,9914819200,Tomas diago 885 entre Bv España y Scoceria  Apto 902 MVD,11300.0,,,,1,1643327907000
+739,666,Alejandro sual mendez,Tpaint000@gmail.com,+5989964964900,Racine 298,1500.0,Canelones Department,Barra de Carrasco,UY,1,1643812104000
+740,667,Jacinto Rodolfo Hernandez Durett,digitel@adinet.com.uy,+5989221185000,Arturo Santana 776/778,20000.0,Maldonado Department,Maldonado,UY,1,1643977227000
+741,668,Ricardo Marcelo Velazco Borghini,velazco.marcelo@gmail.com,+5989993749300,Cláudio Williman 638,30000.0,Lavalleja Department,Minas,UY,1,1644013842000
+742,669,Diego Gutiérrez,dfgutierrezm@gmail.com,+5989994242900,Scoseria 2459 ap 1003,11300.0,Montevideo Department,Montevideo,UY,1,1644029678000
+743,670,Liliana rossi,liliana.diconza@hotmail.com,9641565000,Ruta 101 - 3842,15000.0,Canelones Department,,,1,1644077967000
+744,671,Fabricio De Leon,fabriciodeleon44@gmail.com,+5989381250600,Continuacion Sarandi esquina Juana Tabarez,20400.0,Maldonado Department,San Carlos,UY,1,1644105258000
+745,672,Alicia de Lourdes Montesano Da Silva,alimonte@gmail.com,+5989817352000,18 de Julio 427,8000.0,San José Department,San José de Mayo,UY,1,1644109098000
+746,673,Juana Avila,jumai2009@hotmail.com,+5989126433900,Bertullo1488,75100.0,Soriano Department,Dolores,UY,1,1644162546000
+747,674,Pablo Daniel Olivera Rodriguez,pavlo-olibera@hotmail.com,+5989221498400,Damacio Rodríguez 489,45000.0,Tacuarembó Department,Tacuarembó,UY,1,1644198107000
+748,675,Patricia Carrau Olaso,pcarrau@hotmail.com,+5989754454500,Br. Artigas 1058,11200.0,Montevideo Department,Montevideo,UY,1,1644260153000
+749,676,Nataly Moreira,Tatiimoreira16@hotmail.com,+5989180561900,General Artigas,30300.0,Lavalleja Department,José Pedro Varela,UY,1,1644346901000
+750,677,Fabian Alexander viera Barrios,Grupotorke@hotmail.es,+5989136731700,Ramírez 903 esq corrientes,50000.0,Salto Department,Salto,UY,1,1644359152000
+751,678,Juan manuel ramos elhordoy,manumaramos@gmail.com,+5989493504700,Joaquin diego pereyra 1021,12100.0,Montevideo Department,Montevideo,UY,1,1644421167000
+752,679,María Agustina poblador,Cris-63515955@hotmail.com,5989856341800,Amirim 55,50000.0,,,,1,1644536768000
+753,680,Nadiuska jose urosa rivas,nadiuskajose@hotmail.com,+58412248032900,Avenida humbolt casa n°75,8052.0,Bolívar,Upata,VE,1,1644589340000
+754,681,Damián Elhordoy,damianelhordoy@gmail.com,+5989947216800,Camino Abrevadero 2355,12600.0,Montevideo Department,Montevideo,UY,1,1644590894000
+755,682,Soledad Bruno,slebruno@hotmail.com,+5989855403600,Dr. González 398,94000.0,Florida Department,Florida,UY,1,1644592986000
+756,683,Daniel Alfonso Fontes Astiazarán,colofontes@hotmail.com,+5989981100100,"Belice entre Joaquin de Viana y Cuba, chalet ""El Cedro""",20000.0,Maldonado Department,Maldonado,UY,1,1644612760000
+757,684,Tatiana carla portela de leon,Tportela15@hotmail.com,+5989419777100,Pd 23. Costa rica y melvin jones . Ita maria,20000.0,Maldonado Department,Maldonado,UY,1,1644620068000
+758,685,Agustin Martinez,elagu-79@hotmail.com,+5989920522400,Acevedo diaz 1115,11200.0,Montevideo Department,Montevideo,UY,1,1644685790000
+759,686,Cristina enir ferre,cristinaenir@hotmail.com,+5982903265200,La Paz 1020 904,,Montevideo Department,Montevideo,UY,1,1644714164000
+760,687,Wistons Fernandez,wistonfer54@gmail.com,+5989832886700,Congreso  de Mercedes  2846,11400.0,Montevideo Department,Montevideo,UY,1,1644776382000
+761,688,Ramón Eduardo Andrioli Cardozo,eduand@gmail.com,+5989910574700,Guardia Oriental 3492,11700.0,Montevideo Department,Montevideo,UY,1,1644795200000
+762,689,Matilde angelini,matildeangelini281@gmail.com,+5989453691800,"Hermanos Gil 956, ""A"".  Apto. 502",11800.0,Montevideo Department,Montevideo,UY,1,1644804560000
+763,690,EMPTY,dadsadsa@gmail.com,,,,,,,1,1644872812000
+764,691,Ana Karen Andreis Antunez,anyanyandreis@gmail.com,+5989834742600,Artigas 586,,San José Department,Libertad,UY,1,1645115283000
+765,692,Bruno Rafael Turcatti Carneiro,brunoturcatti@tutanota.com,+5989294259200,Abelardo Márquez 1815,40000.0,Rivera Department,Rivera,UY,1,1645553966000
+766,693,NICOLAS BANCHERO,NICOBANCHEROU@GMAIL.COM,+5989180203500,,,Montevideo Department,Montevideo,UY,1,1645555175000
+767,694,PRUEBA PRUEBA,dasdsadas@dasdsa.com,,,,,,,1,1645557431000
+768,694,GUSTAVO GONZALES,gus051@hotmail.com,9866629000,,,,,,1,1645644402000
+769,695,MICHEL VIDART,mvidart2401@gmail.com,+5989845012100,21 de setiembre 2894 apto 601,,Montevideo Department,Montevideo,UY,1,1645645246000
+770,696,PABLO MACRI,pablo_macri@hotmail.com,9898661000,,,,,,1,1645649201000
+771,697,LUIS HENDERSON,912luis@gmail.com,9866399900,,,,,,1,1645649401000
+772,698,ROSSANA RIVERO,Roriveromadge@gmail.com,9966399900,,,,,,1,1645650404000
+773,699,NICOLAS VARELA PUJOL,Nicovarela2516@gmail.com,9977691800,,,,,,1,1645652283000
+774,700,JEFF HUNTER,jhunter@imobix.com,+5989551310000,Tomas Diago 823,11305.0,Montevideo Department,Montevideo,UY,1,1645653225000
+775,701,DANIEL GARD // ROMINA QUINTELA,rquintela@cousa.com,9245800800,,,,,,1,1645654946000
+776,702,PABLO PITEIRA,Pablopiteira287@gmail.com,9683085100,,,,,,1,1645657587000
+777,703,JAVIER BERDAKCHIAN,javiersbn@gmail.com,9964930800,,,,,,1,1645659484000
+778,704,MONICA PEPE,Monapepe@hotmail.com,9626718000,,,,,,1,1645659869000
+779,705,GABRIELA ALBERT,albertgabriela@hotmail.com,+5989866688800,Bazzurro 7205,11500.0,Montevideo Department,Montevideo,UY,1,1645660507000
+780,706,SEBASTIAN ROBATTO,SEBASTIANROBATTO@GMAIL.COM,9371212100,,,,,,1,1645661303000
+781,707,CARLOS SCHNECK,chs@schneck.com.uy,9441323200,,,,,,1,1645661488000
+782,708,AMERICAN DREAM / MAXPINTAL,mercedes@americandream.com.uy,9992454500,,,,,,1,1645661611000
+783,709,GABRIEL ELECTRONICA BLANKLEDER,urubuy@gmail.com,9964200700,,,,,,1,1645661884000
+784,710,ALFREDO SCANZERRA,colconsa@gmail.com,9466123700,,,,,,1,1645662025000
+785,711,Jose Eduardo Cardozo Leiro,toto1891.jecl@gmail.com.uy,+5989424889300,Tacuarembó 6770,15500.0,Canelones Department,Joaquín Suárez,UY,1,1645802574000
+786,712,Mauricio Rodrigo Daguerre del Cerro,rodrigodaguerre1@gmail.com,+5989873987600,Julio Herrera y Obes 1106,11100.0,Montevideo Department,Montevideo,UY,1,1645920356000
+787,713,CIRO GENTILE / AGUSTINA MORANDI,cirogentile@gmail.com,9961656500,,,,,,1,1646079227000
+788,714,EMILIA BURSTIN,fernando@burstin.uy,9966669100,,,,,,1,1646079389000
+789,715,FABRIZIO ALVAREZ,fabrizioalvarez17@gmail.com,9854322000,,,,,,1,1646080844000
+790,716,ANDRES PEREZ,maderagro@gmail.com,+5989922287200,Ruta 5 km 97,94000.0,Florida Department,Florida,UY,1,1646081024000
+791,717,MARIA FERREIRA,alipia10@hotmail.com,9924678500,,,,,,1,1646087709000
+792,718,FEDERICO SICARDI,fsicardi@gmail.com,9399083100,,,,,,1,1646090366000
+793,719,GERMAN QUINTAS,compras@redesq.com,9974350500,,,,,,1,1646091636000
+794,720,Roxana Janeth Martinez Fernández,Roxana.martinez.fernandez@gmail.com,+5989477391500,Ruta 102 kilometro 23-Leopolis manzana 68 solar 5,14000.0,Canelones Department,Colonia Nicolich,UY,1,1646165562000
+795,721,FELIPE PERDOMO,Felipe.perdomo6@gmail.com,9884796400,,,,,,1,1646238103000
+796,722,ARIEL BARROS,Dieselariel@yahoo.com,9750599900,,,,,,1,1646265612000
+797,723,DANIELA PESZANO,daniela@grupo5.com.Uy,9966448200,,,,,,1,1646266300000
+798,724,GABRIEL TEMPONE,gabriel.tempone@gmail.com,9865567400,,,,,,1,1646267127000
+799,725,KIKO CARLOS FERNANDEZ,Kiko@fernandezasociados.com.uy,9844066500,,,,,,1,1646267468000
+800,726,MANUEL STRADA,manuestrada111@gmail.com,9548797000,,,,,,1,1646267639000
+801,727,Luis Perez,luis.perez@hotmail.com,+5982902149900,jaime civils 926,11100.0,Montevideo Department,Montevideo,UY,1,1646347475000
+802,728,LAZARO QUINTANA,lazaro.kitesurf@gmail.com,9871291600,,,,,,1,1646404681000
+803,729,JULIA ESTHER CALDERON MORENO,Oncargoexpress@gmail.com,+5989120704300,COLONIA 1574 ENTRE TACUAREMBO Y ROXIO APTO 102 MONTEVIDEO URUGUAY,,Montevideo Department,Montevideo,UY,1,1646407143000
+804,730,TELEFONOS,dadasdsa@fdfd.com,,,,,,,1,1646411372000
+805,731,GUSTAVO FABIAN GRASSO GARCIA,sportline2008@gmail.com,+5989440095400,"IGUA   4772                                        Malvin, Montevideo , Uruguay",11400.0,Montevideo Department,Montevideo,UY,1,1646510499000
+806,732,IGNACIO TOSCANINI,Tosca190296@gmail.com,9853336100,Retira en Agencia Copay Paisandu,,,,,1,1646668320000
+807,733,ESTEBAN RECAYTE,estebanrecayte@gmail.com,9730897700,,,,,,1,1646676836000
+808,734,RUBEN JUAN PENEDO AQUINO,Oncargoexpresss@gmail.com,+5989500315400,ARENAL GRANDE 1693 ENTRE PAISANDU Y URUGUAY,,Montevideo Department,Montevideo,UY,1,1646683242000
+809,735,Andrés Ferreira,a.ferreirapino@gmail.com,+5989833121800,Paraguay 1643 apto. 104,11100.0,Montevideo Department,Montevideo,UY,1,1646684647000
+810,736,MATIAS ALVAREZ,alvarez12.matias@gmail.com,9483128000,,,,,,1,1646685148000
+811,737,GUILLERMO SEIPPA,Gui.seippa@gmail.com,9211779400,,,,,,1,1646763604000
+812,738,MARIA LEONOR BLANCO,lblanco@bagno-company.com,9613000000,,,,,,1,1646777018000
+813,739,MARCELO PANCINI,Panciniventas@gmail.com,9972425500,,,,,,1,1646840868000
+814,740,Ignacio Rodríguez,ignaciorod01@gmail.com,+5989248715700,Cufre 1860,11200.0,Montevideo Department,Montevideo,UY,1,1646852086000
+815,741,Pablo Ferraz,ferrazsabiaaa@hotmail.com,+5989936550100,Colonia 1171,94000.0,Montevideo Department,Montevideo,UY,1,1646852569000
+816,742,Alejandro Walter Chichiraldi Avila,alejandro_chichiraldi@hotmail.com,+5989823523200,Washington Beltran 1728,11600.0,Montevideo Department,Montevideo,UY,1,1646875680000
+817,743,Alexis Gelpi,agelpi_05@hotmail.com,+5989632835500,"Garibaldi 36, esquina Florencio Sanchez",15000.0,Canelones Department,Paso de Carrasco,UY,1,1646954645000
+818,744,Nicolás rolando,Nico144rolando@hotmail.com,+5989999285000,Ruta 1 km 54,80100.0,San José Department,Libertad,UY,1,1647009361000
+819,745,LUCHO SERRA,Luisiserra@gmail.com,9725868400,,,,,,1,1647283286000
+820,746,RICHARD COLMAN,richcol@adinet.com.uy,9928444600,,,,,,1,1647376890000
+821,747,GERMAN RODRIGUEZ BUSTIN GRB,grodriguezbustin@gmail.com,9438040400,,,,,,1,1647377929000
+822,748,IVAN SABAJ,ivo_sabaj@hotmail.com,9979548100,,,,,,1,1647383892000
+823,749,GABRIELA BARRIOS AGUIAR,gabrielab64@gmail.com,9444802600,,,,,,1,1647386390000
+824,750,SEBASTIAN CACHES,sebamati36@gmail.com,9858191800,,,,,,1,1647448775000
+825,751,Limon Byte,pruebas@gmail.com,,,,,,,1,1647542209000
+826,752,GERONIMO OLIVERA,pepegomez@gmail.com,786897780000,,,,,,1,1647610699000
+827,753,PABLO MARIANI,pmariani@gmail.com,9991190500,,,,,,1,1647620158000
+828,754,GONZALO BELEN RECHI,gonzalo.belen.97@gmail.com,9138816600,Bv batlle y ordoñez 2668,,,,,1,1647886652000
+829,755,ROBERTO BALADON,rbaladon@adinet.com.uy,9963854800,"Calle 76 manzana 203, solar 18 solymar",,,,,1,1647892195000
+830,756,ADRIAN PINTOS,adropin18@icloud.com,9985913300,,,,,,1,1647964294000
+831,757,MACARENA VLASANOVICH,mvlasanovich@gmail.com,9841092000,,,,,,1,1648141082000
+832,758,Bruno Roldós,brunoroldos1@gmail.com,+5989816438400,Playa Hermosa calle 34 entre 3 y 38 casa amarilla,20200.0,Maldonado Department,Piriápolis,UY,1,1648219425000
+833,759,Franco Rodríguez,Francorod1212@gmail.com,+5989272311500,Domingo Basso 6107 esquina lamolle,,Montevideo Department,Montevideo,UY,1,1648742207000
+834,760,FLORENCIA MENDY,mendyflorencia@hotmail.com,+5989126610300,Tomas Gomensoro 131,75000.0,Soriano Department,Mercedes,UY,1,1649184698000
+835,761,GUILLERMO BECCHIO,francopatrone@hotmail.com,+5989621093100,Rambla Armenia 3801,11300.0,Montevideo Department,Montevideo,UY,1,1649186226000
+836,762,MATEO MERCADO,Mateomercado1991@hotmail.com,9541400000,,,,,,1,1649187228000
+837,763,SEBASTIAN DE HAEDO,seba.deh97@gmail.com,+5989941984700,Pedro Murillo 5806,11500.0,Montevideo Department,Montevideo,UY,1,1649189641000
+838,764,FERNANDO LEAL,fernandoleal80@gmail.com,+5989987037600,Evaristo Ciganda 1378 apto 3,,Montevideo Department,Montevideo,UY,1,1649192571000
+839,765,JUAN PABLO FABINI,Jpfabini@fraylog.com.uy,9862562000,,,,,,1,1649193497000
+840,766,VICTOR NANNARIELLO NELSON GOMEZ,victor@americanelectronics.com.uy,9444905500,,,,,,1,1649348078000
+841,767,Gastón Fernández,gastonfernandez999@gmail.com,+5989169742200,Valladolid 3421,12010.0,Montevideo Department,Montevideo,UY,1,1649603371000
+842,768,Jim Fulkerson,jim.fulkerson@gmail.com,+1310944470800,56 Touran Lane,93117.0,California,Aptos,US,1,1649858996000
+843,769,JOAQUIN LORES,joacolores@gmail.com,305336334000,,,,,,1,1650383569000
+844,770,Luis Miguel Machi Tabarez,luismachi14@gmail.com,+5989208185600,Jacinto Trapani 1058,33000.0,Treinta y Tres Department,Treinta y Tres,UY,1,1650385215000
+845,771,MARIANO CASTRO,Josemariano.castro@gmail.com,9562134300,,,,,,1,1650385693000
+846,772,MAXI CICARELLO,cicarellomaxi@gmail.com,+5989154140600,Aramburu 2014,11800.0,Montevideo Department,Montevideo,UY,1,1650478334000
+847,773,luis alberto espino,espinopa@adinet.com.uy,+5989959309900,Aparicio Saravia 1357,15600.0,Canelones Department,Pando,UY,1,1650649319000
+848,774,Carlos Martín Ziegler Gonzalez,zieglering@gmail.com,+5989840340600,Palmar 2481 /102,11600.0,Montevideo Department,Montevideo,UY,1,1650935656000
+849,775,GABRIEL CAMI,brokerlatuy@gmail.com,999999999900,,,,,,1,1651240088000
+850,776,Gonzalo Delpino,gonzalo_delpino@hotmail.com,+5989376973000,Camino O'Higgins 9151,12800.0,Montevideo Department,Montevideo,UY,1,1651582756000
+851,777,Gaston Fernandez,gastonfernandezgff@gmail.com,+5989169742200,valladolid 3421,12100.0,Montevideo Department,Montevideo,UY,1,1651613287000
+852,778,Juan Quiroz,juanquirozd@gmail.com,+5989463276600,"General Flores 4159, Ap 04",11600.0,Montevideo Department,Montevideo,UY,1,1651711376000
+853,779,ANDRES CAMPODONICO,Campodonico1980@gmail.com,9591126900,,,,,,1,1651764922000
+854,780,OSVALDO ALBERTO PIREZ BITANCURT,osvaldopirez@hotmail.com,+5989515600400,Cisnes 3006 barrio los olivos Carrasco norte,13000.0,Montevideo Department,Montevideo,UY,1,1651765855000
+855,781,FABIAN HERNANDEZ,dasd@gmail.com,,,,,,,1,1651843706000
+856,782,VALENTINA MORO,valentinamoro@gmail.com,9963381500,,,,,,1,1652130782000
+857,783,DANIEL MOLINA,daniesteban22@hotmail.com,+5989617267500,,,Montevideo Department,Montevideo,UY,1,1652191643000
+858,784,Heber Javier peña Fernández,eljavo104@gmail.com,+5989867099500,Calle D entre 4 y 5 parque del plata sur,15300.0,Canelones Department,Atlántida,UY,1,1652228766000
+859,785,WALTER TEXEIRA,texeiraw@gmail.com,9973652900,,,,,,1,1652288365000
+860,786,Jose Victor Ibáñez iguini,iguinivictor@hotmail.com,+5989948365500,Libres 1610/7,11800.0,Montevideo Department,Montevideo,UY,1,1652370154000
+861,787,MARCEL MENDEZ,marcelmanuelmendez@gmail.com,9743837300,,,,,,1,1652458035000
+862,788,SANTIAGO ESTEVES,estevessantiago@hotmail.com,9907218400,,,,,,1,1653399767000
+863,789,Sergio Gonzalez,sergonbal22@gmail.com,+59898771133100,,,San José Department,Ecilda Paullier,UY,1,1653498442000
+864,790,SEBASTIAN ESTEFANIA,sebastianestefania@hotmail.es,9850383200,,,,,,1,1653575212000
+865,791,DIEGO MACIEL,Usa.uystore@gmail.com,9693773300,,,,,,1,1653598813000
+866,792,Diego Mathias Taramasco Serio,diegotaramasco@gmail.com,+5989828075500,Rio de janeiro 4332,11200.0,Montevideo Department,Montevideo,UY,1,1653936233000
+867,793,Ana Diaz Ravina,ravina50@hotmail.com,+5989126531600,"Garibaldi 46, Paso Carrasco",15000.0,Canelones Department,Paso de Carrasco,UY,1,1654284627000
+868,794,Carlos Emilio Ferrero Rijo,eferrerorijo@gmail.com,+5989591210800,Ituzaingo 406 apto 1,30000.0,Lavalleja Department,Minas,UY,1,1654602240000
+869,795,Marìa Yisel Dominguez Chiapinni,yisedominguez@gmail.com,+5989973794000,Avda. Gobernador de Viana 1450 / 14,50000.0,Salto Department,Salto,UY,1,1655086589000
+870,796,Ruben Tassi,ruben_tassi@hotmail.com,+5426415454906800,ADAN QUIROGA 350 SUR,5400.0,San Juan Province,Departamento de Capital,AR,1,1655232578000
+871,797,MARTIN CARBAJAL,martin@waldemarcarbajal.com.uy,9968744100,,,,,,1,1655306971000
+872,798,SERGIO LAFUENTE,dasdsa@gmail.com,,,,,,,1,1655417366000
+873,799,Federico Andres Devanna,fad34@hotmail.com,+54115825099500,Almirante brown 671,9000.0,Chubut Province,Comodoro Rivadavia,AR,1,1655769541000
+874,800,Joaquin Fernández Panigatti,joaquinf91@hotmail.com,+5989474976700,Pedro vidal 2424,11600.0,Montevideo Department,Montevideo,UY,1,1655780794000
+875,801,PABLO ESPUEYS,pespueys@gmail.com,9935049100,,,,,,1,1655917759000
+876,802,Jorge Andrés Ibañez Cairus,jorgiba@hotmail.com,+5989981827500,La Montura y El Petral - Parquet Burnete,20000.0,Maldonado Department,Maldonado,UY,1,1655989771000
+877,803,CHARLIE LOWE,Charliellowe@gmail.com,9424242500,,,,,,1,1656345556000
+878,804,VALENTIN NEFFA,Vale.neffa@gmail.com,9622206500,,,,,,1,1656352147000
+879,805,Hedy Ciuti,combaq@outlook.com,+5989768000500,Complejo Habit.Millan Y Lecoq 6160,,Montevideo Department,Montevideo,UY,1,1656426585000
+880,806,Joaquin Canella,rebotrico@gmail.com,,,,,,,1,1656435637000
+881,807,Mariela Villalba,brunoelfacha2@gmail.com,+5989816438400,Playa Hermosa calle 34 entre 3 y 38 casa amarilla,20200.0,Maldonado Department,Piriápolis,UY,1,1656548369000
+882,808,Salvador Alberto,salvadormorales2122@hotmail.com,+5989422796100,José Pedro Varela 3385,12000.0,Montevideo Department,Montevideo,UY,1,1656742501000
+883,809,SERGIO MARTINEZ,SERGIO@GMAIL.COM,9911697600,,,,,,1,1657227779000
+884,810,RICHARD COMPU,asdad@gmail.com,,,,,,,1,1657232991000
+885,811,Veronica Peveroni,veronicapm1313@gmail.com,+5989959441300,Benito Blanco 774/1,11300.0,Montevideo Department,Montevideo,UY,1,1657672225000
+886,812,Juan Facundo Reggi,jfreggi@gmail.com,+54115478250100,Boulevard todos los santos 5601 Santa Catalina 2 lote 299,1623.0,Buenos Aires Province,Buenos Aires,AR,1,1657833737000
+887,813,Jose Rodriguez,josed.geo@gmail.com,+5989875730200,Maria Stagnero de Munar 2877,12000.0,Montevideo Department,Montevideo,UY,1,1658070134000
+888,814,MARKO MACHADO,markomachado@gmail.com,,,,,,,1,1658252137000
+889,815,Ivan amaya,zonafutboluy@hotmail.com,+5989682838900,"33 Y 12 Octubre, Maldonado",20000.0,Maldonado Department,Maldonado,UY,1,1658360493000
+890,816,ESENCIAS NEVES,dasdasdas@gdsffdsfds.com,,,,,,,1,1658423411000
+891,817,Jorge Ariel Yanes Alonso,jorgeyanes93@hotmail.com,+5989188419000,La paraguaya lote 39  barrió las higueritas,15800.0,Canelones Department,Colonia Nicolich,UY,1,1658589335000
+892,818,Luis Enrique Fernández-Supervielle Bravo,lesupervielled89@gmail.com,+5989168634500,Miguel Barreiro #3010 esquina Cipriano Payán,11300.0,Montevideo Department,Montevideo,UY,1,1659017887000
+893,819,Paula Morales,paulabmorales@gmail.com,9287906500,Ricaurte 830 APT 1,,,,,1,1659028080000
+894,820,NICOLAS PEREIRA,nicolaspereira@outlook.com,9925364500,,,,,,1,1659029029000
+895,821,Juan Ignacio Artola Canclini,juan@moaa.com.uy,+5989180800400,"Bolonia 1655, Bolonia 1655",11500.0,Montevideo Department,Montevideo,UY,1,1659030090000
+896,822,Gonzalo Ariel Cabrera Nodar,gonzalocabrera2991@gmail.com,+5989467544400,20 de Febrero 2255,12100.0,Montevideo Department,Montevideo,UY,1,1659234535000
+897,823,RODRIGO CARDOZO,rodric.2795@gmail.com,9805793400,,,,,,1,1659450944000
+898,824,NATALIA FLORENCIA THEOPHILE LORENZO,nataliatheop@gmail.com,+5989870209200,Espartillo 3628,12000.0,Montevideo Department,Montevideo,UY,1,1659451272000
+899,825,Braian Orozco Díaz,braian89@hotmail.com,+5989234508000,Río Negro 1528 apto 5 esquina paysandu,11100.0,Montevideo Department,Montevideo,UY,1,1659462666000
+900,826,CHRISTIAN HENRIKSEN,Henriksen1967@gmail.com,549114418475700,LIORNA 6518 - APTO 401 - MONTEVIDEO,11500.0,,,,1,1659542016000
+901,827,Alvaro Nicolás Ubiría Avila,Alvaddolores@gmail.com,+5989134003300,Tacuarembó 1610,11200.0,Montevideo Department,Montevideo,UY,1,1660075876000
+902,828,maria hernandez,mariaeugeniahernandez1404@mail.com,+5989262151100,tomas aldabalde 413,15900.0,Canelones Department,La Paz,UY,1,1660847014000
+903,829,Patricia Leites,PATYLO-13@HOTMAIL.COM,+5989846167200,la paz 2233,11800.0,Montevideo Department,Montevideo,UY,1,1660850165000
+904,830,Marco Lorenzo Rampoldi Robaina,malora1221@gmail.com,+5989191282200,Lisandro Garcia Esq. Wilson Ferreira,91600.0,Canelones Department,San Jacinto,UY,1,1660869017000
+905,831,Mariana Elizabeth degiuda scarone,Marianadegiuda@hotmail.com,+5989142922600,Emilio raña 2484,11620.0,Montevideo Department,Montevideo,UY,1,1661195165000
+906,832,Francisco Mazzoni,fran.mazzoni@gmail.com,+5989886641600,"Armenia 1050, Casa 5",15000.0,Canelones Department,Barra de Carrasco,UY,1,1661365091000
+907,833,Pablo Kloosterboer,pablokloosterboer@gmail.com,+5989967621200,Marco Bruto 1319,11300.0,Montevideo Department,Montevideo,UY,1,1661644534000
+908,834,Pablo Kloosterboer,pablok@getnada.com,+5989997961200,Marco Bruto 1309,11300.0,Montevideo Department,Montevideo,UY,1,1661644795000
+909,835,Ruben Barrios,rubenbarriostabeira@gmail.com,+5989832042600,Libertad 2933,11300.0,Montevideo Department,Montevideo,UY,1,1662147230000
+910,836,Rodolfo Miguez,rodolfomiguez76@gmail.com,+5989721430000,Cabildo de 1815 /2358,12800.0,Montevideo Department,Montevideo,UY,1,1662308103000
+911,837,SANTIAGO MAIONARA,santiagomaiorana.96@gmail.com,,,,,,,1,1662560721000
+912,838,LUCIA XIMENA PEREIRA,Luciaxpa@gmail.com,9199292400,,,,,,1,1662560862000
+913,839,Luis Barrios,luisbarrios1899@gmail.com,+5989216633500,Libertad 2933,11300.0,Montevideo Department,Montevideo,UY,1,1663520167000
+914,840,EDUARDO JAVIER BIANCHI,bianchimori@gmail.com,+5989968682700,Pedro F. Berro 1328 / 1003,11300.0,Montevideo Department,Montevideo,UY,1,1663690583000
+915,841,Nicolas Cuadra,nicoccra27@gmail.com,+5989544888300,Ruta interbalnearia km47200 y Central de las toscas (la bielita),16002.0,Canelones Department,Las Toscas,UY,1,1664122685000
+916,842,Alberto Daniel Ríos Espinosa,contacto@ar.com.uy,+5989950179600,Av. Lezica 6680,12500.0,Montevideo Department,Montevideo,UY,1,1664199063000
+917,843,AGUSTINA MORANDI,agusmora7@icloud.com,9844544600,,,,,,1,1664220099000
+918,844,Mónica Morganti,morganti.monica35@gmail.com,+5989945437100,Gumercindo Sarabia casi Nicolás Cordones,,Maldonado Department,Maldonado,UY,1,1664230259000
+919,845,Pablo Eduardo Martínez Balbuena,pablo.afp@gmail.com,+5989733229500,Monzón 1836,11400.0,Montevideo Department,Montevideo,UY,1,1664710847000
+920,846,Cono Lomando,beneze86@gmail.com,+5989904307000,Sara de Ibáñez entre Frugoni y clara Silva,20000.0,Maldonado Department,Maldonado,UY,1,1664824451000
+921,847,PABLO DE LOS SANTOS,Pablodls86@gmail.com,,,,,,,1,1664916342000
+922,848,Mónica Elizabeth Morganti Bentancur,alejandro.nexusg@gmail.com,+5989945437100,"Ruta 5, Km 33.5, Juana de Ibarbourou 201",90300.0,Canelones Department,Progreso,UY,1,1665146425000
+923,849,Pablo Esteban Ferreira Guichon,pefg2014@gmail.com,+5989909407900,General Rivera 370,55000.0,Artigas Department,Artigas,UY,1,1665862625000
+924,850,Julio lunstedt,jcl122@hotmail.com,+5989680451800,Mataojo 138,11400.0,Montevideo Department,Montevideo,UY,1,1665967776000
+925,851,Ayrton Cardozo,darkartixxd@gmail.com,9238831900,Carlos Croquer 2567 apto 905,12000.0,Canelones Department,,,1,1666024962000
+926,852,Raudel Pedrozo Vázquez,raudel.pedroso88@gmail.com,+5989296407300,jose mazzini 3151 esquina d'azegleo,11100.0,Montevideo Department,Montevideo,UY,1,1666035303000
+927,853,MATEO FERNANDEZ,mateofernandezduter@gmail.com,,,,,,,1,1666104629000
+928,854,Florencia Vázquez Villano,florenciavazquezv@gmail.com,+5989499815000,20 de febrero 2255,12100.0,Montevideo Department,Montevideo,UY,1,1666141073000
+929,855,GONZALO SATRANO,Gonzbr@hotmail.com,,,,,,,1,1666190595000
+930,856,Edgardo Silva,edgar_sil19@hotmail.com,+5989562207000,Av instrucciones 3950,12400.0,Montevideo Department,Montevideo,UY,1,1666276715000
+931,857,Fernando Milan,fernandomilan@hotmail.com,+5989991014500,"José María Vidal, Montevideo",11900.0,Montevideo Department,Montevideo,UY,1,1666363747000
+932,858,Martín Cuadro Muslera,martin098229130@gmail.com,+5989822913000,Garibaldi 2596 ap 504,11600.0,Montevideo Department,Montevideo,UY,1,1666466626000
+933,859,Sebastian Luis devoto Firpo,arqdevoto@gmail.com,+5989968890200,Co de Los horneros 238  b08,15800.0,Canelones Department,Barros Blancos,UY,1,1666730571000
+934,860,Maria Eloisa Porta Uguccioni,eloisa.porta@hotmail.com,+5989616433300,Monte caseros 3048 bis,11600.0,Montevideo Department,Montevideo,UY,1,1666898549000
+935,861,Damian Laquintana,damianrolandolaquintana@gmail.com,+5989682235300,90200,90200.0,Canelones Department,Las Piedras,UY,1,1667085887000
+936,862,CHIARA SCANZERRA,chiarascanzerra4@gmail.com,,,,,,,1,1667311962000
+937,863,CAROLONA DA ROSA,carodarosa@gmail.com,,,,,,,1,1667317269000
+938,864,Cristian Javier Vestal Zoff,cristianvestalzoff@gmail.com,9970213700,San Jose 1116,11100.0,,,,1,1667591838000
+939,865,OCTAVIO KOGAN,octa93.kogan@protonmail.com,,,,,,,1,1667831574000
+940,866,MANUEL ASUAGA,manuelasuaga@gmail.com,,,,,,,1,1668446465000
+941,867,Ignacio Costas,nachocostas90@gmail.com,+5989913113700,Tomas Gomez 3576,11600.0,Montevideo Department,Montevideo,UY,1,1668650711000
+942,868,Andrés Bondy,andresbondy@gmail.com,+5989669925100,Maipu 1858,11600.0,Montevideo Department,Montevideo,UY,1,1669143681000
+943,869,HORACIO MOYANO,horaciomoyano@gmail.com,,,,,,,1,1669660234000
+944,870,DIEGO SCHNECK,diegoschneck@gmail.com,,,,,,,1,1669739312000
+945,871,SERGIO CHERKOFF,sergiocherkoff@gmail.com,,,,,,,1,1669755109000
+946,872,Jonathan andres perera erba,Pereraandres03@gmail.com,+5989517774200,Gobernador del pino 4171BIS,11900.0,Montevideo Department,Montevideo,UY,1,1669934108000
+947,873,AGUSTIN VIERA,agustinviera@gmail.com,,,,,,,1,1669937694000
+948,874,CRISTIAN SARUBBI,sarubbi@gmail.com,,,,,,,1,1670260873000
+949,875,Jessica Wendy Gómez Lemes,lemeswendy@gmail.com,+5989211112100,Alvariza 926,20400.0,Maldonado Department,San Carlos,UY,1,1670415772000
+950,876,Juan Carlos Laser Ship,saracardosou@yahoo.es,9667836800,,,,,,1,1671132747000
+951,877,MARCELO PANZARDO,MARCELOPANZARDO@GMAIL.COM,,,,,,,1,1671143444000
+952,878,Santiago Rodriguez,santirodromero@gmail.com,+5989249591600,Los olivos S/n esq Los pinos,90600.0,Canelones Department,Progreso,UY,1,1671414470000
+953,879,DIEGO CASTANO,diegocastano@gmail.com,,,,,,,1,1671743177000
+954,880,Carolina Virginia Herrera Egues,carolinaherrera1987@hotmail.com,+5989985665100,solano garcia 2635 ap. 001,11300.0,Montevideo Department,Montevideo,UY,1,1672668709000
+955,881,Anahi Salaberri Galli,anahifnx@hotmail.com,+5989147674500,Agustín Muñoz 3976,11900.0,Montevideo Department,Montevideo,UY,1,1672868302000
+956,882,Leticia fabiana darino castroman,Darino.let@hotmail.com,9510822200,Timote 5404,11900.0,,,,1,1673026930000
+957,883,JOEL RODRIGUEZ BUSTIN,jrodriguezbustin@gmail.com,+598,,,Maldonado Department,Punta del Este,UY,1,1673283084000
+958,884,luis Daniel Fernandez Maurente,dani_fernandez21@hotmail.com,+5989885568200,rossel y rius 16 72,11600.0,Montevideo Department,Montevideo,UY,1,1673318316000
+959,885,RICARDO GLAZMAN,ricardoglazman@gmail.com,,,,,,,1,1673384417000
+960,886,FEDERICO TESKE,federicoteske@gmail.com,9988298300,,,,,,1,1673561390000
+961,887,Omar Marker,omarker@gmail.com,+5989894255200,Los Talas y Av Alavariza,20400.0,Maldonado Department,San Carlos,UY,1,1673969007000
+962,888,Eduardo Duarte Nardini,drduarte@adinet.com.uy,+5989990953200,18 de julio 819,20400.0,Maldonado Department,San Carlos,UY,1,1674054741000
+963,889,Axel Nahuel Gutiérrez valtelhas,chino.2000v@icloud.com,+5989822082400,Gabriel Pereira esquina treinta y tres,15600.0,Canelones Department,Empalme Olmos,UY,1,1674692221000
+964,890,Graciela Correa (Gustavo Umpierrez),gracielacorrea@gmail.com,9881047300,,,,,,1,1674748872000
+965,891,Danny Cirillo,Dcirillo@gmail.com,,,,,,,1,1674766958000
+966,892,FERNANDO ESPINOSA,Ferespinosa@gmail.com,,,,,,,1,1674767841000
+967,893,Edwards Nicolás moris isoco,Nicomoris122@gmail.com,+5989230433300,19 de abril 699,70100.0,Colonia Department,Carmelo,UY,1,1675215560000
+968,894,Ines Pereira,inespereiramontero@hotmail.com,+5989934232000,General French 1553 - apt 201,15000.0,Montevideo Department,Montevideo,UY,1,1675365509000
+969,895,INES PICK,inespick@gmail.com,,,,,,,1,1675371461000
+970,896,nico,elcharruaquevuela@gmail.com,+5989975054600,CAmino,90100.0,Canelones Department,Las Piedras,UY,1,1675374979000
+971,897,Giannina Vanesa Moreira correa,giannimoreira244@gmail.com,+5989881047300,Urbanización san jorge,20000.0,Maldonado Department,Maldonado,UY,1,1675537556000
+972,898,Marianela Sangenis,sangeniscatalina@gmail.com,+5989158742700,Nelson 3347 esquina Luisa Luisi,11700.0,Montevideo Department,Montevideo,UY,1,1675552156000
+973,899,Karina Zunino,Karinazunu@gmail.com,+54114024677200,Entre rios 598,1842.0,Buenos Aires Province,Villa Santa Rita,AR,1,1675569872000
+974,900,Lucho Varela,luchovarela@gmail.com,1786624905100,,,Maldonado Department,,,1,1675970063000
+975,901,Mariana Garcia Press,mgarciapress@gmail.com,+5989919795400,juan spikerman 2281 timbre labpack de 8 a 16hs,,Montevideo Department,Montevideo,UY,1,1676300257000
+976,902,Rosana acosta,Roacostaba@gmail.com,+5989859895800,Cesareo berisso,,Canelones Department,La Floresta,UY,1,1676926972000
+977,903,MARTIN LAFFITTE,MARTINLAFFITTE@GMAIL.COM,,,,,,,1,1677248401000
+978,904,ALEJANDRO VAYA ALFALIDER,alejandrovaya@gmail.com,,,,,,,1,1677680993000
+979,905,Nathaly Romina Gonzalez Lima,nathalygonzalez160@gmail.com,+5989519582900,Jacinto Trapani 1058,33000.0,Treinta y Tres Department,Treinta y Tres,UY,1,1677725834000
+980,906,María Verónica rodio Gómez,vero21.4.97@gmail.com,+5989101808100,Pasaje peatonal central 1038 eq islas Canarias,11800.0,Montevideo Department,Montevideo,UY,1,1678133477000
+981,907,Valeria Elena Molina Gutierrez,valem40@gmail.com,+5989904713200,Rivera 3077,11200.0,Montevideo Department,Montevideo,UY,1,1678280007000
+982,908,Gaston Riveiro UPS,gastonriveiro@gmail.com,+54,,,Buenos Aires Province,Buenos Aires,AR,1,1678293907000
+983,909,Horacio Fuentes,horacio88fuentes@gmail.com,+5989174007600,Luiz Pasteur 12 79,80100.0,San José Department,Libertad,UY,1,1679320862000
+984,910,LUCIA VIDIELLA,LUCIAVIDIELLA@GMAIL.com,,,,,,,1,1680791998000
+985,911,Josue Guarachi,jguarachi@gmail.com,+5989572953400,Juana de ibarbouru 203,15900.0,Canelones Department,Progreso,UY,1,1680921826000
+986,912,Anthony Pérez,anthonyperez1014@gmail.com,+15989208302000,"20200 NW 2nd ave, Unit 108",33169.0,Florida,Miami,US,1,1683498297000
+987,913,DIEGO TASENDE,diegotasende@gmail.com,,,,,,,1,1683737842000
+988,914,LUCIA MONTERO,LUCIAMONTERO@gmail.com,,,,,,,1,1683737918000
+989,915,ROBERTO BALADON CANEPA,rbaladon@icloud.com,+598248376300,Pedro Bustamante 1871,11009.0,Montevideo Department,Montevideo,UY,1,1684704200000
+990,916,JUAN MANUEL CASELLA,juanma@gmail.com,,,,,,,1,1685020987000
+991,917,Jessica Wendy Gómez Lemes,wendy18wendy@hotmail.com,+5989211112100,Alvariza 926,20400.0,Maldonado Department,San Carlos,UY,1,1685062217000
+992,918,ALEJANDRO ABELLA,alejandroabella@gmail.com,,,,,,,1,1685107243000
+993,919,Jorge Horacio Hernández,jhoracio87@gmail.com,+5989848856400,Oribe 1231,37000.0,Cerro Largo Department,Melo,UY,1,1685553154000
+994,920,Nicolas Ramon Curbelo Varas,nicolascurbelo@gmail.com,+5989885873400,retiro en agencia de encomiendas ciudad de Minas,30000.0,Lavalleja Department,Minas,UY,1,1685830712000
+995,921,Melissa Mertz,Jarred_Boehm57@hotmail.com,1242701660000,31345 Vandervort Turnpike,,,,,1,1686235351000
+996,922,Eddy Lauber Grela,eddylauber@gmail.com,+5989956412600,"Gobernador Viana 1400, Viv. 23. Cooperativa COVIN",50000.0,Salto Department,Salto,UY,1,1686701227000
+997,923,MAURO ALMEIDA,MAUROALMEIDA@GMAIL.COM,,,,,,,1,1686861893000
+998,924,Javier Jesús silveira arce,Javisil_22@hotmail.com,+5989945225600,Charrúa 2261,50000.0,Salto Department,Salto,UY,1,1687530010000
+999,925,Gustavo Aguero,gustavomx56@gmail.com,+549264511214100,sanidad argentina 1124,5400.0,San Juan Province,Departamento de Rivadavia,AR,1,1687832059000
+1000,926,Evelyn Antonella Silva ocampo,antosilva44@gmail.com,+1598470981342200,2611 NW 56th Ave apt 506,33313.0,Florida,Lauderhill,US,1,1687890753000
+1001,927,Braian Orozco Díaz,braianod@hotmail.es,+5989234508000,Río Negro 1528 apto 5 esquina paysandu,11100.0,Montevideo Department,Montevideo,UY,1,1687988479000
+1002,928,JOEL LACOSTE / ADRIAN ESCOBAR,joellacoste@gmail.com,,,,,,,1,1688137754000
+1003,929,Diego Oliveri,Doliveri@outlook.com,+5989879898900,Bolivia 1641,11400.0,Montevideo Department,Montevideo,UY,1,1688220006000
+1004,930,FEDERICO ACOSTA,fedeacosta@gmail.com,,,,,,,1,1688737521000
+1005,931,Nestor Fernando Bouchaton Pereira,elferbouchaton@hotmail.com,+5989959946900,Santa Lucia 5264,11900.0,Montevideo Department,Montevideo,UY,1,1688772551000
+1006,932,Federico g Chávez,cba.development.group@gmail.com,+1598305481402000,W,33413.0,Florida,Wellington,US,1,1689266580000
+1007,933,federico chavez,lorachavez2000@hotmail.com,+1598305481402000,1239 Imperial Laka Rd,33413.0,Florida,West Palm Beach,US,1,1689267233000
+1008,934,Bruno Rollandi Insua,brunorollandi@hotmail.com,+5989851003900,Martin C Martinez 2315bis,11800.0,Montevideo Department,Montevideo,UY,1,1689278668000
+1009,935,Gonzalo Andrés Delgado Pombo,gadp187@hotmail.com,+5989981015100,Acevedo Díaz 2344 apto 101 esquina Domingo Aramburu,11200.0,Montevideo Department,Montevideo,UY,1,1689289420000
+1010,936,Dahiana Trakimas,trakimasdahiana@gmail.com,,,,,,,1,1689697455000
+1011,937,Paulo Rodriguez,ipelol.gg@gmail.com,+5989939520000,Soriano 787,20000.0,Maldonado Department,Maldonado,UY,1,1689914836000
+1012,938,Juan Ananin,juan.ananin@gmail.com,+5989130912000,"Bulevard España 2228, Apto 203",11200.0,Montevideo Department,Montevideo,UY,1,1690082905000
+1013,939,Nicolás Demczylo,delosaliadosestudio@gmail.com,+5989873277800,"Uspallata 1310, Punta Gorda",11400.0,Montevideo Department,Montevideo,UY,1,1690546682000
+1014,940,Carlos Ignacio Bartaburu,nachobarta@gmail.com,+5989980007000,Avda. Ferreira y Artigas 1960,50000.0,Salto Department,Salto,UY,1,1690552307000
+1015,941,Emiliano Medina Uran,medinauranemi@gmail.com,+5989127870700,Monte Caseros 2931,11600.0,Montevideo Department,Montevideo,UY,1,1690988309000
+1016,942,DIEGO PANZARDO,diegopanzardo@gmail.com,,,,,,,1,1691157699000
+1017,943,FACUNDO MENDIETA,facundomendieta@gmail.com,,,,,,,1,1691158013000
+1018,944,NICOLAS PIQUEREZ,nicolaspiqueres@gmail.com,,,,,,,1,1691158062000
+1019,945,JOSEFINA,josefina@gmail.com,,,,,,,1,1691426377000
+1020,946,VICTORIA BARBERO,victoriabarbero@gmail.com,,,,,,,1,1691512468000
+1021,947,gustavo javier medero,gustavomedero@gmail.com,+5989764851500,los remansos entre los destinos y blue disa - casa ARGOS,20061.0,Maldonado Department,Punta del Este,UY,1,1691701283000
+1022,948,Deborah natalia muniz castro,jonablanco19@gmail.com,+5989367949100,Felisberto hernandez 3523,13000.0,Montevideo Department,Montevideo,UY,1,1691731981000
+1023,949,FLORENCIA PERRETT,florenciaperrett@gmail.com,,,,,,,1,1692113022000
+1024,950,Juan Victor Pallero Silveira,juanpallero1970@gmail.com,+5989925833100,Avenida Luis Braille Nª 2967,12100.0,Montevideo Department,Montevideo,UY,1,1692282181000
+1025,951,Mauricio Lazaro Salmini,mauriciolazaro@gmail.com,,,,,,,1,1692291767000
+1026,952,PABLO MARTINEZ,pablomartinez@gmail.com,,,,,,,1,1692730259000
+1027,953,STEFANO PUCCIARELLI,stefano@gmail.com,,,,,,,1,1692802533000
+1028,954,Mariam Santana,mariam.santana0698@gmail.com,+5989335436300,Avenida 8 de octubre 3070 apto 008,11600.0,Montevideo Department,Montevideo,UY,1,1692820335000
+1029,955,SEBASTIAN DEFRANCO / DAIANA AMARO,sebastiandefranco@gmail.com,,,,Canelones Department,,,1,1692889998000
+1030,956,Aníbal Rafael Sugo Labus,sugoanibal@hotmail.com,+5989983274600,Cantalicio Cardozo 1495,45000.0,Tacuarembó Department,Tacuarembó,UY,1,1693186106000
+1031,957,Adrian Guido,adrianguido79@gmail.com,+598,La CUmparsito 1333 Apto 5,,Montevideo Department,Montevideo,UY,1,1693407727000
+1032,958,Andres Ruiz de Austry,ardeaustry@gmail.com,+5989925047200,Río Negro 1192,11100.0,Montevideo Department,Montevideo,UY,1,1694474643000
+1033,959,ANA RUBIO SCHAINER,anarubio@gmail.com,,,,,,,1,1694706708000
+1034,960,GIANCARLO BORDOLI,bordoli@gmail.com,,,,,,,1,1695145305000
+1035,961,Dai Vrilache,daivrilache@gmail.com,9975848300,,,,,,1,1695231906000
+1036,962,ALESSANDRO GREGORIO,alessandro@gmail.com,,,,,,,1,1695305697000
+1037,963,Flor Niell,florniell@gmail.com,,,,,,,1,1695326724000
+1038,964,Victoria villarino,Victoriavillarino22@gmail.com,+1598786461068100,7155 Rue Notre Dame,33141.0,Florida,Miami Beach,US,1,1695831341000
+1039,965,Freddie Smitham,Walter659.Heathcote2007@alabamahomenetwoks.com,11126477723300,20568 Daniela Cliffs,,,,,1,1696844361000
+1040,966,Jorge Vellozo,jvellozo@gmail.com,+5989444720400,Plaza Independencia 831 Of 603,11100.0,Montevideo Department,Montevideo,UY,1,1696953181000
+1041,967,ESTEBAN FIRPO,eltenan55@gmail.com,,,,,,,1,1696983325000
+1042,968,Cristian eduardo moleda elizondo,Cristianmol456789@gmail.com,+5989273054700,Manuel freire 966,15900.0,Canelones Department,Las Piedras,UY,1,1697034963000
+1043,969,ALEJO BENENATI,ALEJO@GMAIL.COM,,,,,,,1,1697036203000
+1044,970,VENANCIO,VENANCIO@gmail.com,,,,,,,1,1697661400000
+1045,971,Lucy Littel,Ray612_Hartmann_1966@alabamahomenetwoks.com,11475129216100,32990 Grant Springs,,,,,1,1697875018000
+1046,971,Maria Alejandra muse de leon,mariaalejandramuse@gmail.com,+5989722440000,"Juan Agaazzi, 2716",12100.0,Montevideo Department,Montevideo,UY,1,1697977045000
+1047,972,ALEJANDRO GASTELUMENDI,alejandro@gmail.com,,,,,,,1,1698239848000
+1048,973,Juan Margni,margnione1jm@gmail.com,+5989881040200,Pasaje vecinal 008 E,12700.0,Montevideo Department,Montevideo,UY,1,1698355154000
+1049,974,JOAQUIN DE ANDRES,JOAQUINDEANDRES@gmail.com,,,,,,,1,1698414307000
+1050,975,LUCIA BILLI,LUCIABILLI@gmail.com,,,,,,,1,1698414360000
+1051,976,Matias Magariños Sosa,matiasmagarinos97@gmail.com,+5989541960000,Minas 1417,11200.0,Montevideo Department,Montevideo,UY,1,1699068164000
+1052,977,JUAN CRUZ ENRIQUE LARROSA,JUANCRUZ@GMAIL.COM,,,,,,,1,1699898798000
+1053,978,Mateo Sniper,trackingsplug@gmail.com,+5989629071700,Washington Beltran 1818 apt 2,12000.0,Montevideo Department,Montevideo,UY,1,1699904160000
+1054,979,agustin pagano,contacto@medioymedio.uy,+5989999422100,Juan Spikerman 2281,11600.0,Montevideo Department,Montevideo,UY,1,1700052929000
+1055,980,LIBER ANGEL,Liberangel@gmail.com,,,,,,,1,1701105636000
+1056,981,NICOLAS BONOME,nicolasbonome@gmail.com,,,,,,,1,1701706933000
+1057,982,JORGE ALVES,jorgealves@gmail.com,,,,,,,1,1701707019000
+1058,983,Juan Mattos,mattosjuan4@gmail.com,+5981862596802400,,,Montevideo Department,Montevideo,UY,1,1701893582000
+1059,984,CONSTANZA DARTAYETE,constanzadartayete@gmail.com,,,,,,,1,1701957470000
+1060,985,Guillermo Maciel,guillemaciel@gmail.com,+598954493508800,,,Montevideo Department,Montevideo,UY,1,1701957955000
+1061,986,Damian Dalessandro - Bazzino,damian@gmail.com,+5989444236400,Deauviwe 6923 esq. French y Santander,,Montevideo Department,Montevideo,UY,1,1702321530000
+1062,987,Facundo Fontes - Bazzino,facundo@gmail.com,+5989981288800,"Av. del Mar y Paso de la Gadena, la arbolada VIllage Lote 43",,Maldonado Department,Punta del Este,UY,1,1702321793000
+1063,988,Agustin Chappe - Bazzino,Aguchappe@gmail.com,+5989952419300,Hermano Gil 4094,,Montevideo Department,Montevideo,UY,1,1702321924000
+1064,989,Mauro Fernandez - Bazzino,maurofernandez@gmail.com,+5989389621100,Roberto de las Carretas 5737,11200.0,Montevideo Department,Montevideo,UY,1,1702571344000
+1065,990,Christian Urciuoli,Ch.urciuoli@gmail.com,+5989932963900,Agustín Muñoz 4045,11900.0,Montevideo Department,Montevideo,UY,1,1703087111000
+1066,991,Luis Asti,luisasti@gmail.com,+5987886531870500,,,Montevideo Department,Montevideo,UY,1,1703178916000
+1067,992,Diego Matías Guerrero Atel,deidara202.dg@gmail.com,+5989662553900,Galicia 1376,11200.0,Montevideo Department,Montevideo,UY,1,1703514038000
+1068,993,daniel parodi parodi,josefinodelhoyo@gmail.com,+5989995034100,SEVILLA 5109,15000.0,Canelones Department,Barra de Carrasco,UY,1,1703727786000
+1069,994,JUAN F PEREZ,LUCASLAMBERTI99@GMAIL.COM,,,,,,,1,1704214108000
+1070,995,Nicolas Ignacio Diaz Peña,niidp94@gmail.com,+5989890256700,"Av. Sarmiento 2519, 301",11300.0,Montevideo Department,Montevideo,UY,1,1704375116000
+1071,996,Paula Barreiro,paulabarreiro07@icloud.com,+5989855597300,Gral Artigas 1033,95000.0,Florida Department,25 de Mayo,UY,1,1705317799000
+1072,997,EDUARDO AGUILERA,aguilera@gmail.com,,,,,,,1,1705592088000
+1073,998,Rodney Olivera - Bazzino,rodney@gmail.com,+5989968445500,Edificio Coral Tower ap1701 Domicilio : Rambla Williman esquina Pedragosa Sierra,20100.0,Maldonado Department,Punta del Este,UY,1,1705634997000
+1074,999,Santiago DIz - Bazzino,santiago@gmail.com,,,,,,,1,1705635041000
+1075,1000,Leonardo Serrón,leoserron7@gmail.com,+5989335430400,Gral Flores 4162,12000.0,Montevideo Department,Montevideo,UY,1,1705775494000
+1076,1001,Diego Ignacio Domínguez Menes,dominguezdiego4@gmail.com,+5989875134800,Chana 2335,11200.0,Montevideo Department,Montevideo,UY,1,1706113370000
+1077,1002,Pablo Martin Vilar Velazquez,electronics_cars@hotmail.com,+5989911545300,"Republica de Chile, 968",91000.0,Canelones Department,Pando,UY,1,1706143663000
+1078,1003,Daiana Pastorino - Bazzino,daiana@gmail.com,+5989444465000,Av del Lago 3386 San Nicolas,,Montevideo Department,Montevideo,UY,1,1706210447000
+1079,1004,Rodolfo Benitez - Bazzino,rodolfo@gmail.com,+5989912972900,Cornelio Cantera 2833,,Montevideo Department,Montevideo,UY,1,1706214450000
+1080,1005,Alvaro Midaglia,alvaromidaglian@gmail.com,+5989397760900,Isidoro de maria 1595,11800.0,Montevideo Department,Montevideo,UY,1,1706566119000
+1081,1006,Laura Castro - Bazzino,laura@gmail.com,+5989239052600,Panaderia Emi - Calle Ernesto Paravis esq. Isla Gorriti Barrio San Martin,,Maldonado Department,Maldonado,UY,1,1706843401000
+1082,1007,Braulio Nelson Molaguero Appratto,bnmolaguero@gmail.com,+5989922280600,Av. Italia 4104,11400.0,Montevideo Department,Montevideo,UY,1,1706954421000
+1083,1008,Carlos Blanco - Bazzino,carlosblanco@gmail.com,+5989443364600,Mizar y Alcor pinares Maldonado ch. Margarita,20000.0,Maldonado Department,Maldonado,UY,1,1707168567000
+1084,1009,Nestor Larrosa - Bazzino,nestos@gmail.com,9443364600,ENVIAR A CARLOS BLANCO - BAZZINO,,,,,1,1707408266000
+1085,1010,German Sacco - Bazzino,germansacco295@gmail.com,+5989443035700,Betete 130 (Dijo que pasa a retirar o se encuentra contigo),,Montevideo Department,Montevideo,UY,1,1707408585000
+1086,1011,Sebastian Perez,Sebastianrperez1984@gmail.com,+54261617580200,Olegario V Andrades 590,5500.0,Mendoza,Mendoza,AR,1,1707862687000
+1087,1012,Pablo Ceymonat - Bazzino,pablo@gmail.com,9723604700,Viviendas Codifor (Policial) Vivienda #7 - Wilson Ferreira Aldunate entre Venecia y Aguilar,,Maldonado Department,,,1,1708015060000
+1088,1013,Damian Andrés Porley Rodríguez,damianporley@gmail.com,+5989994876900,España 125,70200.0,Colonia Department,Rosario,UY,1,1708631619000
+1089,1014,SEBASTIAN ARRUTI,ARRUTI@GMAIL.COM,,,,,,,1,1708702609000
+1090,1015,Agustin Fassana - Bazzino,agustin1@gmail.com,+5989261533500,RETIRA AGENCIA CENTRAL DAC MALDONADO,,Maldonado Department,Maldonado,UY,1,1709046067000
+1091,1016,Mauro Roberto Sacco - Bazzino,mauro@gmail.com,+5989260096300,Luis Batlle Berres 379,,Montevideo Department,Montevideo,UY,1,1709046133000
+1092,1017,Rolando Rozenblum - Bazzino,rolando@gmail.com,+5989810150000,Laureano alonso Peres esq. malvin - Chalet Magnolia - San Rafael,20000.0,Maldonado Department,Punta del Este,UY,1,1709046219000
+1093,1018,FABRIZIO BARANZANO,BARANZANO@GMAIL.COM,,,,,,,1,1709047202000
+1094,1019,Juan Hourcade,jihourcade@hotmail.com,+5989936836000,Juncal 291,50000.0,Salto Department,Salto,UY,1,1709054864000
+1095,1020,PABLO VIVIAN `,PVIVIAN@GMAIL.COM,,,,,,,1,1709055826000
+1096,1021,Elias Dono - Bazzino,eliasdono@gmail.com,9965633300,Rambla Republica del Peru 1503 apto 602,,Montevideo Department,,,1,1709230857000
+1097,1022,Maribel Delgado,maribel@gmail.com,813510095800,,,Colonia Department,,,1,1709299459000
+1098,1023,Agustin Daveri Rodriguez,agustindaveri@gmail.com,+5989273176600,Gaboto 1164,11200.0,Montevideo Department,Montevideo,UY,1,1709410204000
+1099,1024,Sebastian Aldo Sierra Balzani,sebasierra55@gmail.com,+5989453132600,Ellauri 527 esquina Montero (Colegio Juan Zorrilla de San Martín),11300.0,Montevideo Department,Montevideo,UY,1,1709574788000
+1100,1025,Rolando Rozenblum - Bazzino,bazino1234@gmail.com,+5989810150000,Laureano alonso Peres esa malvin Chalet Magnolia - San Rafael,20000.0,Maldonado Department,Punta del Este,UY,1,1709834463000
+1101,1025,Victor Pongracs Juanes,victorbp1960@gmail.com,+5989946456500,Fco Aguilar 1972,11300.0,Montevideo Department,Montevideo,UY,1,1710514723000
+1102,1026,Walter Diego Girona Campot - BAZZINO,bazzino@gmail.uy,+5989914997600,Agencia Piriapolis,,Maldonado Department,Piriápolis,UY,1,1710792069000
+1103,1027,Victor Batalla Perez,lbelectrico@gmail.com,+5989471151900,Biarritz M10 S30,15008.0,Canelones Department,Barra de Carrasco,UY,1,1710798778000
+1104,1028,DIEGO CAMI,m.d.impserv@gmail.com,+598,,,Montevideo Department,Montevideo,UY,1,1711411411000
+1105,1029,Eduardo,er307_sp@hotmail.com,+5989977414900,Soriano 791,11200.0,Montevideo Department,Montevideo,UY,1,1712003810000
+1106,1030,Gaston Robinson,gastonrobinson8@gmail.com,+5989897638700,Pacheco y Obes 712,9400.0,Florida Department,Florida,UY,1,1712580368000
+1107,1031,JUAN BENQUET,juanbenquet@gmail.com,,,,,,,1,1712678349000
+1108,1032,CHRISTIAN DELASCIO,CHRISTIAN@GMAIL.COM,,,,,,,1,1712679620000
+1109,1033,ALEJANDRO BALDOVINO,ALE@GMAIL.COM,,,,,,,1,1712774556000
+1110,1034,Agustín Romero,a.romeromannise@gmail.com,+5989922085100,8 DE OCTUBRE 1035,50000.0,Salto Department,Salto,UY,1,1712861034000
+1111,1035,Joaquín Aineseder,joacoaineseder@gmail.com,+5989142017600,R8 K23.500 Los Sauces M302 S7,15500.0,Canelones Department,Barros Blancos,UY,1,1712871078000
+1112,1036,Florencia viera beltramelli,florenciaviera245@gmail.com,9615847000,Piedras 597,500000.0,Salto Department,,,1,1713286628000
+1113,1037,Marcos Ferreira,marcosferreira971983@gmail.com,+5989589411400,Presidente berro 2586/702,11600.0,Montevideo Department,Montevideo,UY,1,1713305985000
+1114,1038,Mateo Rolande Balsámo,gastoneo2005@gmail.com,+5989560010500,Valdenegro esquina Danton km 20 La Paz,90200.0,Canelones Department,La Paz,UY,1,1713324769000
+1115,1039,Facundo Salazar,facuvalen77@icloud.com,+5989262570700,Cerro Largo 1807,11200.0,Montevideo Department,Montevideo,UY,1,1713633338000
+1116,1040,Eduardo Dario torres silva,Turbosrpm@hotmail.com,+5989655101500,Lavalleja 1026,15600.0,Canelones Department,Pando,UY,1,1713925627000
+1117,1041,SANTIAGO SELVES,SANTIAGOSELVES@GMAIL.COM,,,,,,,1,1714142593000
+1118,1042,Carlos Damián  DAlessandro,damiandalessandro@hotmail.com,+5989444236400,Deauville   6923,11500.0,Montevideo Department,Montevideo,UY,1,1714239668000
+1119,1043,Santino Guido,santinoguido18@gmail.com,+5989933279900,La cumparsita 1333 apto 5,11100.0,Montevideo Department,Montevideo,UY,1,1714766236000
+1120,1044,Jaqueline Flores,floresj06@gmail.com,+5989919479000,Br José Batlle y Ordóñez 4494,12300.0,Montevideo Department,Montevideo,UY,1,1714939547000
+1121,1045,OLIMPIA BEHZABE GARCIA CARRASQUERO,OLIMPIA.GARCIA26@GMAIL.COM,+58412652127500,"CALLE LAS VEGAS,CASA#29,MUNICIPIO CARIRUBANA, PARROQUIA PUNTA CARDON,CIUDAD PUNTO FIJO. EDO. FALCON,VENEZUELA",4102.0,Falcón,Punto Fijo,VE,1,1715268644000
+1122,1046,Diego Llama,diegonicolas.llama@gmail.com,+5989962854100,Agraciada 933 apto 203,50000.0,Salto Department,Salto,UY,1,1715357120000
+1123,1047,Agustina Rodriguez,agustinarodriguezmederos@gmail.com,+5989295602900,Demostenes 3511 apt 104,11600.0,Montevideo Department,Montevideo,UY,1,1715971011000
+1124,1048,Dario Marchioro,alpina_72@hotmail.com,+5989942595900,Cno.carrasco 4779,12100.0,Montevideo Department,Montevideo,UY,1,1716204439000
+1125,1049,FERNANDO PRAVIA,FERPRAVIA@GMAIL.COM,,,,,,,1,1716222839000
+1126,1050,Fabian Gerosa - Bazzino,fabiangerosa@gmail.com,+5989992362600,LOCAL DAC de CAMINO LUSSICH (NUEVO),,Maldonado Department,Maldonado,UY,1,1716265444000
+1127,1051,Giulliana Rabosto Marsicano,rabosto.giu@gmail.com,+5982507778600,Vera 2704 bis apto 603,12000.0,Montevideo Department,Montevideo,UY,1,1716313777000
+1128,1052,MARCOS MANUEL,servicios1946@hotmail.com,+5989632638200,25 de agosto 3342,65000.0,Río Negro Department,Fray Bentos,UY,1,1717182557000
+1129,1053,Federico Pérez Di Maggio,federico1198@hotmail.com,+5989152392700,Sarandi 878,85000.0,Flores Department,Trinidad,UY,1,1717383944000
+1130,1054,LUCAS GUILLERMO OLIVERA,lucasgolivera@outlook.com,,,,,,,1,1717533127000
+1131,1055,JONATHAN FERRI,jonathan.ferri98@gmail.com,+5989588717100,Constituyente 1742,11200.0,Montevideo Department,Montevideo,UY,1,1717534234000
+1132,1056,Víctor Diaz Diaz,chinodiaz32@icloud.com,+5989148536600,Av lib brig gral Lavalleja 1859 apto 503,11100.0,Montevideo Department,Montevideo,UY,1,1717610354000
+1133,1057,Emmett Buckridge,Marina314_Brown_1976@alabamahomenetwoks.com,1114731658300,809 Hirthe Passage,,,,,1,1717743684000
+1134,1058,Agnes Kiehn,Armando833.Franecki2004@alabamahomenetwoks.com,1286380205100,4161 Stoltenberg Summit,,,,,1,1717743718000
+1135,1059,Nelson Nitzsche,amadocenizaii@yahoo.ca,1024747204200,394 Agustin Plains,,,,,1,1717895138000
+1136,1060,Sebastian Gentieu,segnt453@gmail.com,+5989279390200,General Flores 2913,11200.0,Montevideo Department,Montevideo,UY,1,1718472469000
+1137,1061,Leticia Avila,Leticiaavilab@gmail.com,+5989951399500,Echeverria 553,1130.0,Montevideo Department,Montevideo,UY,1,1718506804000
+1138,1062,DANILO BARBERO,danilobarbero@gmail.com,,,,,,,1,1718648030000
+1139,1063,JUAN KAUKE juancho,Juankauke@gmail.com,,,,,,,1,1718648165000
+1140,1064,RICARDO PACHECO,Ricardopacheco@gmail.com,,,,,,,1,1718653826000
+1141,1065,Ruben Sosa,rubensosa@gmail.com,+59899601767100,,,Montevideo Department,Montevideo,UY,1,1719243164000
+1142,1066,FRANCISCO KOLENEC,KOLENEC@GMAIL.COM,,,,,,,1,1719522723000
+1143,1067,Elias Salazar,Eliassalazar.10@hotmail.com,+5989211066700,Cerro Largo 1807,11200.0,Montevideo Department,Montevideo,UY,1,1719630158000
+1144,1068,Sebastian Lapitz Touron,kisuan_his@hotmail.com,+5989929938700,Av Cataluña 3126,11600.0,Montevideo Department,Montevideo,UY,1,1720206482000
+1145,1069,Florencia Rocha,florenciarochasorondo@gmail.com,+5989162261500,ciudad de young 1213,60000.0,Paysandú Department,Paysandú,UY,1,1720312299000
+1146,1070,Lucas Rodriguez,lucastricanico@hotmail.com,+5989584424200,"Millan y lecocq, calle 1, entrada 864, ap 001",11900.0,Montevideo Department,Montevideo,UY,1,1720449879000
+1147,1071,Solange Micaela Vazquez - Bazzino,micaelavazquez@gmail.com,+5989215906900,Ñapinda 1233,,Maldonado Department,Maldonado,UY,1,1721067768000
+1148,1072,Ana Ledesma/Roberto Perez,anaelenaledesma@gmail.com,+5989145116900,E Sineiro,91100.0,Canelones Department,San Ramón,UY,1,1721072877000
+1149,1073,Nicolás Gómez,nico.gomez@gmail.com,+5989291837600,Av De Las Instrucciones 1982,12400.0,Montevideo Department,Montevideo,UY,1,1721482501000
+1150,1074,John Raynor,alamnazdak@comcast.net,1420089477800,76446 Xzavier Place,,,,,1,1721487773000
+1151,1075,Evangelina Clavijo,mariaevangelinaclavijo@hotmail.com,+5989573304200,Molle manzana 348 solar 7,15500.0,Canelones Department,Barros Blancos,UY,1,1721688549000
+1152,1076,Alejandro Fontaina - Bazzino,alef@gmail.com,+5989825568100,DAC Agencia Maldonado,,Maldonado Department,Maldonado,UY,1,1721743473000
+1153,1077,Mariano Banchero,bancherotourn@gmail.com,+5989953981800,Gral Flores 167,70100.0,Colonia Department,Carmelo,UY,1,1722467576000
+1154,1078,Mr. Orville Larkin,Marilou410_Mraz1991@alabamahomenetwoks.com,1248273292300,5861 Christophe Curve,,,,,1,1722615985000
+1155,1079,Robert Senger IV,Chadd813_Bechtelar_2009@alabamahomenetwoks.com,1708380091800,7610 Lesch Fork,,,,,1,1722615986000
+1156,1080,Perry Ankunding,Brennan946_Rodriguez_2000@alabamahomenetwoks.com,1521328465600,457 Hill Street,,,,,1,1722615988000
+1157,1081,Geneva Koch,Emelia607_Schiller_2003@alabamahomenetwoks.com,1781375967600,384 Wiley Rue,,,,,1,1722615998000
+1158,1078,Pablo Geymonat - Bazzino,geymonat@gmail.com,+5989723604700,"Wilson Ferreira Aldunate, Viviendas Coxipol #7",,Maldonado Department,Maldonado,UY,1,1723657751000
+1159,1079,María Jose gonzalez,majo_af2009@hotmail.com,+5989980716300,Laureles 431,11900.0,Montevideo Department,Montevideo,UY,1,1723913552000
+1160,1080,Avril Belén Camargo González,avrilcamargo.2006@gmail.com,+5989881911500,Laureles 431 esquina Pedro Celestino Bauza y Gobernador del pino,11900.0,Montevideo Department,Montevideo,UY,1,1723927299000
+1161,1081,Alem Nicolás Durán Santa Cruz,Alemduran18@hotmail.com,+5989986798500,Camino cibils 5570bis,12800.0,Montevideo Department,Montevideo,UY,1,1724517647000
+1162,1082,Bazzino - Carlos Urquiola,urquiola@gmail.com,+5989436950100,Retira DAC Maldonado,,Maldonado Department,Maldonado,UY,1,1724795421000
+1163,1083,Gerardo Julio Theophile Lorenzo,gerardotheophileusa@outlook.com,+5989208477100,Espartillo 3628,12000.0,Montevideo Department,Montevideo,UY,1,1724981588000
+1164,1084,Kirk Stanton,zehntnerin@yahoo.com,1482739234200,92067 W 10th Street,,,,,1,1724993059000
+1165,1085,Bazzino - Ignacio Irureta,sdadasdsadafa@gmail.com,+598923083300,Pedro Murillo 6237.,11500.0,Montevideo Department,Montevideo,UY,1,1725042908000
+1166,1086,GERARDO JULIO THEOPHILE LORENZO,gjuliolorenzo@gmail.com,,,,,,,1,1725279275000
+1167,1087,ADRIANA COLOMBI,adrianacolombi@gmail.com,,,,,,,1,1725387072000
+1168,1088,Joaquin Stable,Joaquin@drei.uy,+5982924371100,Martin Garcia 1226,11800.0,Montevideo Department,Montevideo,UY,1,1725539794000
+1169,1089,Mattie Baumbach,nolovehere954@gmail.com,1501905241000,70442 W Main,,,,,1,1725850691000
+1170,1090,Maureen O'Keefe,ellifeld@gmail.com,1273596763100,16373 Sabrina Dale,,,,,1,1725940561000
+1171,1091,Jimena Echevarría,jimueche25@gmail.com,+5989977558700,Ramón castriz 2529,12100.0,Montevideo Department,Montevideo,UY,1,1725942178000
+1172,1092,Eva Trantow,Beaulah250_Carter.1982@alabamahomenetwoks.com,1064192443300,95064 5th Street,,,,,1,1726043771000
+1173,1093,Maria Ullrich II,Karen372Batz.1997@alabamahomenetwoks.com,1359540351100,9569 Main Street,,,,,1,1726043781000
+1174,1094,Julio Steuber,Nico971_Bednar1974@alabamahomenetwoks.com,1417261727400,8797 Audrey Motorway,,,,,1,1726043808000
+1175,1092,Gonzalo Ganicoche,Yaya283ganicoche@gmail.com,+5989895686400,Morquio1810,50000.0,Salto Department,Salto,UY,1,1726575635000
+1176,1093,ADRIAN ISOLA,ISOLA@GMAIL.COM,,,,,,,1,1726764406000
+1177,1094,Dianne Strosin,kodakblack354@gmail.com,1607437080400,97463 State Line Road,,,,,1,1727708835000
+1178,1095,Daniel Oribe Guerequiz Rivero,Danielguerequiz@gmail.com,+5989449363600,Laureles 184,11900.0,Montevideo Department,Montevideo,UY,1,1727974514000
+1179,1096,Giuliana Bon Layes,giulibon132@gmail.com,+1598786932934700,1050sw 70th avenue,33144.0,Florida,West Miami,US,1,1728144344000
+1180,1097,Roxana Janeth Martínez Fernández,Roxana@tupropiedad.com.uy,+5989477391500,Ruta 102k23 calle leopolis manzana 68 solar 05,14000.0,Canelones Department,Colonia Nicolich,UY,1,1728398542000
+1181,1098,Hernan Duran,Fernatvache@gmail.com,+5989238042000,Sarandi 977,85000.0,Flores Department,Trinidad,UY,1,1728404072000
+1182,1099,Bazzino - Anibal Garcia,sadfdsdasdafdgfs@gmail.com,+5989521148500,DAC Maldonado,,Maldonado Department,Maldonado,UY,1,1728585384000
+1183,1100,CAROLINA CECCONELLO,carolina@gmail.com,,,,,,,1,1728587416000
+1184,1101,Grace Keebler,Maude514Boehm_1972@alabamahomenetwoks.com,1671944152900,581 Grove Street,,,,,1,1728676984000
+1185,1102,Henry Odera,melence68@gmail.com,9380709400,Becu M55 S16,15000.0,Canelones Department,,,1,1728915242000
+1186,1103,Raul Rodriguez - Bazzino,sadsaasds@gmail.com,+598549113202260500,RETIRA AGENCIA PIRIAPOLIS,,Maldonado Department,Piriápolis,UY,1,1728930759000
+1187,1104,Edgardo Maximiliano Camejo Fuques,maxicamejo_12@hotmail.com,+5989887697100,Colonia 2037,11200.0,Montevideo Department,Montevideo,UY,1,1729112783000
+1188,1105,GERMAN MERODIO,GERMANMERODIO@GMAIL.COM,,,,,,,1,1729195889000
+1189,1106,RAMIRO TERRADO,RAMIROTERRADO@GMAIL.COM,,,,,,,1,1729195952000
+1190,1107,GUSTAVO DELMONTE,gdelmonte@gmail.com,,,,,,,1,1729602346000
+1191,1108,Martin Patricio Borchardt - BAZZINO,dkfjdsklfjdskl@gmail.com,+5989870750300,"Edificio Trump Tower  Rambla Lorenzo Batlle Pacheco Parada 9, Apto 302",20100.0,Maldonado Department,Punta del Este,UY,1,1729608490000
+1192,1109,Stefania Rey - BAZZINO,dsafdsfdsas@gmail.com,+5989523454500,calle 22 esquina calle 21 edificio Kennedy apto 1303,20100.0,Maldonado Department,Punta del Este,UY,1,1729608564000
+1193,1110,Ramon eduardo leopoldo,Ramon32670701@gmail.com,+54296457683400,Aeroposta argentina 155,9420.0,Tierra del Fuego Province,Río Grande,AR,1,1730315958000
+1194,1111,SANDRA ALVAREZ,sandraalvarez@gmail.com,,,,,,,1,1730400624000
+1195,1112,Gianni de Crecenzio,GDCL@hotmail.com,9965467000,General Palleja 2633,11600.0,Montevideo Department,,,1,1730841750000
+1196,1113,Bazzino - Fabian Gutierrez,sadsafads@gmail.com,+5989192343300,RETIRA DAC MALDONADO,,Maldonado Department,Maldonado,UY,1,1730995157000
+1197,1114,BAZZINO - Lydia Baragiola,dsadfdss@gmail.com,+5989563206700,Claudio William 20100 Dto 1704 Piso 17. Parada 1 Mansa,,Maldonado Department,Maldonado,UY,1,1731004925000
+1198,1115,Ignacio toscanini,Fixfon19@gmail.com,+5989853336100,19 de abril 709,60000.0,Paysandú Department,Paysandú,UY,1,1731461031000
+1199,1116,JUANA VILLARONGA,JUANA@GMAIL.COM,,,,,,,1,1731514236000
+1200,1117,MARTIN LAUZ,Martinlauz@gmail.com,,,,,,,1,1731519392000
+1201,1118,Rodrigo Martinez,rodrigo.mn@montevideo.com.uy,+598,,,Canelones Department,Barra de Carrasco,UY,1,1732115238000
+1202,1119,BAZZINO - Juan Manuel Ponce de Leon,fdffsd@gmail.com,+5989797077400,JM GARAGE - Giannastasio 1500 CIUDAD DE LA COSTA,,Canelones Department,Canelones,UY,1,1732119633000
+1203,1120,BAZZINO - Karina Porteiro,dsafdsfas@gmail.com,9968482100,Carlos Sole 3259,11700.0,Montevideo Department,,,1,1732202982000
+1204,1121,Malena Rosa,sdasdas@gmail.com,1786752191600,Mevir Numero 24983 VIlla Castellanos Departamento de Canelones,91200.0,Canelones Department,,,1,1732219816000
+1205,1122,Pablo Horacio Garcia Falero,pgarciauy@gmail.com,+5989994845800,Hocquart 2250,11200.0,Montevideo Department,Montevideo,UY,1,1732363503000
+1206,1123,Natalia Riani,veronica.peveroni@gmail.com,,,,Montevideo Department,,,1,1732977643000
+1207,1124,DIEGO MARTINEZ,diegomartinez@gmail.com,,,,,,,1,1733151416000
+1208,1125,GONZALO BALTAR,gonzalobaltar@gmail.com,,,,,,,1,1733156046000
+1209,1126,BAZZINO - Federico García,dfdaf@gmail.com,+5989897796400,DAC MALDONADO,,Maldonado Department,Maldonado,UY,1,1733236291000
+1210,1127,Bazzino - Alejandro galdona,dasfdsfasd@gmail.com,+5989612229200,Cerrito m226 b solar 13 el pinar,,Canelones Department,Canelones,UY,1,1733236398000
+1211,1128,MARIANO GAVEL ZONA BARBER,zonabarber@gmail.com,,,,,,,1,1733244784000
+1212,1129,VICTORIA ARBON,VICTORIA@GMAIL.COM,,,,,,,1,1733430287000
+1213,1130,Santiago Trias,santiagotrias770@gmail.com,+5989822396500,charrua,11200.0,Montevideo Department,Montevideo,UY,1,1733500452000
+1214,1131,Santiago trias,santiustrias@gmail.com,+5989822396500,charrua,11200.0,Montevideo Department,Montevideo,UY,1,1733500768000
+1215,1132,Alejandra Cherro,dsadsadas@gmail.com,9847783000,,,Montevideo Department,,,1,1733931554000
+1216,1133,Esteban Martinez - BAZZINO,dasfdsdsa@gmail.com,+5989962352500,DAC MALDONADO,,Maldonado Department,Maldonado,UY,1,1733943432000
+1217,1134,Daniel nunez - Bazzino,dsadffddsfg@gmail.com,+59854911236474900,DAC MALDONADO,,Maldonado Department,Maldonado,UY,1,1734020172000
+1218,1135,Nelson Mejias,ruichardstalin@gmail.com,+1598239628780300,1048 NE 17 AV,33909.0,Florida,Cape Coral,US,1,1734025024000
+1219,1136,Romina Da Silva Lemes,romilemes1234@gmail.com,+5989108555800,casavalle 5692,12500.0,Montevideo Department,Montevideo,UY,1,1734279371000
+1220,1137,Jorge Gaston Rozza Perez,gaston.rozza@gmail.com,+5989997497300,Wilson Ferreira Aldunate 093 esquina Soriano,80000.0,San José Department,San José de Mayo,UY,1,1734623408000
+1221,1138,Ruben Antonio Herrera Ramirez,cheromallicoraw@gmail.com,+5989896681200,Paraguay 1107,11100.0,Montevideo Department,Montevideo,UY,1,1734955189000
+1222,1139,Jose Cerdeiras - BAZZINO,dsfdsaDFD@GMAIL.COM,+5982710310300,21 setiembre 2694 apt 602,,Montevideo Department,Montevideo,UY,1,1735225377000
+1223,1140,marco manfredi,marcodryco@gmail.com,+5989840781100,regimiento 9 1823,11700.0,Montevideo Department,Montevideo,UY,1,1736341089000
+1224,1141,Matias  Esteves,matiasesteves64@gmail.com,+5989191891100,Clemente Cesar,11800.0,Montevideo Department,Montevideo,UY,1,1736350521000
+1225,1142,Eduardo Fabio Caprani Mendez,Ecaprani@comunicacionesuruguayas.com.uy,+5989944132000,Av. Bolivia 2179,11400.0,Montevideo Department,Montevideo,UY,1,1736447216000
+1226,1143,Cristian Leonel Clavijo,crisleon2008ford@gmail.com,+5989470938000,"Molle, manzana 348, solar 7",15500.0,Canelones Department,Barros Blancos,UY,1,1736696127000
+1227,1144,Mareo 1959,mareo@gmail.com,+598,Retira MVD,,Montevideo Department,Montevideo,UY,1,1736874805000
+1228,1145,Mathias Sebastián Saravia Presa,mathi.saravia1234@gmail.com,+5989466963400,Juan de dios peza 1826,11500.0,Montevideo Department,Montevideo,UY,1,1736953644000
+1229,1146,BAZZINO-Jorge Etcheverrito,dsffdgsgf@gmail.com,+5989964092000,Edificio Emerador Parada 1 1/2 APT 302,,Maldonado Department,Punta del Este,UY,1,1737048853000
+1230,1147,Diego sosa,Dalecabalodale@gmail.com,786459258600,6960 Collins ave,33141.0,,,,1,1737395919000
+1231,1148,Jeremy Casañol,shere_stahp97@hotmail.com,+5989988897900,Salto 0014,15900.0,Canelones Department,Progreso,UY,1,1738113910000
+1232,1149,Martin Vlasanovich,martin.vlasa@gmail.com,+5989270920400,Av Brasil 2995 apto 902,11300.0,Montevideo Department,Montevideo,UY,1,1738175169000
+1233,1150,julio alamancos bouzas,jota@usermail.com,+5989508464900,p. artigas 3774,11700.0,Montevideo Department,Montevideo,UY,1,1738271721000
+1234,1151,Bazzino - Allen Marcus,dsafadfdasaf@gmail.com,+5989960981800,Rambla Claudio Williman esquina Av José Terradel  Edificio Aquarella  Apto 1002,,Maldonado Department,Punta del Este,UY,1,1738593010000
+1235,1152,Bazzino - Esteban Cuello,fdgbnbdsas@gmail.com,+5989899231600,"Va a retirar, coordinar",,Montevideo Department,Montevideo,UY,1,1738677727000
+1236,1153,PABLO CANEDO,pcanedo74@gmail.com,+5989370000600,"Colonia , 993 Ap 801",11100.0,Montevideo Department,Montevideo,UY,1,1739139950000
+1237,1154,MATIAS BALADAN,MBALADAN@GMAIL.COM,,,,,,,1,1739205197000
+1238,1155,GERARD REMY,GERARD@gmail.com,,,,,,,1,1739394735000
+1239,1156,santiago trias,strias43@gmail.com,+5989822396500,rodo 2073,11200.0,Montevideo Department,Montevideo,UY,1,1739452362000
+1240,1157,santiago trias,molinasanti30@gmail.com,+5989822396500,rodo 2073,11200.0,Montevideo Department,Montevideo,UY,1,1739452559000
+1241,1158,MAURICIO DE MARINO,Mauruciodemarino@gmail.com,,,,,,,1,1739821569000
+1242,1159,Jairo Roman Raiz Larraura,Jairolarraura@gmail.com,+5989258527500,Luis moro 4355,12900.0,Montevideo Department,Montevideo,UY,1,1739886066000
+1243,1160,Bazzino - Fredy Gutierrez,fdsfgdasdsfdfg@gmail.com,9910727500,barrio San Francisco calle Firenze entre Mesina y Salerno,,Maldonado Department,,,1,1739909022000
+1244,1161,Bazzino - Leopoldo Visini,hgfsdafhgfd@gmail.com,+598,,,Maldonado Department,Punta del Este,UY,1,1739909156000
+1245,1162,elcharruaquevuela@gmail.com,nicobirrielmusica@gmail.com,+5989975054600,"Camino Inia Ruta 48 km 9.500 Padron 15911, Rincon del Colorado",90100.0,Canelones Department,Los Cerrillos,UY,1,1739933100000
+1246,1163,Laura Manuela Kuolas Blanco,a47kuolas@gmail.com,+5989986180100,Francisco Piria 60 apto 4  esq San Mateo,11900.0,Montevideo Department,Montevideo,UY,1,1740162271000
+1247,1164,IGNACIO NACHO OLIVERA,nacho@gmail.com,,,,,,,1,1740413369000
+1248,1165,Bazzino - Daniel Fernández,safbvmcbgdfv@gmail.com,+5989444337500,Agencia DAC Punta del Este,,Maldonado Department,Punta del Este,UY,1,1741126898000
+1249,1166,CAMILA BADO,DFSGDADDVBVDSD@GMAIL.COM,,,,,,,1,1741289946000
+1250,1167,DANIEL GONZALES,Dgonzales@gmail.com,,,,,,,1,1741729582000
+1251,1168,Alvaro Serra,alvarousa1975@gmail.com,+5989361363100,Ruta 8 km 24.700,15500.0,Canelones Department,Barros Blancos,UY,1,1742308517000
+1252,1169,YARLEY GONZALES,Yarleygonzales@gmail.com,,,,,,,1,1742481826000
+1253,1170,MATIAS ARRIONDO,matias@gmail.com,,,,,,,1,1743512572000
+1254,1171,Bazzino -  Felipe Besil,felipe@gmail.com,+5989102624000,"Balneario Ocean Park calle Saint Morithz entre Avda.Mar del Plata y Santa Margaritte chalet ""Gringa""",,Maldonado Department,Maldonado,UY,1,1743776817000
+1255,1172,Gerardo Martinez,gera.uy@hotmail.com,+5989678051700,Barrios Amoring 1844,11100.0,Montevideo Department,Montevideo,UY,1,1743783293000
+1256,1173,Bazzino - Lucas Gonzalez,lucas@gmail.com,+5989907206600,Coordinar encuentro o pasa a retirar,,Montevideo Department,Montevideo,UY,1,1744049776000
+1257,1174,Cristian Leonel Clavijo Perez,evangelinaclavijo@gmail.com,+5989470938000,"Calle molle, manzana 348, solar 7. Entre Curupay y Cardal",15500.0,Canelones Department,Barros Blancos,UY,1,1744130322000
+1258,1175,JULIAN DELGADO,juliandelgado@gmail.com,,,,,,,1,1744659854000
+1259,1176,Bazzino - Alfonso Fantoni,alfonso@gmail.com,9391529600,"Chalet AWA ruta 10 k163.500 casi calle San Carlos, Manantiales",,,,,1,1745241937000
+1260,1177,Bazzino - Alvaro Rocco,rocco@gmail.com,+5989466767900,Bulevar España 2721 Apto 701,,Montevideo Department,Montevideo,UY,1,1745591674000
+1261,1178,Juan Prando,juan.prando@gmail.com,+5989912754600,Ciudad de Guayaquil 1452,11400.0,Montevideo Department,Montevideo,UY,1,1746457478000
+1262,1179,JOSE LUIS OLIVERA,luisolivera@gmail.com,,,,,,,1,1746532980000
+1263,1180,Ignacio Nahuel Nalerio Vera,loanasilva757@gmail.com,+5989492442500,El chaja 6069,12500.0,Montevideo Department,Montevideo,UY,1,1746901130000
+1264,1181,Nicolas Castellano,ncastellanogard@hotmail.com,+5989964694900,Rio Negro 1394 ap 901,11100.0,Montevideo Department,Montevideo,UY,1,1746987836000
+1265,1182,Santiago huisman,santihouseman@gmail.com,+598962513300,"Camino de los horneros. Barrio, viñedos de la tahona. Lote d11",15800.0,Canelones Department,Barros Blancos,UY,1,1747063790000
+1266,1183,RODRIGO PEREZ,rodrigoperez@gmail.com,,,,,,,1,1747101623000
+1267,1184,Bazzino - Elbio Fernandez Ameglio,elbio@gmail.com,+5989960981800,Gral. Nariño 1973. Montevideo,11500.0,Montevideo Department,Montevideo,UY,1,1747350478000
+1268,1185,Romina Natali Núñez Teperino,rominan526@gmail.com,+5989640090600,"arroyo leoncho, m231, s9",15500.0,Canelones Department,Barros Blancos,UY,1,1747366451000
+1269,1186,Bazzino - Raul Roque Bermudez,safddghbvcs@gmail.com,+5989873533900,DAC Maldonado,,Maldonado Department,Maldonado,UY,1,1747663868000
+1270,1187,Dario Jose Rodriguez Bentancor,carzone300@gmail.com,+5989955463300,W Beltran 30,90700.0,Canelones Department,Santa Lucía,UY,1,1747754897000
+1271,1188,German Mora Reyes,german.mr2395@gmail.com,+1598786729659900,1401South 25th Avenue,33020.0,Florida,Hollywood,US,1,1747767482000
+1272,1189,Mathias nicolas castro sotelo,Mathiascas-@hotmail.com,+598,,,Canelones Department,Atlántida,UY,1,1747948681000
+1273,1190,Javier López,jlcheva9080@gmail.com,+5989105273000,Mevir17341,94100.0,Florida Department,Sarandí Grande,UY,1,1748052955000
+1274,1191,Matías Bermúdez,matias_bermudez@outlook.com,+5989938120000,Av Garibaldi 2930,,Montevideo Department,Montevideo,UY,1,1748361700000
+1275,1192,SEBASTIAN BUERO,sebabuero@gmail.com,,,,,,,1,1748391637000
+1276,1193,Lucia gonzalez,lugonzalezvilche@gmail.com,+5989954677100,"Colinas de Carrasco Lote G7, camino los aromos y ruta 101",15500.0,Montevideo Department,Montevideo,UY,1,1748820474000
+1277,1194,alfonso blanco,lucia@carrascoviajes.com.uy,+5989954677100,"Colinas de carrasco lote g7, camino los aromos g7",15500.0,Montevideo Department,Montevideo,UY,1,1748822775000
+1278,1195,MATIAS BERMUDEZ,matiasbermudez@gmail.com,,,,,,,1,1748902136000
+1279,1196,SANTIAGO STAMBOULIAN,santiagostamboulian@gmail.com,,,,,,,1,1749133249000
+1280,1197,Danilo Asconeguy,daniloasconeguy_19@hotmail.com,+5989226589100,Waterloo 883,,Montevideo Department,Montevideo,UY,1,1749521724000
+1281,1198,Bazzino - Feliciano Luna,mkfvnjvnfdlkmcmskl@gmail.com,+598549113053868400,DAC Pta del Este,,Maldonado Department,Punta del Este,UY,1,1749656194000
+1282,1199,Mateo Carmona,mateo.carmona@icloud.com,+5989912356600,siria 6337,11400.0,Montevideo Department,Montevideo,UY,1,1750622903000
+1283,1200,SEBASTIAN KOWALCZYK,sebastiank@gmail.com,,,,,,,1,1750695780000
+1284,1201,FACUNDO GONZALEZ,facugonzales@gmail.com,,,,,,,1,1750697296000
+1285,1202,NICOLAS GONZALES,Nicolasgonzales@gmail.com,,,,,,,1,1750881861000
+1286,1203,Bazzino - Nicolás Martín Trindado,ddadfssad@gmail.com,+598,DAC Piriapolis,,Maldonado Department,Piriápolis,UY,1,1751903545000
+1287,1204,John Lauz,jflb1968@gmail.com,+5989480839800,Manuel Meléndez 987,90200.0,Canelones Department,Las Piedras,UY,1,1752156157000
+1288,1205,John mutter benitez,Lilianpresa@hotmail.com,+5989938914000,Montero vidaurreta 691,11900.0,Montevideo Department,Montevideo,UY,1,1752369740000
+1289,1206,Humberto Mauro Arioli Espino,mauro.arioli@hotmail.com,+5989915079800,Martín García 1624,11800.0,Montevideo Department,Montevideo,UY,1,1752434801000
+1290,1207,Rudy Bonilla,rudyapabonilla@gmail.com,+5989876239200,Covisan 10 Casa 36 Zorrilla Y N° 5,60000.0,Paysandú Department,Paysandú,UY,1,1752547275000
+1291,1208,Alberto Javier yine alegre,javieryine@gmail.com,9146912400,regimiento 9 1571,12500.0,Montevideo Department,,,1,1752784009000
+1292,1209,Bruno Flamant,brunoflamant2014@gmail.com,+5989849356700,Dr. Pablo de María 1375,11200.0,Montevideo Department,Montevideo,UY,1,1752812161000
+1293,1210,Emilia  Chacon,emiliachacon58@gmail.com,,carretera de calafel 40,8850.0,,,,1,1753348121000
+1294,1211,Bazzino - Fabian Dutra,dsafggfdasvgh@gmail.com,+5989419186500,Agenciándolas DAC San Carlos,,Maldonado Department,San Carlos,UY,1,1753374164000
+1295,1212,Gianina Acuña,giamusic333@gmail.com,+5989881384500,Solano Lopez 1482 Apto 306 Torre C,11400.0,Montevideo Department,Montevideo,UY,1,1753810122000
+1296,1213,Gaston Santos,Santosgaston@outlook.com,+5989231832500,8 de octubre 1245,,Montevideo Department,Montevideo,UY,1,1753975786000
+1297,1214,FELIPE FEIJOO,felipe_2@gmail.com,+5989980090000,,11300.0,Montevideo Department,Montevideo,UY,1,1755100800000
+1298,1215,Miguel Franggi,miguelfranggi@gmail.com,+5989890722600,Calle 2 Entre D Y E Las Toscas M33 S25,15200.0,Canelones Department,Atlántida,UY,1,1755104819000
+1299,1216,Nicolas Wasiluk,nicolaswasiluk@gmail.com,+5989975841900,,,Paysandú Department,Paysandú,UY,1,1755611203000
+1300,1217,Mariano Cundere,marianocundere@gmail.com,+5411155509571500,Conde 4246 3c,1430.0,Buenos Aires Province,Buenos Aires,AR,1,1755874229000
+1301,1218,Ignacio Maximiliano Alves Britos,VanessaPereyra425@hotmail.com,+5989627372800,Juan A Gonzalez,91000.0,Canelones Department,Pando,UY,1,1756250213000
+1302,1219,SILVIA GONZALES,SILVIAG@GMAIL.COM,,,,,,,1,1756827113000
+1303,1220,Adrian Abril,Abril.gaara@gmail.com,+5989589266500,Av 8 de octubre 4040 esquina pan de azúcar,11400.0,Montevideo Department,Montevideo,UY,1,1756925842000
+1304,1221,Bazzino - German Pena,germanpena@gmail.com,+5989440395500,Maria Stagnero de Munar nro3,,Canelones Department,Paso de Carrasco,UY,1,1757012834000
+1305,1222,JETBOX baxauma,tomasgamalesc@gmail.com,+1598757698384300,8249 NW 70 St,33166.0,Florida,Doral,US,1,1757365739000
+1306,1223,Maximiliano Perdomo,maximiliano.perdomo.gonzalez@gmail.com,+5989426376800,Eduardo Víctor Haedo 2322 apto 308,11200.0,Montevideo Department,Montevideo,UY,1,1757602305000
+1307,1224,Rodrigo Nicolas Amuz Balari,rodrigo@gmail.com,9861837300,,,,,,1,1757603096000
+1308,1225,Yudith Lilian Tabarez,judithliliantabarez@gmail.com,+5989234295200,Abayuba,33000.0,Treinta y Tres Department,Treinta y Tres,UY,1,1757645431000
+1309,1226,SERGIO PEREZ,Lola.ringoo@gmail.com,,,,,,,1,1757704075000
+1310,1227,Bazzino-Raul Rodríguez,raul@gmail.com,+598549113202260500,DAC Carmelo,,Colonia Department,Carmelo,UY,1,1757998352000
+1311,1228,Bazzino - José Mariano Castro,mariano@gmail.com,+5989562134300,Antonio Méndez Esq. Av Roosevelt - Torre GAUDI Apto. 201,20005.0,Maldonado Department,Punta del Este,UY,1,1757998449000
+1312,1229,Bazzino - Carlos Fernández,carlos@gmail.com,,DAC CARRASCO,,,,,1,1758032456000
+1313,1230,ESTEBAN PEREZ,estebancortesml@gmail.com,,,,,,,1,1758069741000
+1314,1231,PATRICIA PEREZ,jjimenez@tklogisticsuy.com,,,,,,,1,1758069789000

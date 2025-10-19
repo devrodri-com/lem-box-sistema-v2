@@ -10,7 +10,13 @@ export interface Client {
   phone?: string;
   address?: string;
   country: string; // libre, no union restringido
+  state?: string;
+  city?: string;
   contact?: string; // referente (Danny, IFS, etc.)
+  docType?: string;     // Tipo de documento (Cédula/DNI/Pasaporte/RUT/Otro)
+  docNumber?: string;   // Número del documento
+  postalCode?: string;  // Código postal
+  emailAlt?: string;    // Email adicional
   activo?: boolean;
   createdAt?: number;
 }

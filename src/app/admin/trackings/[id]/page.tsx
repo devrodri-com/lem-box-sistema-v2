@@ -35,7 +35,7 @@ interface Inbound {
 
 export default function TrackingDetailPage() {
   return (
-    <RequireAuth>
+    <RequireAuth requireAdmin>
       <PageInner />
     </RequireAuth>
   );

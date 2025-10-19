@@ -5,6 +5,8 @@ import RequireAuth from "@/components/RequireAuth";
 import { collection, doc, getDoc, getDocs, getFirestore, orderBy, query, updateDoc, where } from "firebase/firestore";
 import Script from "next/script";
 import type { Client } from "@/types/lem";
+import StatusBadge from "@/components/ui/StatusBadge";
+import { fmtWeightPairFromLb } from "@/lib/weight";
 
 type Shipment = {
   id: string;
@@ -28,7 +30,6 @@ type Box = {
   shipmentId?: string | null;
 };
 
-const LB_TO_KG = 0.45359237;
 
 export default function EstadoEnviosPage() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -128,8 +129,22 @@ export default function EstadoEnviosPage() {
     }
   };
 
+  function renderShipmentStatus(st: Shipment["status"]) {
+    return st === "open" ? (
+      <StatusBadge scope="shipment" status="open" />
+    ) : st === "shipped" ? (
+      <StatusBadge scope="shipment" status="shipped" />
+    ) : st === "arrived" ? (
+      <StatusBadge scope="shipment" status="arrived" />
+    ) : st === "closed" ? (
+      <StatusBadge scope="shipment" status="closed" />
+    ) : (
+      <span className="text-xs">{st}</span>
+    );
+  }
+
   return (
-    <RequireAuth>
+    <RequireAuth requireAdmin>
       <main className="p-4 md:p-8 space-y-6">
         <h1 className="text-2xl font-semibold">Estado de envíos</h1>
         {loading ? (
@@ -160,7 +175,7 @@ export default function EstadoEnviosPage() {
                       </td>
                       <td className="px-3 py-2">{s.country}</td>
                       <td className="px-3 py-2">{s.type}</td>
-                      <td className="px-3 py-2">{statusLabel(s.status)}</td>
+                      <td className="px-3 py-2">{renderShipmentStatus(s.status)}</td>
                       <td className="px-3 py-2">{s.openedAt ? new Date(s.openedAt).toLocaleDateString() : "-"}</td>
                       <td className="px-3 py-2">
                         {s.status === "open" && (
@@ -196,7 +211,7 @@ export default function EstadoEnviosPage() {
                                       </td>
                                       <td className="px-2 py-1">{clientsById[b.clientId]?.name || b.clientId}</td>
                                       <td className="px-2 py-1">{b.itemIds?.length || 0}</td>
-                                      <td className="px-2 py-1">{(Number(b.weightLb||0)*LB_TO_KG).toFixed(2)} kg</td>
+                                      <td className="px-2 py-1">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
                                       <td className="px-2 py-1">
                                         <button className="px-2 py-1 rounded border" onClick={() => removeBoxFromShipment(b, s)}>Eliminar de embarque</button>
                                       </td>
@@ -242,7 +257,7 @@ export default function EstadoEnviosPage() {
                       {detailItems.map((i) => (
                         <tr key={i.id} className="border-t">
                           <td className="p-2 font-mono">{i.tracking}</td>
-                          <td className="p-2">{(Number(i.weightLb||0)*LB_TO_KG).toFixed(2)} kg</td>
+                          <td className="p-2">{fmtWeightPairFromLb(Number(i.weightLb || 0))}</td>
                           <td className="p-2">{i.photoUrl ? (<a href={i.photoUrl} target="_blank" aria-label="Ver foto">📷</a>) : ("—")}</td>
                         </tr>
                       ))}
@@ -253,7 +268,7 @@ export default function EstadoEnviosPage() {
                   </table>
                 </div>
               )}
-              <div className="mt-3 text-sm">Peso total: {(Number(detailBox.weightLb||0)*LB_TO_KG).toFixed(2)} kg</div>
+              <div className="mt-3 text-sm">Peso total: {fmtWeightPairFromLb(Number(detailBox.weightLb || 0))}</div>
             </div>
           </div>
         ) : null}

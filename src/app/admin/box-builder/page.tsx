@@ -24,7 +24,7 @@ type ClientOption = Pick<Client, "id" | "code" | "name">;
 
 export default function BoxBuilderPage() {
   return (
-    <RequireAuth>
+    <RequireAuth requireAdmin>
       <PageInner />
     </RequireAuth>
   );

@@ -13,18 +13,14 @@ import {
   limit,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { Client, Carrier } from "@/types/lem";
-import { BrowserMultiFormatReader } from "@zxing/browser";
-import type { IScannerControls } from "@zxing/browser";
-import { useRef } from "react";
 
 const LB_TO_KG = 0.45359237;
 const KG_TO_LB = 1 / LB_TO_KG;
-type ImageMode = "photo" | "doc";
 
 // Resize/compress using a canvas. Returns a JPEG Blob.
-async function processImage(file: File, mode: ImageMode): Promise<Blob> {
+async function processImage(file: File): Promise<Blob> {
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const i = new Image();
@@ -33,8 +29,8 @@ async function processImage(file: File, mode: ImageMode): Promise<Blob> {
     i.src = url;
   });
 
-  const maxEdge = mode === "photo" ? 1600 : 2400; // documentos mantienen más resolución
-  const quality = mode === "photo" ? 0.82 : 0.92;
+  const maxEdge = 1600; // foto de paquete
+  const quality = 0.82;
 
   const { width, height } = img;
   const scale = Math.min(1, maxEdge / Math.max(width, height));
@@ -47,13 +43,6 @@ async function processImage(file: File, mode: ImageMode): Promise<Blob> {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No canvas context");
   ctx.drawImage(img, 0, 0, w, h);
-
-  // Para documentos chicos ya nítidos, evita recomprimir agresivo
-  const isSmallDoc = mode === "doc" && file.size < 400 * 1024;
-  if (isSmallDoc) {
-    // Devuelve el blob original si es pequeño
-    return file.slice(0, file.size, file.type);
-  }
 
   return await new Promise<Blob>((resolve) =>
     canvas.toBlob((b) => resolve(b as Blob), "image/jpeg", quality)
@@ -68,14 +57,13 @@ type Row = {
   weightLb: number;
   weightKg: number;
   photo?: File | null;
-  imageMode: ImageMode; // "photo" por defecto, "doc" para facturas
 };
 
 const carriers: Carrier[] = ["UPS", "FedEx", "USPS", "DHL", "Amazon", "Other"];
 
 export default function IngresoPage() {
   return (
-    <RequireAuth>
+    <RequireAuth requireAdmin>
       <PageInner />
     </RequireAuth>
   );
@@ -88,6 +76,16 @@ function PageInner() {
     for (const c of clients) if (c.id) m[c.id] = c as Client;
     return m;
   }, [clients]);
+
+  const [clientQuery, setClientQuery] = useState("");
+  const filteredClients = useMemo(() => {
+    const q = clientQuery.trim().toLowerCase();
+    if (!q) return clients;
+    return clients.filter((c) => (
+      `${c.code} ${c.name}`.toLowerCase().includes(q)
+    ));
+  }, [clients, clientQuery]);
+
   const [form, setForm] = useState<Row>({
     tracking: "",
     carrier: "UPS",
@@ -95,11 +93,10 @@ function PageInner() {
     weightLb: 0,
     weightKg: 0,
     photo: null,
-    imageMode: "photo",
   });
   const [saving, setSaving] = useState(false);
   type InboundRow = { id: string; tracking: string; carrier: Carrier; clientId: string; weightLb: number; photoUrl?: string; receivedAt: number; status: string };
-const [rows, setRows] = useState<InboundRow[]>([]);
+  const [rows, setRows] = useState<InboundRow[]>([]);
   const [errMsg, setErrMsg] = useState("");
   const midnight = useMemo(() => {
     const d = new Date();
@@ -107,16 +104,26 @@ const [rows, setRows] = useState<InboundRow[]>([]);
     return d.getTime();
   }, []);
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [scanning, setScanning] = useState(false);
-  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
-  const controlsRef = useRef<IScannerControls | null>(null);
-
-  const videoRefPhoto = useRef<HTMLVideoElement | null>(null);
-  const [photoActive, setPhotoActive] = useState(false);
+  // inputs ocultos para foto: cámara y archivo
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // Cámara embebida (getUserMedia)
+  const videoRefPhoto = useRef<HTMLVideoElement | null>(null);
+  const [photoActive, setPhotoActive] = useState(false);
+  // Botones LEM-BOX (paleta: #005f40, #eb6619, #cf6934)
+  const btnPrimaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+  const btnSecondaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+
+  // cortar cámara al desmontar
+  useEffect(() => () => {
+    try {
+      const media = videoRefPhoto.current?.srcObject as MediaStream | null;
+      media?.getTracks().forEach(t => t.stop());
+      if (videoRefPhoto.current) (videoRefPhoto.current as HTMLVideoElement).srcObject = null;
+    } catch {}
+  }, []);
 
   useEffect(() => {
     // cargar clientes
@@ -147,47 +154,44 @@ const [rows, setRows] = useState<InboundRow[]>([]);
         })
       )
     );
-
   }, [midnight]);
 
-  async function startScan() {
-    if (scanning) return;
-    setScanning(true);
-    if (!readerRef.current) readerRef.current = new BrowserMultiFormatReader();
-    const reader = readerRef.current;
-    controlsRef.current = await reader.decodeFromVideoDevice(
-      undefined,
-      videoRef.current!,
-      (result) => {
-        if (result) {
-          const value = result.getText().trim();
-          setForm((f) => ({ ...f, tracking: value }));
-          if (form.clientId && hasWeight()) {
-            setSaving(true);
-            setErrMsg("");
-            createInbound(value).finally(() => { setSaving(false); });
-          }
-          stopScan();
-        }
-      }
-    );
+  function hasWeight() {
+    return Number(form.weightLb) > 0 || Number(form.weightKg) > 0;
   }
 
-  async function stopScan() {
-    try {
-      await controlsRef.current?.stop();
-      controlsRef.current = null;
-    } finally {
-      setScanning(false);
-    }
+  const computeWeightLb = useCallback((): number => {
+    if (Number(form.weightLb) > 0) return Number(form.weightLb);
+    if (Number(form.weightKg) > 0) return Number((Number(form.weightKg) * KG_TO_LB).toFixed(2));
+    return 0;
+  }, [form.weightLb, form.weightKg]);
+
+  // Manejo de archivos
+  function onCameraPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] || null;
+    if (!f) return;
+    setForm((x) => ({ ...x, photo: f }));
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(String(reader.result));
+    reader.readAsDataURL(f);
   }
+  function onFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] || null;
+    if (!f) return;
+    setForm((x) => ({ ...x, photo: f }));
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(String(reader.result));
+    reader.readAsDataURL(f);
+  }
+
+  // --- Inline camera/photo functions ---
 
   async function startPhoto() {
     if (photoActive) return;
     setPhotoActive(true);
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     if (videoRefPhoto.current) {
-      videoRefPhoto.current.srcObject = stream as MediaStream;
+      (videoRefPhoto.current as HTMLVideoElement).srcObject = stream as MediaStream;
       await videoRefPhoto.current.play();
     }
   }
@@ -196,7 +200,7 @@ const [rows, setRows] = useState<InboundRow[]>([]);
     try {
       const media = videoRefPhoto.current?.srcObject as MediaStream | null;
       media?.getTracks().forEach(t => t.stop());
-      if (videoRefPhoto.current) videoRefPhoto.current.srcObject = null;
+      if (videoRefPhoto.current) (videoRefPhoto.current as HTMLVideoElement).srcObject = null;
     } finally {
       setPhotoActive(false);
     }
@@ -220,30 +224,7 @@ const [rows, setRows] = useState<InboundRow[]>([]);
     return file;
   }
 
-  function openFilePicker() {
-    fileInputRef.current?.click();
-  }
-
-  function onFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0] || null;
-    if (!f) return;
-    setForm((x) => ({ ...x, photo: f }));
-    const reader = new FileReader();
-    reader.onload = () => setPhotoPreview(String(reader.result));
-    reader.readAsDataURL(f);
-  }
-
-  function hasWeight() {
-    return Number(form.weightLb) > 0 || Number(form.weightKg) > 0;
-  }
-
-  const computeWeightLb = useCallback((): number => {
-    if (Number(form.weightLb) > 0) return Number(form.weightLb);
-    if (Number(form.weightKg) > 0) return Number((Number(form.weightKg) * KG_TO_LB).toFixed(2));
-    return 0;
-  }, [form.weightLb, form.weightKg]);
-
-  // Nota: la foto es opcional para todos los carriers.
+  // Crear inbound
   const createInbound = useCallback(async (trackingValue: string) => {
     // Unicidad por tracking
     const dupeSnap = await getDocs(query(collection(db, "inboundPackages"), where("tracking", "==", trackingValue), limit(1)));
@@ -257,7 +238,7 @@ const [rows, setRows] = useState<InboundRow[]>([]);
 
     let photoUrl: string | undefined;
     if (form.photo) {
-      const blob = await processImage(form.photo, form.imageMode);
+      const blob = await processImage(form.photo);
       const dest = `inbound/${Date.now()}-${trackingValue}.jpg`;
       const r = ref(storage, dest);
       await uploadBytes(r, blob, { contentType: "image/jpeg" });
@@ -273,21 +254,20 @@ const [rows, setRows] = useState<InboundRow[]>([]);
       receivedAt: Timestamp.now().toMillis(),
     });
     setRows([{ id: docRef.id, tracking: trackingValue, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, receivedAt: Date.now(), status: "received" }, ...rows]);
-    setForm({ tracking: "", carrier: form.carrier, clientId: form.clientId, weightLb: 0, weightKg: 0, photo: null, imageMode: form.imageMode });
+    setForm({ tracking: "", carrier: form.carrier, clientId: form.clientId, weightLb: 0, weightKg: 0, photo: null });
     setPhotoPreview(null);
     return true;
-  }, [form.carrier, form.clientId, form.imageMode, form.photo, rows, computeWeightLb]);
+  }, [form.carrier, form.clientId, form.photo, rows, computeWeightLb]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.tracking || !form.clientId || !form.weightLb) return;
+    if (!form.tracking || !form.clientId || !hasWeight()) return;
     setSaving(true);
     setErrMsg("");
     const trackingValue = form.tracking.trim();
-    if (!hasWeight()) { setSaving(false); setErrMsg("Ingrese un peso válido en lb o kg."); return; }
     const ok = await createInbound(trackingValue);
-    if (!ok) { setSaving(false); return; }
     setSaving(false);
+    if (!ok) return;
   }
 
   return (
@@ -296,35 +276,53 @@ const [rows, setRows] = useState<InboundRow[]>([]);
       {errMsg ? (
         <div className="p-3 rounded border border-red-300 bg-red-50 text-sm text-red-700">{errMsg}</div>
       ) : null}
+
       <div className="bg-white text-neutral-900 rounded-lg shadow p-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* TRACKING + SCAN + CARRIER */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="md:col-span-2">
-            <label className="text-xs font-medium text-neutral-500">Ingreso de tracking</label>
-            <input
-              className="border rounded-md px-4 h-12 w-full bg-white text-base"
-              placeholder="Escanear o escribir tracking"
-              value={form.tracking}
-              onChange={(e) => setForm((f) => ({ ...f, tracking: e.target.value }))}
-            />
-          </div>
-          <div className="flex md:block gap-2 md:gap-0">
-            <div className="w-1/2 md:w-full">
-              <label className="text-xs font-medium text-neutral-500">&nbsp;</label>
-              <button
-                type="button"
-                onClick={scanning ? stopScan : startScan}
-                className="h-12 w-full rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm"
-                aria-pressed={scanning}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* BUSCAR CLIENTE + SELECT */}
+          {/* removed client search and filter UI */}
+
+          {/* CLIENTE SELECT + TRACKING */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="md:col-span-2">
+              <label className="text-xs font-medium text-neutral-500">Cliente</label>
+              <input
+                className="mt-1 mb-1 border rounded-md px-4 h-10 w-full bg-white text-base"
+                placeholder="Escribir para buscar (código o nombre)"
+                value={clientQuery}
+                onChange={(e) => setClientQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const first = filteredClients[0];
+                    if (first?.id) setForm((f) => ({ ...f, clientId: String(first.id) }));
+                  }
+                }}
+              />
+              <select
+                className="mt-1 border rounded-md px-4 h-12 w-full bg-white text-base"
+                value={form.clientId}
+                onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
               >
-                {scanning ? "Detener" : "Escanear"}
-              </button>
+                <option value="">Seleccionar…</option>
+                {filteredClients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11px] text-neutral-500">Mostrando {filteredClients.length} de {clients.length}</p>
             </div>
-            <div className="w-1/2 md:w-full">
+            <div>
+              <label className="text-xs font-medium text-neutral-500">Ingreso de tracking</label>
+              <input
+                className="mt-1 border rounded-md px-4 h-12 w-full bg-white text-base"
+                placeholder="Escanear o escribir tracking"
+                value={form.tracking}
+                onChange={(e) => setForm((f) => ({ ...f, tracking: e.target.value }))}
+              />
+            </div>
+            <div>
               <label className="text-xs font-medium text-neutral-500">Carrier</label>
               <select
-                className="border rounded-md px-4 h-12 w-full bg-white text-base"
+                className="mt-1 border rounded-md px-4 h-12 w-full bg-white text-base"
                 value={form.carrier}
                 onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value as Carrier }))}
               >
@@ -334,111 +332,119 @@ const [rows, setRows] = useState<InboundRow[]>([]);
               </select>
             </div>
           </div>
-        </div>
-        {scanning ? (
-          <div>
-            <video ref={videoRef} className="w-full rounded-md border" autoPlay muted playsInline />
-          </div>
-        ) : null}
 
-        {/* CLIENTE */}
-        <div>
-          <label className="text-xs font-medium text-neutral-500">Cliente</label>
-          <select
-            className="mt-1 border rounded-md px-4 h-12 w-full bg-white text-base"
-            value={form.clientId}
-            onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
-          >
-            <option value="">Seleccionar…</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* PESO */}
-        <div>
-          <label className="text-xs font-medium text-neutral-500">Peso</label>
-          <div className="mt-1 grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2">
-              <input
-                className="border rounded-md px-4 h-12 w-full bg-white text-base"
-                type="number" step="0.01" placeholder="0.00"
-                value={form.weightLb || ""}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setForm((f) => ({
-                    ...f,
-                    weightLb: v === "" ? 0 : Number(v),
-                    weightKg: v === "" ? 0 : Number((Number(v) * LB_TO_KG).toFixed(2)),
-                  }));
-                }}
-              />
-              <span className="text-xs text-neutral-500">lb</span>
+          {/* PESO: tarjetas grandes */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-start gap-4">
+            {/* Libra */}
+            <div className="rounded-lg border ring-1 ring-slate-200 overflow-hidden">
+              <div className="p-4">
+                <input
+                  className="w-full text-center text-3xl md:text-4xl font-semibold outline-none"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={form.weightLb || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm((f) => ({
+                      ...f,
+                      weightLb: v === "" ? 0 : Number(v),
+                      weightKg: v === "" ? 0 : Number((Number(v) * LB_TO_KG).toFixed(3)),
+                    }));
+                  }}
+                />
+              </div>
+              <div className="py-2 text-white text-sm text-center font-semibold" style={{ backgroundColor: "#005f40" }}>
+                LIBRA
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                className="border rounded-md px-4 h-12 w-full bg-white text-base"
-                type="number" step="0.01" placeholder="0.00"
-                value={form.weightKg || ""}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setForm((f) => ({
-                    ...f,
-                    weightKg: v === "" ? 0 : Number(v),
-                    weightLb: v === "" ? 0 : Number((Number(v) * KG_TO_LB).toFixed(2)),
-                  }));
-                }}
-              />
-              <span className="text-xs text-neutral-500">kg</span>
+
+            <div className="hidden md:grid place-items-center text-3xl font-bold select-none">=</div>
+
+            {/* Kilogramo */}
+            <div className="rounded-lg border ring-1 ring-slate-200 overflow-hidden">
+              <div className="p-4">
+                <input
+                  className="w-full text-center text-3xl md:text-4xl font-semibold outline-none"
+                  type="number"
+                  step="0.001"
+                  placeholder="0.000"
+                  value={form.weightKg || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm((f) => ({
+                      ...f,
+                      weightKg: v === "" ? 0 : Number(v),
+                      weightLb: v === "" ? 0 : Number((Number(v) * KG_TO_LB).toFixed(2)),
+                    }));
+                  }}
+                />
+              </div>
+              <div className="py-2 text-white text-sm text-center font-semibold" style={{ backgroundColor: "#005f40" }}>
+                KILOGRAMO
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* FOTO / DOCUMENTO */}
-        <div>
-          <label className="text-xs font-medium text-neutral-500">Foto del paquete / documento</label>
-          <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-            <button type="button" onClick={photoActive ? stopPhoto : startPhoto} className="h-12 w-full rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm">
+          {/* FOTO */}
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => (photoActive ? stopPhoto() : startPhoto())}
+              className={btnSecondaryCls}
+            >
               {photoActive ? "Cerrar cámara" : "Tomar foto"}
             </button>
-            <button type="button" className="h-12 w-full rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm" onClick={async () => { const f = await capturePhoto(); if (f) setForm((x) => ({ ...x, photo: f })); }} disabled={!photoActive}>
+            <button
+              type="button"
+              onClick={async () => { const f = await capturePhoto(); if (f) setForm((x) => ({ ...x, photo: f })); }}
+              disabled={!photoActive}
+              className={btnPrimaryCls}
+            >
               Capturar
             </button>
-            <button type="button" className="h-12 w-full rounded-md border bg-white text-neutral-900 hover:bg-neutral-100 text-sm" onClick={openFilePicker}>
-              Adjuntar
-            </button>
-            <select
-              className="h-12 w-full px-4 rounded-md border text-sm bg-white"
-              value={form.imageMode}
-              onChange={(e) => setForm((f) => ({ ...f, imageMode: e.target.value as ImageMode }))}
-              title="Tipo de imagen"
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={btnSecondaryCls}
             >
-              <option value="photo">Foto paquete (comprimir)</option>
-              <option value="doc">Documento nítido</option>
-            </select>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFilePicked} />
-          </div>
-          {photoPreview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoPreview} alt="preview" className="mt-2 h-20 w-20 object-cover rounded-md border" />
-          ) : null}
-          {photoActive ? (
-            <div className="mt-2">
-              <video ref={videoRefPhoto} className="w-full rounded-md border" autoPlay muted playsInline />
-            </div>
-          ) : null}
-        </div>
-
-        {/* BOTÓN GUARDAR sticky en mobile */}
-        <div className="md:static fixed left-0 right-0 bottom-0 bg-white/90 backdrop-blur border-t p-3 z-10">
-          <div className="max-w-3xl mx-auto text-right">
-            <button disabled={saving} className="h-12 px-6 rounded-md text-white text-base" style={{ backgroundColor: saving ? '#3b3b3b' : '#005f40' }}>
-              {saving ? 'Guardando…' : 'Guardar'}
+              Adjuntar foto
             </button>
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*;capture=camera"
+              capture="environment"
+              className="hidden"
+              onChange={onCameraPick}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onFilePick}
+            />
+            {photoPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoPreview} alt="preview" className="h-12 w-12 object-cover rounded-md border" />
+            ) : null}
+            {photoActive ? (
+              <div className="mt-2">
+                <video ref={videoRefPhoto} className="w-full rounded-md border" autoPlay muted playsInline />
+              </div>
+            ) : null}
           </div>
-        </div>
-      </form>
+
+          {/* BOTÓN GUARDAR sticky en mobile */}
+          <div className="md:static fixed left-0 right-0 bottom-0 bg-white/90 backdrop-blur border-t p-3 z-10">
+            <div className="max-w-3xl mx-auto text-right">
+              <button disabled={saving} className={btnPrimaryCls}>
+                {saving ? 'Guardando…' : 'Enviar'}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
 
       <section>
@@ -450,14 +456,12 @@ const [rows, setRows] = useState<InboundRow[]>([]);
               className="border rounded p-3 flex items-center gap-3"
             >
               {r.photoUrl ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={r.photoUrl}
-                    alt=""
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                </>
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={r.photoUrl}
+                  alt=""
+                  className="w-16 h-16 object-cover rounded"
+                />
               ) : (
                 <div className="w-16 h-16 bg-neutral-100 rounded" />
               )}

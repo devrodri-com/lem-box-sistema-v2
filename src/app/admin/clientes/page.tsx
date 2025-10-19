@@ -3,7 +3,7 @@
 import RequireAuth from "@/components/RequireAuth";
 import { db } from "@/lib/firebase";
 import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, Timestamp, updateDoc, runTransaction } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { Client } from "@/types/lem";
 
 const COUNTRIES: string[] = [
@@ -24,7 +24,7 @@ const STATES_BY_COUNTRY: Record<string, string[]> = {
 
 export default function ClientesPage() {
   return (
-    <RequireAuth>
+    <RequireAuth requireAdmin>
       <PageInner />
     </RequireAuth>
   );
@@ -33,6 +33,8 @@ export default function ClientesPage() {
 function PageInner() {
   const [rows, setRows] = useState<Client[]>([]);
   const [busyId, setBusyId] = useState<string>("");
+  const [q, setQ] = useState("");
+  const [countryFilter, setCountryFilter] = useState<string>("");
 
   // Form fields
   const [name, setName] = useState("");
@@ -78,6 +80,17 @@ function PageInner() {
     );
   }, []);
 
+  const filteredRows = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return rows.filter((c) => {
+      const okCountry = !countryFilter || ((c.country || "").toLowerCase() === countryFilter.toLowerCase());
+      if (!query) return okCountry;
+      const name = (c.name || "").toLowerCase();
+      const code = (c.code || "").toLowerCase();
+      return okCountry && (name.includes(query) || code.includes(query));
+    });
+  }, [rows, q, countryFilter]);
+
   async function nextClientCode(): Promise<string> {
     const counterRef = doc(db, 'counters', 'clients');
     const n = await runTransaction(db, async (tx) => {
@@ -95,23 +108,23 @@ function PageInner() {
     e.preventDefault();
     if (!name || !country || !email || !password) return;
     const code = await nextClientCode();
-    const payload: Omit<Client, 'id'> & { documento: { tipo: string; numero: string | null }; emailAlt?: string | null; state?: string | null; city?: string | null; postalCode?: string | null; contact?: string | undefined } = {
+    const payload: Omit<Client, 'id'> & { documento: { tipo: string; numero: string | null } } = {
       code,
       name,
       country,
       documento: { tipo: documentType, numero: documentNumber || null },
       email: email,
-      emailAlt: emailAlt || null,
+      emailAlt: emailAlt || undefined,
       phone: phone || undefined,
       address: address || undefined,
-      state: stateName || null,
-      city: city || null,
-      postalCode: postalCode || null,
+      state: stateName || undefined,
+      city: city || undefined,
+      postalCode: postalCode || undefined,
       contact: contact || undefined,
       activo: true,
       createdAt: Timestamp.now().toMillis(),
     };
-    const sanitized = Object.fromEntries(Object.entries(payload).filter(([, v]) => v !== undefined));
+    const sanitized = Object.fromEntries(Object.entries(payload).filter(([, v]) => v != null));
     const ref = await addDoc(collection(db, 'clients'), sanitized as any);
     setRows([{ id: ref.id, ...(sanitized as any) }, ...rows]);
     resetForm();
@@ -146,12 +159,47 @@ function PageInner() {
         <h1 className="text-2xl font-semibold">Clientes</h1>
         <button
           type="button"
-          className="h-10 px-4 rounded-md text-white"
-          style={{ backgroundColor: '#005f40' }}
           onClick={() => setOpenCreate(true)}
+          className="h-10 px-4 rounded-md bg-brand-primary text-white shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-brand-primary"
         >
-          Crear nuevo cliente
+          + Crear nuevo cliente
         </button>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="relative">
+          <label className="text-xs font-medium text-neutral-600">Buscar</label>
+          <input
+            className="mt-1 h-11 w-full rounded-md border border-slate-300 pl-10 pr-9"
+            placeholder="Nombre o Nº cliente"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <span className="absolute left-3 top-[38px] text-neutral-400" aria-hidden>🔎</span>
+          {q ? (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              className="absolute right-3 top-[34px] text-neutral-500"
+              aria-label="Limpiar búsqueda"
+            >
+              ✕
+            </button>
+          ) : null}
+        </div>
+        <div>
+          <label className="text-xs font-medium text-neutral-600">País</label>
+          <select
+            className="mt-1 h-11 w-full rounded-md border border-slate-300"
+            value={countryFilter}
+            onChange={(e) => setCountryFilter(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {COUNTRIES.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Modal de creación */}
@@ -195,6 +243,16 @@ function PageInner() {
                 </div>
                 <div className="md:col-span-2">
                   <input className="border rounded px-4 h-12 w-full" type="password" placeholder="Contraseña (provisional)" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                <div className="md:col-span-2">
+                  <input
+                    className="border rounded px-4 h-12 w-full"
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="Teléfono"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
                 </div>
 
                 <div className="md:col-span-3">
@@ -245,7 +303,7 @@ function PageInner() {
       ) : null}
 
       <section className="grid gap-2">
-        {rows.map((c) => (
+        {filteredRows.map((c) => (
           <div key={c.id} className="border rounded p-4 flex items-center justify-between gap-3">
             <div>
               <div className="text-sm"><b>{c.code}</b> — {c.name}</div>
@@ -274,8 +332,10 @@ function PageInner() {
             </div>
           </div>
         ))}
-        {!rows.length ? (
+        {rows.length === 0 ? (
           <div className="text-sm text-neutral-500">Sin clientes aún.</div>
+        ) : filteredRows.length === 0 ? (
+          <div className="text-sm text-neutral-500">Sin resultados para la búsqueda.</div>
         ) : null}
       </section>
     </main>
