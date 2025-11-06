@@ -1,7 +1,18 @@
-# 📦 LEM-BOX System V2
-
-Web logistics system for **LEM-BOX**, built with **Next.js 15 + Firebase**.  
+# 📦 LEM-BOX System V2  
+_Logistics & shipping management system built with Next.js 15 + Firebase_
 Enables end‑to‑end management of packages and boxes in the Miami warehouse, with access for administrators, operators, and clients.
+
+[![Tests](https://img.shields.io/github/actions/workflow/status/softbmllc/lem-box-sistema-v2/tests.yml?label=Tests&logo=vitest&logoColor=white)]()
+[![Firebase](https://img.shields.io/badge/Firebase-secured-orange?logo=firebase)]()
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
+
+## ✨ Highlights
+- Full **admin + client** portal (Next.js App Router)
+- **Role-based security** (Firestore Rules tested with Emulator)
+- **Vitest** suite with integration, unit & rule tests
+- **6×4 label generation** (jsPDF) + **dual weight** handling (lb/kg)
+- **Mobile-first, accessible, bilingual-ready**
 
 ---
 
@@ -273,6 +284,12 @@ Backend services managed with Firebase (Firestore, Auth, Storage).
 - Full smoke test of admin and client flows.
 
 ---
+
+## 🌐 Portfolio
+Project: [lem-box.com](https://lem-box.com)  
+Repository: [github.com/softbmllc/lem-box-sistema-v2](https://github.com/softbmllc/lem-box-sistema-v2)
+
+LEM-BOX V2 is a modern logistics platform built with performance, accessibility, and data security in mind.
 
 ## 👨‍💻 Team
 
