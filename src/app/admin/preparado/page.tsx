@@ -36,6 +36,22 @@ type Box = {
   status?: "open" | "closed"; // estado caja
 };
 
+const COUNTRY_OPTIONS: { value: string; label: string }[] = [
+  { value: "UY", label: "Uruguay" },
+  { value: "AR", label: "Argentina" },
+  { value: "US", label: "United States" },
+];
+function countryLabel(code?: string) {
+  const f = COUNTRY_OPTIONS.find(c => c.value === code);
+  return f ? f.label : (code || "—");
+}
+
+// Compatibilidad: cajas viejas pueden tener country como etiqueta larga, otras como código.
+function countryMatches(docCountry: string | undefined, filterCode: string) {
+  const label = countryLabel(filterCode);
+  return docCountry === filterCode || docCountry === label;
+}
+
 // Minimal inline icons (no extra deps)
 const IconPlus = (props: React.SVGProps<SVGSVGElement>) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 5v14M5 12h14"/></svg>
@@ -58,7 +74,7 @@ function PageInner() {
   const btnPrimaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
   const btnSecondaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
   const tabBtn = (active: boolean) =>
-    `px-3 h-9 text-sm rounded-full ${active ? 'bg-[#005f40] text-white shadow' : 'text-slate-700 hover:bg-white'}`;
+    `px-3 h-9 text-sm font-semibold rounded-full ${active ? 'bg-[#005f40] !text-white font-bold shadow' : 'text-slate-800 hover:bg-white'}`;
   const linkCls = "text-sky-700 underline hover:text-sky-800 focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm";
 
   return (
@@ -175,7 +191,7 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `cajas_${country}_${type}.csv`; a.click(); URL.revokeObjectURL(url);
+    a.href = url; a.download = `cajas_${countryLabel(country)}_${type}.csv`; a.click(); URL.revokeObjectURL(url);
   }
   const [clients, setClients] = useState<Client[]>([]);
   const clientsById = useMemo(() => {
@@ -189,7 +205,7 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
     });
   }, []);
 
-  const [country, setCountry] = useState<string>("Uruguay");
+  const [country, setCountry] = useState<string>("UY");
   const [type, setType] = useState<ShipmentType>("COMERCIAL");
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [picked, setPicked] = useState<Record<string, boolean>>({});
@@ -207,13 +223,17 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
   const [targetShipmentId, setTargetShipmentId] = useState("");
 
   useEffect(() => {
-    // Cajas sin embarque, filtradas por país y tipo
+    // Compatibilidad: hay cajas viejas con country como etiqueta ("Uruguay") y nuevas con código ("UY").
+    // Traemos por "type" y filtramos país en cliente admitiendo ambos formatos.
     getDocs(query(
       collection(db, "boxes"),
-      where("shipmentId", "==", null),
-      where("country", "==", country),
       where("type", "==", type)
-    )).then(s => setBoxes(s.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Box, 'id'>) }))));
+    )).then(s => {
+      const all = s.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Box, 'id'>) }));
+      const noShipment = all.filter(b => (b as any).shipmentId === null || !("shipmentId" in (b as any)));
+      const byCountry = noShipment.filter(b => countryMatches((b as any).country, country));
+      setBoxes(byCountry);
+    });
     setPicked({});
   }, [country, type]);
 
@@ -265,7 +285,6 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
         const types = new Set(boxesData.map(b => b.type));
         if (countries.size !== 1 || types.size !== 1) throw new Error("El embarque debe tener cajas del mismo país y tipo.");
         for (const b of boxesData) {
-          if (b.status !== "closed") throw new Error(`Caja ${b.code} no está cerrada`);
           if (b.shipmentId) throw new Error(`Caja ${b.code} ya tiene embarque`);
         }
 
@@ -325,7 +344,6 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
         if (countries.size !== 1 || types.size !== 1) throw new Error("Las cajas deben ser del mismo país y tipo.");
         if (ship.country !== boxesData[0].country || ship.type !== boxesData[0].type) throw new Error("País/tipo no coinciden con el embarque.");
         for (const b of boxesData) {
-          if (b.status !== "closed") throw new Error(`Caja ${b.code} no está cerrada`);
           if (b.shipmentId) throw new Error(`Caja ${b.code} ya tiene embarque`);
         }
 
@@ -349,10 +367,28 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
 
   async function closeShipment() {
     if (!targetShipmentId) return;
-    await updateDoc(doc(db, "shipments", targetShipmentId), { status: "shipped", closedAt: Date.now() });
-    // quitar de la lista local
-    setShipments(list => list.filter(s => s.id !== targetShipmentId));
-    setTargetShipmentId("");
+    try {
+      await runTransaction(db, async (tx) => {
+        const shipRef = doc(db, "shipments", targetShipmentId);
+        const shipSnap = await tx.get(shipRef);
+        if (!shipSnap.exists()) throw new Error("Embarque no encontrado");
+        const ship = shipSnap.data() as any;
+        if (ship.status !== "open") throw new Error("El embarque no está abierto");
+        const boxIds: string[] = Array.isArray(ship.boxIds) ? ship.boxIds : [];
+
+        // Cerrar embarque y cajas
+        tx.update(shipRef, { status: "shipped", closedAt: Date.now() });
+        for (const id of boxIds) {
+          const boxRef = doc(db, "boxes", id);
+          tx.update(boxRef, { status: "closed" });
+        }
+      });
+      // quitar de la lista local
+      setShipments(list => list.filter(s => s.id !== targetShipmentId));
+      setTargetShipmentId("");
+    } catch (e: any) {
+      alert(e?.message || "No se pudo cerrar el embarque");
+    }
   }
 
   async function openBoxDetail(box: Box) {
@@ -437,9 +473,9 @@ function printBoxLabel(box: Box) {
           <div>
             <label className="text-xs text-neutral-500">País</label>
             <select className="border rounded p-2 w-full" value={country} onChange={(e)=> setCountry(e.target.value)}>
-              <option>Uruguay</option>
-              <option>Argentina</option>
-              <option>United States</option>
+            {COUNTRY_OPTIONS.map(c => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
             </select>
           </div>
           <div>
@@ -502,7 +538,7 @@ function printBoxLabel(box: Box) {
                 <td className="p-2 font-mono"><button className={linkCls} onClick={() => openBoxDetail(b)}>{b.code}</button></td>
                 <td className="p-2">{fmtDate(b.createdAt)}</td>
                 <td className="p-2">{clientsById[b.clientId] ? `${clientsById[b.clientId].code} — ${clientsById[b.clientId].name}` : b.clientId}</td>
-                <td className="p-2">{b.country}</td>
+                <td className="p-2">{countryLabel(b.country)}</td>
                 <td className="p-2">{b.type}</td>
                 <td className="p-2 text-right tabular-nums">{b.itemIds?.length || 0}</td>
                 <td className="p-2 text-right tabular-nums">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>

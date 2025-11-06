@@ -48,7 +48,7 @@ function getDocTypes(country: string) {
   return DOC_TYPES_BY_COUNTRY[country] || ["Pasaporte", "Otro"];
 }
 const tabBtn = (active: boolean) =>
-  `px-3 h-9 text-sm rounded-full ${active ? "bg-[#005f40] text-white shadow" : "text-slate-700 hover:bg-white"}`;
+  `px-3 h-9 text-sm font-semibold rounded-full ${active ? 'bg-[#005f40] !text-white font-bold shadow' : 'text-slate-800 hover:bg-white'}`;
 
 export default function MiPerfilPage() {
   const router = useRouter();

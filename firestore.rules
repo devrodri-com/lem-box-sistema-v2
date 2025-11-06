@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    // ===== Helpers =====
+    function hasAuth() { return request.auth != null; }
+    function userDoc() { return hasAuth() ? get(/databases/$(db)/documents/users/$(request.auth.uid)) : null; }
+    function role() {
+      return hasAuth()
+        ? (userDoc().data.role != null ? userDoc().data.role
+           : (request.auth.token.role != null ? request.auth.token.role : null))
+        : null;
+    }
+    function clientId() {
+      return hasAuth()
+        ? (userDoc().data.clientId != null ? userDoc().data.clientId
+           : (request.auth.token.clientId != null ? request.auth.token.clientId : null))
+        : null;
+    }
+    function isSuperAdmin() { return role() == 'superadmin' || request.auth.token.superadmin == true; }
+    function isAdmin()      { return role() == 'admin'      || request.auth.token.admin == true; }
+    function isStaff()      { return isSuperAdmin() || isAdmin(); }
+    function isOwner(cid)   { return clientId() != null && clientId() == cid; }
+
+    // ===== Validators / enums =====
+    function isNonEmptyString(s) { return s is string && s.size() > 0; }
+    function isPositive(n) { return n is number && n > 0; }
+    function isNonNegNumber(n) { return n is number && n >= 0; }
+    function isCarrier(c) { return ['UPS','FedEx','USPS','DHL','Amazon','Other'].hasAny([c]); }
+    function isInboundStatus(s) { return ['received','boxed','void'].hasAny([s]); }
+    function isBoxStatus(s) { return ['open','closed'].hasAny([s]); }
+
+    // Timestamp == milisegundos
+    function eqTsOrInt(a, b) {
+      return (a == b)
+        || (a is int && b is timestamp && a == b.toMillis())
+        || (a is timestamp && b is int && b == a.toMillis());
+    }
+
+    // Transiciones válidas
+    function inboundTransition(old, neu) {
+      return (old == neu)
+          || (old == 'received' && (neu == 'boxed' || neu == 'void'))
+          || (old == 'boxed' && neu == 'void');
+    }
+
+    // ===== users =====
+    match /users/{uid} {
+      allow read:   if isStaff() || (hasAuth() && (uid == request.auth.uid || resource.data.uid == request.auth.uid));
+      allow create: if hasAuth() && (uid == request.auth.uid || request.resource.data.uid == request.auth.uid);
+      allow update: if isStaff() || (hasAuth() && (uid == request.auth.uid || resource.data.uid == request.auth.uid));
+      allow delete: if isSuperAdmin();
+    }
+
+    // ===== clients =====
+    match /clients/{id} {
+      allow read: if isStaff() || isOwner(id) || (hasAuth() && resource.data.email == request.auth.token.email);
+      allow update: if isStaff() || (isOwner(id) && resource.data.diff(request.resource.data).changedKeys().hasOnly(['name','phone','country','state','city','address']));
+      allow create, delete: if isStaff();
+    }
+
+    // ===== inboundPackages =====
+    match /inboundPackages/{inbId} {
+      allow read: if isStaff() || isOwner(resource.data.clientId);
+
+      allow create: if isStaff() &&
+        isNonEmptyString(request.resource.data.tracking) &&
+        isCarrier(request.resource.data.carrier) &&
+        isNonEmptyString(request.resource.data.clientId) &&
+        isPositive(request.resource.data.weightLb) &&
+        isInboundStatus(request.resource.data.status);
+
+      allow update: if isStaff() &&
+        request.resource.data.tracking == resource.data.tracking &&
+        request.resource.data.clientId == resource.data.clientId &&
+        isInboundStatus(request.resource.data.status) &&
+        inboundTransition(resource.data.status, request.resource.data.status) &&
+        (request.resource.data.weightLb is number) &&
+        eqTsOrInt(request.resource.data.receivedAt, resource.data.receivedAt) &&
+        (
+          request.resource.data.boxedAt == resource.data.boxedAt ||
+          (
+            resource.data.boxedAt == null &&
+            resource.data.status == 'received' &&
+            request.resource.data.status == 'boxed' &&
+            isNonNegNumber(request.resource.data.boxedAt)
+          )
+        ) &&
+        (
+          !(resource.data.status == 'boxed' && request.resource.data.status == 'void') ||
+          isNonEmptyString(request.resource.data.voidReason)
+        );
+
+      allow delete: if isStaff();
+    }
+
+    // ===== boxes =====
+    match /boxes/{boxId} {
+      allow read: if isStaff() || isOwner(resource.data.clientId);
+
+      allow create: if isStaff() &&
+        isNonEmptyString(request.resource.data.code) &&
+        isNonEmptyString(request.resource.data.clientId) &&
+        (request.resource.data.itemIds is list) &&
+        isBoxStatus(request.resource.data.status);
+
+      allow update: if isStaff() &&
+        request.resource.data.clientId == resource.data.clientId &&
+        isBoxStatus(request.resource.data.status);
+
+      allow delete: if isStaff();
+    }
+
+    // ===== shipments =====
+    match /shipments/{id} {
+      allow read: if isStaff() || (clientId() != null && clientId() in resource.data.clientIds);
+      allow write: if isStaff();
+    }
+
+    // ===== trackingAlerts =====
+    match /trackingAlerts/{id} {
+      allow create: if hasAuth() && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if isStaff();
+    }
+
+    // ===== counters/admins =====
+    match /counters/{id} { allow read, write: if isStaff(); }
+    match /admins/{uid}  { allow read, write: if isSuperAdmin(); }
+
+    // ===== BYPASS GLOBAL SOLO PARA TU UID (temporal) =====
+    match /{document=**} {
+      allow write: if hasAuth() && request.auth.uid == '6zmyM2JUKVbnki3eHWtNnPoHQfs1';
+      allow read: if false;
+    }
+  }
+}

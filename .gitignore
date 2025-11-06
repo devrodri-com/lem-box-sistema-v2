@@ -40,5 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# firebase credentials
+# firebase credentials and emulator logs
 serviceAccount.json
+firebase-debug.log
+firestore-debug.log
+*.key.json
+*.cred.json
+.firebase/

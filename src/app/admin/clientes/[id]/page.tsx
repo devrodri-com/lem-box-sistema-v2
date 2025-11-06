@@ -79,7 +79,7 @@ function PageInner() {
   const btnPrimaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
   const btnSecondaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
   const tabBtn = (active: boolean) =>
-    `px-3 h-9 text-sm rounded-full ${active ? 'bg-[#005f40] text-white shadow' : 'text-slate-700 hover:bg-white'}`;
+    `px-3 h-9 text-sm font-semibold rounded-full ${active ? 'bg-[#005f40] !text-white font-bold shadow' : 'text-slate-800 hover:bg-white'}`;
 
   // cargar cliente y movimientos
   useEffect(() => {

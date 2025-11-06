@@ -116,8 +116,7 @@ function PageInner() {
 
   useEffect(() => {
     async function load() {
-      const qs: any[] = [];
-      let inboundQ: any = query(collection(db, "inboundPackages"), orderBy("receivedAt", "desc"));
+            let inboundQ: any = query(collection(db, "inboundPackages"), orderBy("receivedAt", "desc"));
       if (dateFrom) {
         inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
       }
