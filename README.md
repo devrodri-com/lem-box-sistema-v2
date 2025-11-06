@@ -159,6 +159,33 @@ service cloud.firestore {
 
 </details>
 
+## 🧪 Testing & QA Automation
+
+LEM‑BOX V2 includes a complete automated testing suite to ensure functional accuracy, data integrity, and rule enforcement across the system.
+
+### Testing stack
+- **Vitest** for unit, integration, and UI component tests.
+- **Firebase Emulator Suite** for Firestore Rules validation.
+- **Playwright** for end‑to‑end (E2E) browser automation.
+
+### Coverage
+- Unit & integration: services (`userService`, utilities like `formatDate`, `weight`).
+- UI: visual and DOM interaction tests (`ContactButton`, smoke tests).
+- Firestore Rules: verified with Emulator (`users`, `clients`, `boxes`, `inboundPackages`, `shipments`).
+- E2E: login, admin panel access, and client portal flow.
+
+All automated tests currently **pass successfully** (`pnpm test:all ✅`).
+
+### Test scripts
+```bash
+pnpm test         # Unit / integration / UI
+pnpm test:rules   # Firestore rules (Emulator)
+pnpm test:all     # Full suite (with Emulator)
+pnpm e2e          # Playwright E2E
+```
+
+---
+
 ## 🧩 UI conventions
 - **CTAs**: **orange** `#eb6619`; secondary with border and **green** focus `#005f40`.
 - **Status**: `StatusBadge` (Received/Consolidated; Open/In transit/At destination/Closed).
