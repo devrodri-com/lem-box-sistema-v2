@@ -313,7 +313,7 @@ Backend services managed with Firebase (Firestore, Auth, Storage).
 ---
 
 ## 🌐 Portfolio
-Project: [lem-box.com.uy](https://lem-box.com)  
+Project: [lem-box.com.uy](https://lem-box.com.uy)  
 Repository: [github.com/softbmllc/lem-box-sistema-v2](https://github.com/softbmllc/lem-box-sistema-v2)
 
 LEM-BOX V2 is a modern logistics platform built with performance, accessibility, and data security in mind.
