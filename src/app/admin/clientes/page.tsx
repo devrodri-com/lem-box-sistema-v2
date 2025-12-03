@@ -36,6 +36,10 @@ function PageInner() {
   const [q, setQ] = useState("");
   const [countryFilter, setCountryFilter] = useState<string>("");
 
+  // Pagination state
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [page, setPage] = useState<number>(0);
+
   // Form fields
   const [name, setName] = useState("");
   const [country, setCountry] = useState<string>(""); // free text or pick from datalist
@@ -80,16 +84,35 @@ function PageInner() {
     );
   }, []);
 
+  useEffect(() => {
+    setPage(0);
+  }, [q, countryFilter]);
+
   const filteredRows = useMemo(() => {
     const query = q.trim().toLowerCase();
     return rows.filter((c) => {
-      const okCountry = !countryFilter || ((c.country || "").toLowerCase() === countryFilter.toLowerCase());
+      const okCountry =
+        !countryFilter ||
+        ((c.country || "").toLowerCase() === countryFilter.toLowerCase());
       if (!query) return okCountry;
       const name = (c.name || "").toLowerCase();
       const code = (c.code || "").toLowerCase();
       return okCountry && (name.includes(query) || code.includes(query));
     });
   }, [rows, q, countryFilter]);
+
+  const paginatedRows = useMemo(() => {
+    const total = filteredRows.length;
+    const safePage = Math.min(
+      page,
+      Math.max(0, Math.ceil(total / pageSize) - 1)
+    );
+    const start = safePage * pageSize;
+    return filteredRows.slice(start, start + pageSize);
+  }, [filteredRows, page, pageSize]);
+
+  const totalRows = filteredRows.length;
+  const totalPages = totalRows === 0 ? 1 : Math.ceil(totalRows / pageSize);
 
   async function nextClientCode(): Promise<string> {
     const counterRef = doc(db, 'counters', 'clients');
@@ -202,6 +225,8 @@ function PageInner() {
         </div>
       </div>
 
+      
+
       {/* Modal de creación */}
       {openCreate ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40">
@@ -303,7 +328,7 @@ function PageInner() {
       ) : null}
 
       <section className="grid gap-2">
-        {filteredRows.map((c) => (
+        {paginatedRows.map((c) => (
           <div key={c.id} className="border rounded p-4 flex items-center justify-between gap-3">
             <div>
               <div className="text-sm"><b>{c.code}</b> — {c.name}</div>
@@ -338,6 +363,67 @@ function PageInner() {
           <div className="text-sm text-neutral-500">Sin resultados para la búsqueda.</div>
         ) : null}
       </section>
+      {totalRows > 0 && (
+        <div className="mt-4 flex flex-col items-center justify-center gap-2 text-xs text-neutral-600">
+          <div className="flex items-center gap-2">
+            <span>Mostrar</span>
+            <select
+              className="h-8 rounded border border-slate-300 px-2"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(0);
+              }}
+            >
+              {[10, 20, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <span>por página</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage(0)}
+              disabled={page === 0}
+              className="px-2 py-1 rounded border text-xs disabled:opacity-40"
+            >
+              «
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="px-2 py-1 rounded border text-xs disabled:opacity-40"
+            >
+              Anterior
+            </button>
+            <span>
+              Página {totalRows === 0 ? 0 : page + 1} de {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                setPage((p) => Math.min(totalPages - 1, p + 1))
+              }
+              disabled={page >= totalPages - 1 || totalRows === 0}
+              className="px-2 py-1 rounded border text-xs disabled:opacity-40"
+            >
+              Siguiente
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage(totalPages - 1)}
+              disabled={page >= totalPages - 1 || totalRows === 0}
+              className="px-2 py-1 rounded border text-xs disabled:opacity-40"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

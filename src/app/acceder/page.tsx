@@ -6,13 +6,8 @@ import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-
-const btnPrimary =
-  "inline-flex items-center justify-center h-11 px-5 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
-const btnSecondary =
-  "inline-flex items-center justify-center h-11 px-5 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
-const inputCls =
-  "h-11 w-full rounded-md border border-slate-300 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+import AuthHero from "@/components/auth/AuthHero";
+import LoginCard from "@/components/auth/LoginCard";
 
 export default function AccederPage() {
   const router = useRouter();
@@ -71,38 +66,38 @@ export default function AccederPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] flex items-center justify-center p-6 bg-neutral-50">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-md ring-1 ring-slate-200">
-        <h1 className="text-2xl font-semibold">Acceder</h1>
-        <p className="text-sm text-neutral-600">Entrá para ver tus trackings, cajas y envíos.</p>
+    <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center justify-center gap-10 p-6">
+      <div className="w-full max-w-6xl grid gap-8 md:grid-cols-[1.1fr_1fr] items-start">
+        {/* Columna izquierda: logo */}
+        <AuthHero />
 
-        {err ? (
-          <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</div>
-        ) : null}
-        {msg ? (
-          <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{msg}</div>
-        ) : null}
+        {/* Columna derecha: formulario */}
+        <LoginCard
+          email={email}
+          setEmail={setEmail}
+          pw={pw}
+          setPw={setPw}
+          saving={saving}
+          err={err}
+          msg={msg}
+          onSubmit={onSubmit}
+          onForgot={handleForgot}
+          onCreateAccount={() => router.push("/registro")}
+        />
 
-        <form onSubmit={onSubmit} className="mt-4 grid gap-3">
-          <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Email</span>
-            <input className={inputCls} type="email" value={email} onChange={(e)=>setEmail(e.target.value)} autoFocus autoComplete="email" />
-          </label>
-          <label className="grid gap-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-neutral-600">Contraseña</span>
-              <button type="button" onClick={handleForgot} className="text-xs underline text-sky-700 hover:text-sky-800">Olvidé mi contraseña</button>
-            </div>
-            <input className={inputCls} type="password" value={pw} onChange={(e)=>setPw(e.target.value)} autoComplete="current-password" />
-          </label>
-
-          <div className="mt-2 flex gap-2">
-            <button type="button" onClick={()=>router.push("/registro")} className={btnSecondary}>Crear cuenta</button>
-            <button type="submit" disabled={saving} className={btnPrimary}>
-              {saving ? "Ingresando…" : "Ingresar"}
-            </button>
+        {/* Hero de texto centrado a lo ancho, debajo de ambas columnas */}
+        <section className="md:col-span-2 mt-8 flex justify-center px-2 md:px-6">
+          <div className="max-w-3xl text-center space-y-3">
+            <h1 className="text-3xl md:text-4xl font-semibold text-white">
+              Accedé a tu panel LEM-BOX
+            </h1>
+            <p className="text-sm md:text-base text-neutral-300">
+              Entrá para ver tus trackings, cajas y envíos desde tu cuenta
+              centralizada. Todo el flujo logístico, desde Miami hasta Uruguay
+              y Argentina, en un solo lugar.
+            </p>
           </div>
-        </form>
+        </section>
       </div>
     </main>
   );
