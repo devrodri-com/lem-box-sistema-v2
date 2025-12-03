@@ -8,13 +8,15 @@ import {
   collection, addDoc, doc, runTransaction, setDoc
 } from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import AccessNavbarDesktop from "@/components/auth/AccessNavbarDesktop";
+import AccessNavbarMobile from "@/components/auth/AccessNavbarMobile";
 
 const btnPrimary =
   "inline-flex items-center justify-center h-11 px-5 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 const btnSecondary =
   "inline-flex items-center justify-center h-11 px-5 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
 const inputCls =
-  "h-11 w-full rounded-md border border-slate-300 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+  "h-11 w-full rounded-md border border-slate-300 bg-slate-50 text-slate-900 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40]";
 const STATES_BY_COUNTRY: Record<string, string[]> = {
   Uruguay: [
     "Artigas","Canelones","Cerro Largo","Colonia","Durazno","Flores","Florida","Lavalleja","Maldonado","Montevideo","Paysandú","Río Negro","Rivera","Rocha","Salto","San José","Soriano","Tacuarembó","Treinta y Tres"
@@ -50,6 +52,65 @@ type UserPayload = {
   lang: "es";
   role: "client";
 };
+
+interface BrandSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder: string;
+  disabled?: boolean;
+}
+
+function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
+  const [open, setOpen] = useState(false);
+
+  const showLabel = value || placeholder;
+  const baseClasses =
+    inputCls +
+    " flex items-center justify-between pr-9 bg-white text-slate-900" +
+    (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
+
+  return (
+    <div
+      className="relative"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        className={baseClasses + (!value ? " text-slate-400" : "")}
+        onClick={() => {
+          if (!disabled) setOpen((prev) => !prev);
+        }}
+      >
+        <span className="truncate text-left">{showLabel}</span>
+        <span className="ml-2 text-slate-500">▾</span>
+      </button>
+      {open && !disabled && options.length > 0 && (
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+          {options.map((opt) => (
+            <li key={opt}>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+              >
+                {opt}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -143,91 +204,161 @@ export default function RegistroPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] flex items-center justify-center p-6 bg-neutral-50">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-md ring-1 ring-slate-200">
-        <h1 className="text-2xl font-semibold">Crear cuenta</h1>
-        <p className="text-sm text-neutral-600">Registrate para ver tus envíos, cajas y trackings.</p>
+    <>
+      <AccessNavbarDesktop />
+      <AccessNavbarMobile />
 
-        {err ? (
-          <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            {err}
-          </div>
-        ) : null}
+      <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-6 pt-24 md:pt-28">
+        <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-md ring-1 ring-slate-200 text-neutral-900">
+          <h1 className="text-2xl font-semibold">Crear cuenta</h1>
+          <p className="text-sm text-neutral-600">
+            Registrate para ver tus envíos, cajas y trackings.
+          </p>
 
-        <form onSubmit={onSubmit} className="mt-4 grid gap-3">
-          <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Nombre y apellido</span>
-            <input className={inputCls} value={name} onChange={(e)=>setName(e.target.value)} />
-          </label>
-          <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Teléfono</span>
-            <input className={inputCls} type="tel" inputMode="tel" value={phone} onChange={(e)=>setPhone(e.target.value)} />
-          </label>
+          {err ? (
+            <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              {err}
+            </div>
+          ) : null}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <form onSubmit={onSubmit} className="mt-4 grid gap-3">
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">País</span>
-              <select
+              <span className="text-xs font-medium text-neutral-600">
+                Nombre y apellido
+              </span>
+              <input
                 className={inputCls}
-                value={country}
-                onChange={(e)=>{ setCountry(e.target.value); setStateName(""); }}
-              >
-                <option>Uruguay</option>
-                <option>Argentina</option>
-                <option>United States</option>
-              </select>
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </label>
-
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">Estado / Depto / Provincia</span>
-              <select
+              <span className="text-xs font-medium text-neutral-600">
+                Teléfono
+              </span>
+              <input
                 className={inputCls}
-                value={stateName}
-                onChange={(e)=> setStateName(e.target.value)}
-                disabled={!STATES_BY_COUNTRY[country]}
-              >
-                <option value="">Seleccionar…</option>
-                {(STATES_BY_COUNTRY[country] || []).map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+                type="tel"
+                inputMode="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </label>
+
+            <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1.5fr_1fr] gap-3">
+              <label className="grid gap-1">
+                <span className="text-xs font-medium text-neutral-600">
+                  País
+                </span>
+                <BrandSelect
+                  value={country}
+                  onChange={(val) => {
+                    setCountry(val);
+                    setStateName("");
+                  }}
+                  options={["Uruguay", "Argentina", "United States"]}
+                  placeholder="Seleccionar país"
+                />
+              </label>
+
+              <label className="grid gap-1">
+                <span className="text-xs font-medium text-neutral-600">
+                  Estado / Depto / Provincia
+                </span>
+                <BrandSelect
+                  value={stateName}
+                  onChange={(val) => setStateName(val)}
+                  options={STATES_BY_COUNTRY[country] || []}
+                  placeholder="Seleccionar…"
+                  disabled={!STATES_BY_COUNTRY[country]}
+                />
+              </label>
+
+              <label className="grid gap-1">
+                <span className="text-xs font-medium text-neutral-600">
+                  Ciudad
+                </span>
+                <input
+                  className={inputCls}
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <label className="grid gap-1">
+              <span className="text-xs font-medium text-neutral-600">
+                Dirección (opcional)
+              </span>
+              <input
+                className={inputCls}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
             </label>
 
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">Ciudad</span>
-              <input className={inputCls} value={city} onChange={(e)=>setCity(e.target.value)} />
+              <span className="text-xs font-medium text-neutral-600">
+                Email
+              </span>
+              <input
+                className={inputCls}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </label>
-          </div>
+            <label className="grid gap-1">
+              <span className="text-xs font-medium text-neutral-600">
+                Contraseña
+              </span>
+              <input
+                className={inputCls}
+                type="password"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+              />
+            </label>
 
-          <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Dirección (opcional)</span>
-            <input className={inputCls} value={address} onChange={(e)=>setAddress(e.target.value)} />
-          </label>
+            <label className="mt-1 flex items-start gap-2">
+              <input
+                type="checkbox"
+                className="mt-[2px]"
+                checked={accept}
+                onChange={(e) => setAccept(e.target.checked)}
+              />
+              <span className="text-xs text-neutral-600">
+                Acepto los{" "}
+                <a href="https://lem-box.com.uy/terminos" className="underline">
+                  Términos
+                </a>{" "}
+                y la{" "}
+                <a href="https://lem-box.com.uy/privacidad" className="underline">
+                  Política de Privacidad
+                </a>
+                .
+              </span>
+            </label>
 
-          <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Email</span>
-            <input className={inputCls} type="email" value={email} onChange={(e)=>setEmail(e.target.value)} />
-          </label>
-          <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Contraseña</span>
-            <input className={inputCls} type="password" value={pw} onChange={(e)=>setPw(e.target.value)} />
-          </label>
-
-          <label className="mt-1 flex items-start gap-2">
-            <input type="checkbox" className="mt-[2px]" checked={accept} onChange={(e)=>setAccept(e.target.checked)} />
-            <span className="text-xs text-neutral-600">
-              Acepto los <a href="/terminos" className="underline">Términos</a> y la <a href="/privacidad" className="underline">Política de Privacidad</a>.
-            </span>
-          </label>
-
-          <div className="mt-2 flex gap-2">
-            <button type="button" onClick={()=>router.push("/acceder")} className={btnSecondary}>Ya tengo cuenta</button>
-            <button type="submit" disabled={saving || !accept} className={btnPrimary}>
-              {saving ? "Creando…" : "Crear cuenta"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </main>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => router.push("/acceder")}
+                className={btnSecondary}
+              >
+                Ya tengo cuenta
+              </button>
+              <button
+                type="submit"
+                disabled={saving || !accept}
+                className={btnPrimary}
+              >
+                {saving ? "Creando…" : "Crear cuenta"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </main>
+    </>
   );
 }

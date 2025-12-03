@@ -59,7 +59,73 @@ type Row = {
   photo?: File | null;
 };
 
+
 const carriers: Carrier[] = ["UPS", "FedEx", "USPS", "DHL", "Amazon", "Other"];
+
+// --- BrandSelect helper types and component ---
+
+interface BrandOption {
+  value: string;
+  label: string;
+}
+
+interface BrandSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: BrandOption[];
+  placeholder: string;
+  disabled?: boolean;
+}
+
+function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
+  const [open, setOpen] = useState(false);
+
+  const showLabel = value ? options.find((o) => o.value === value)?.label ?? value : placeholder;
+  const baseClasses =
+    "mt-1 h-12 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
+
+  return (
+    <div
+      className="relative"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        className={baseClasses + (!value ? " text-slate-400" : "")}
+        onClick={() => {
+          if (!disabled) setOpen((prev) => !prev);
+        }}
+      >
+        <span className="truncate text-left">{showLabel}</span>
+        <span className="ml-2 text-slate-500">▾</span>
+      </button>
+      {open && !disabled && options.length > 0 && (
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+          {options.map((opt) => (
+            <li key={opt.value}>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function IngresoPage() {
   return (
@@ -271,7 +337,7 @@ function PageInner() {
   }
 
   return (
-    <main className="p-4 md:p-8 space-y-6">
+    <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28 space-y-6">
       <h1 className="text-2xl font-semibold">Ingreso de paquetes</h1>
       {errMsg ? (
         <div className="p-3 rounded border border-red-300 bg-red-50 text-sm text-red-700">{errMsg}</div>
@@ -298,16 +364,17 @@ function PageInner() {
                   }
                 }}
               />
-              <select
-                className="mt-1 border rounded-md px-4 h-12 w-full bg-white text-base"
+              <BrandSelect
                 value={form.clientId}
-                onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
-              >
-                <option value="">Seleccionar…</option>
-                {filteredClients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
-                ))}
-              </select>
+                onChange={(val) => setForm((f) => ({ ...f, clientId: val }))}
+                options={filteredClients
+                  .filter((c) => c.id)
+                  .map((c) => ({
+                    value: String(c.id),
+                    label: `${c.code} — ${c.name}`,
+                  }))}
+                placeholder="Seleccionar…"
+              />
               <p className="mt-1 text-[11px] text-neutral-500">Mostrando {filteredClients.length} de {clients.length}</p>
             </div>
             <div>
@@ -321,15 +388,12 @@ function PageInner() {
             </div>
             <div>
               <label className="text-xs font-medium text-neutral-500">Carrier</label>
-              <select
-                className="mt-1 border rounded-md px-4 h-12 w-full bg-white text-base"
+              <BrandSelect
                 value={form.carrier}
-                onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value as Carrier }))}
-              >
-                {carriers.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+                onChange={(val) => setForm((f) => ({ ...f, carrier: val as Carrier }))}
+                options={carriers.map((c) => ({ value: c, label: c }))}
+                placeholder="Seleccionar carrier"
+              />
             </div>
           </div>
 

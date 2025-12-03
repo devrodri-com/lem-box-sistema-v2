@@ -16,7 +16,7 @@ export default function AccessNavbarDesktop() {
       role="banner"
       className={[
         "fixed inset-x-0 top-0 z-[100]",
-        "bg-[#005f40]/10 backdrop-blur-xl backdrop-saturate-150",
+        "bg-[#02120f]",
         "h-20 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.35)] border-b border-white/10",
       ].join(" ")}
       style={navStyle}
