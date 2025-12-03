@@ -8,6 +8,8 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/aut
 import { doc, getDoc } from "firebase/firestore";
 import AuthHero from "@/components/auth/AuthHero";
 import LoginCard from "@/components/auth/LoginCard";
+import AccessNavbarDesktop from "@/components/auth/AccessNavbarDesktop";
+import AccessNavbarMobile from "@/components/auth/AccessNavbarMobile";
 
 export default function AccederPage() {
   const router = useRouter();
@@ -66,39 +68,44 @@ export default function AccederPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center justify-center gap-10 p-6">
-      <div className="w-full max-w-6xl grid gap-8 md:grid-cols-[1.1fr_1fr] items-start">
-        {/* Columna izquierda: logo */}
-        <AuthHero />
+    <>
+      <AccessNavbarDesktop />
+      <AccessNavbarMobile />
 
-        {/* Columna derecha: formulario */}
-        <LoginCard
-          email={email}
-          setEmail={setEmail}
-          pw={pw}
-          setPw={setPw}
-          saving={saving}
-          err={err}
-          msg={msg}
-          onSubmit={onSubmit}
-          onForgot={handleForgot}
-          onCreateAccount={() => router.push("/registro")}
-        />
+      <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center justify-center gap-10 p-6 pt-24 md:pt-28">
+        <div className="w-full max-w-6xl grid gap-8 md:grid-cols-[1.1fr_1fr] items-start">
+          {/* Columna izquierda: logo */}
+          <AuthHero />
 
-        {/* Hero de texto centrado a lo ancho, debajo de ambas columnas */}
-        <section className="md:col-span-2 mt-8 flex justify-center px-2 md:px-6">
-          <div className="max-w-3xl text-center space-y-3">
-            <h1 className="text-3xl md:text-4xl font-semibold text-white">
-              Accedé a tu panel LEM-BOX
-            </h1>
-            <p className="text-sm md:text-base text-neutral-300">
-              Entrá para ver tus trackings, cajas y envíos desde tu cuenta
-              centralizada. Todo el flujo logístico, desde Miami hasta Uruguay
-              y Argentina, en un solo lugar.
-            </p>
-          </div>
-        </section>
-      </div>
-    </main>
+          {/* Columna derecha: formulario */}
+          <LoginCard
+            email={email}
+            setEmail={setEmail}
+            pw={pw}
+            setPw={setPw}
+            saving={saving}
+            err={err}
+            msg={msg}
+            onSubmit={onSubmit}
+            onForgot={handleForgot}
+            onCreateAccount={() => router.push("/registro")}
+          />
+
+          {/* Hero de texto centrado a lo ancho, debajo de ambas columnas */}
+          <section className="md:col-span-2 mt-8 flex justify-center px-2 md:px-6">
+            <div className="max-w-3xl text-center space-y-3">
+              <h1 className="text-3xl md:text-4xl font-semibold text-white">
+                Accedé a tu panel LEM-BOX
+              </h1>
+              <p className="text-sm md:text-base text-neutral-300">
+                Entrá para ver tus trackings, cajas y envíos desde tu cuenta
+                centralizada. Todo el flujo logístico, desde Miami hasta Uruguay
+                y Argentina, en un solo lugar.
+              </p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </>
   );
 }
