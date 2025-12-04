@@ -1,4 +1,4 @@
-// src/app/admin/preparado/[clientId]/page.tsx
+// src/app/admin/preparado/[clientId]/page.tsx 
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { db } from "@/lib/firebase";
@@ -43,6 +43,73 @@ export default function ConsolidarClientePage() {
     <RequireAuth>
       <ClienteInner />
     </RequireAuth>
+  );
+}
+
+// --- BrandSelect helper ---
+interface BrandOption {
+  value: string;
+  label: string;
+}
+
+interface BrandSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: BrandOption[];
+  placeholder: string;
+  disabled?: boolean;
+}
+
+function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
+  const [open, setOpen] = useState(false);
+
+  const showLabel = value
+    ? options.find((o) => o.value === value)?.label ?? value
+    : placeholder;
+
+  const baseClasses =
+    "mt-1 h-10 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
+
+  return (
+    <div
+      className="relative"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        className={baseClasses + (!value ? " text-slate-400" : "")}
+        onClick={() => {
+          if (!disabled) setOpen((prev) => !prev);
+        }}
+      >
+        <span className="truncate text-left">{showLabel}</span>
+        <span className="ml-2 text-slate-500">▾</span>
+      </button>
+      {open && !disabled && options.length > 0 && (
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+          {options.map((opt) => (
+            <li key={opt.value}>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -318,251 +385,260 @@ function ClienteInner() {
   }
 
   return (
-    <main className="p-4 md:p-8 space-y-4">
-      {notice ? (
-        <div
-          role="status"
-          className={
-            `pointer-events-none fixed right-6 top-20 z-[999] rounded-md px-3 py-2 text-sm shadow ring-1 ring-inset ` +
-            (notice.type === "success"
-              ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-              : notice.type === "error"
-              ? "bg-rose-50 text-rose-800 ring-rose-200"
-              : "bg-slate-50 text-slate-800 ring-slate-200")
-          }
-        >
-          {notice.msg}
-        </div>
-      ) : null}
-      <div className="flex items-center gap-2">
-        <button className="px-3 py-2 rounded border" onClick={() => router.push("/admin/preparado")}>← Volver</button>
-        <h1 className="text-xl font-semibold">Consolidar — {client ? `${client.code} — ${client.name}` : "Cargando..."}</h1>
-      </div>
-
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          {boxId ? (
-            <div className="space-y-2">
-              <div className="text-sm text-slate-700">
-                {(() => {
-                  const b = boxes.find(x => x.id === boxId);
-                  if (!b) return null;
-                  return (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Caja actual:</span> {b.code}
-                        <span>{b.status === "closed" ? <StatusBadge scope="box" status="closed" /> : <StatusBadge scope="box" status="open" />}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Peso verificado:</span> {typeof b.verifiedWeightLb === "number" ? `${b.verifiedWeightLb.toFixed(2)} lb` : "—"}
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-              <div>
-                <button
-                  className="mt-1 inline-flex items-center gap-2 rounded bg-emerald-700 px-3 py-1.5 text-white disabled:opacity-50"
-                  onClick={closeCurrentBox}
-                  disabled={!boxId || boxes.find(b => b.id === boxId)?.status === "closed"}
-                >Cerrar caja</button>
-              </div>
-              <div className="rounded border p-3">
-                <div className="text-sm font-medium mb-2">Verificar peso</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-                  <div>
-                    <label className="block text-xs text-neutral-500 mb-1">Peso en libras (lb)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={verifyLb}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setVerifyLb(v);
-                        const n = Number(v);
-                        setVerifyKg(Number.isFinite(n) ? lbToKg(n, 2).toFixed(2) : "");
-                      }}
-                      className="w-full border rounded px-3 h-10"
-                      placeholder="0.00"
-                      inputMode="decimal"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-neutral-500 mb-1">Peso en kilogramos (kg)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={verifyKg}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setVerifyKg(v);
-                        const n = Number(v);
-                        setVerifyLb(Number.isFinite(n) ? kgToLb(n, 2).toFixed(2) : "");
-                      }}
-                      className="w-full border rounded px-3 h-10"
-                      placeholder="0.00"
-                      inputMode="decimal"
-                    />
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <button
-                    className="inline-flex items-center gap-2 rounded bg-[#005f40] px-3 py-1.5 text-white disabled:opacity-50"
-                    onClick={() => {
-                      const n = Number(verifyLb);
-                      if (Number.isFinite(n) && n > 0) {
-                        void confirmVerifiedWeight(n);
-                        setVerifyLb("");
-                        setVerifyKg("");
-                      }
-                    }}
-                    disabled={!verifyLb || Number(verifyLb) <= 0}
-                  >
-                    Confirmar
-                  </button>
-                  <button
-                    className="inline-flex items-center gap-2 rounded border px-3 py-1.5"
-                    onClick={() => { setVerifyLb(""); setVerifyKg(""); }}
-                    type="button"
-                  >
-                    Re-pesar
-                  </button>
-                  <button
-                    className="inline-flex items-center gap-2 rounded border px-3 py-1.5"
-                    type="button"
-                    onClick={() => {/* noop */}}
-                  >
-                    Adjuntar foto
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-600">Creá o elegí una caja para registrar el peso de balanza.</p>
-          )}
-        </div>
-      </div>
-
-      <section className="space-y-3">
-        <div className="grid grid-cols-1 gap-3">
-          <div>
-            <label className="text-xs text-neutral-500">Tipo de envío</label>
-            <select className="border rounded p-2 w-full" value={boxType} onChange={(e) => setBoxType(e.target.value as ShipmentType)}>
-              <option value="COMERCIAL">COMERCIAL</option>
-              <option value="FRANQUICIA">FRANQUICIA</option>
-            </select>
-          </div>
-        </div>
-
-        {anySelected ? (
-          <div className="flex items-center gap-2 rounded border bg-neutral-50 p-2">
-            <span className="text-sm">Caja destino:</span>
-            <select
-              className="border rounded p-1 text-sm"
-              value={bulkBoxId}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === "__new__") {
-                  (async () => {
-                    const id = await createBox();
-                    if (id) setBulkBoxId(id);
-                  })();
-                } else {
-                  setBulkBoxId(val);
-                }
-              }}
-            >
-              <option value="" disabled>Elegí caja…</option>
-              {eligibleBoxes.map(b => (
-                <option key={b.id} value={b.id}>{b.code} · {fmtWeightPairFromLb(Number(b.weightLb||0), 2, 2)} · {b.itemIds?.length || 0} items</option>
-              ))}
-              <option value="__new__">+ Agregar caja</option>
-            </select>
-            <button
-              className="ml-1 px-3 py-1.5 rounded bg-[#eb6619] text-white text-sm font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50"
-              onClick={() => addSelectedToBox(bulkBoxId)}
-              disabled={!bulkBoxId || !anySelected}
-            >
-              Agregar seleccionados
-            </button>
-            <span className="ml-auto text-xs text-neutral-600">Total: {fmtWeightPairFromLb(totalLb, 2, 2)}</span>
+    <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
+      <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-4">
+        {notice ? (
+          <div
+            role="status"
+            className={
+              `pointer-events-none fixed right-6 top-20 z-[999] rounded-md px-3 py-2 text-sm shadow ring-1 ring-inset ` +
+              (notice.type === "success"
+                ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                : notice.type === "error"
+                ? "bg-rose-50 text-rose-800 ring-rose-200"
+                : "bg-slate-50 text-slate-800 ring-slate-200")
+            }
+          >
+            {notice.msg}
           </div>
         ) : null}
-
-        <div className="overflow-x-auto border rounded">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50">
-              <tr>
-                <th className="p-2">Selec.</th>
-                <th className="text-left p-2">Fecha</th>
-                <th className="text-left p-2">Tracking</th>
-                <th className="text-left p-2">Peso</th>
-                <th className="text-left p-2">Caja</th>
-                <th className="text-left p-2">Foto</th>
-                <th className="text-left p-2">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleInbounds.map(r => (
-                <tr key={r.id} className="border-t">
-                  <td className="p-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        disabled={r.status === "boxed"}
-                        checked={!!selected[r.id]}
-                        onChange={(e) => setSelected(s => ({ ...s, [r.id]: e.target.checked }))}
-                        aria-label="Seleccionar tracking"
-                        form={undefined}
-                      />
-                      {selected[r.id] && r.status !== "boxed" ? (
-                        <select
-                          className="border rounded p-1 text-xs"
-                          value={rowBoxChoice[r.id] ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setRowBoxChoice(m => ({ ...m, [r.id]: val }));
-                            void handleAssignInbound(r.id, val);
-                          }}
-                          aria-label="Elegir caja destino"
-                          form={undefined}
-                        >
-                          <option value="" disabled>Elegí caja…</option>
-                          {eligibleBoxes.map(b => (
-                            <option key={b.id} value={b.id}>{b.code} · {fmtWeightPairFromLb(Number(b.weightLb||0), 2, 2)} · {b.itemIds?.length || 0} items</option>
-                          ))}
-                          <option value="__new__">+ Agregar caja</option>
-                        </select>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : "-"}</td>
-                  <td className="p-2 font-mono">{r.tracking}</td>
-                  <td className="p-2">{fmtWeightPairFromLb(Number(r.weightLb||0), 2, 2)}</td>
-                  <td className="p-2">{boxByInbound[r.id]?.code || "-"}</td>
-                  <td className="p-2">
-                    {r.photoUrl ? (
-                      <a href={r.photoUrl} target="_blank" rel="noreferrer" title="Ver foto" aria-label="Ver foto">📷</a>
-                    ) : ("—")}
-                  </td>
-                  <td className="p-2">
-                    {r.status === "void" ? (
-                      <StatusBadge scope="package" status="void" />
-                    ) : boxByInbound[r.id]?.code ? (
-                      <StatusBadge scope="package" status="boxed" />
-                    ) : (
-                      <StatusBadge scope="package" status="received" />
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {!visibleInbounds.length ? (<tr><td className="p-3 text-neutral-500" colSpan={7}>Sin trackings.</td></tr>) : null}
-            </tbody>
-          </table>
+        <div className="flex items-center gap-2">
+          <button className="px-3 py-2 rounded border" onClick={() => router.push("/admin/preparado")}>← Volver</button>
+          <h1 className="text-xl font-semibold">Consolidar — {client ? `${client.code} — ${client.name}` : "Cargando..."}</h1>
         </div>
-      </section>
+
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {boxId ? (
+              <div className="space-y-2">
+                <div className="text-sm text-slate-700">
+                  {(() => {
+                    const b = boxes.find(x => x.id === boxId);
+                    if (!b) return null;
+                    return (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Caja actual:</span> {b.code}
+                          <span>{b.status === "closed" ? <StatusBadge scope="box" status="closed" /> : <StatusBadge scope="box" status="open" />}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Peso verificado:</span> {typeof b.verifiedWeightLb === "number" ? `${b.verifiedWeightLb.toFixed(2)} lb` : "—"}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+                <div>
+                  <button
+                    className="mt-1 inline-flex items-center gap-2 rounded bg-emerald-700 px-3 py-1.5 text-white disabled:opacity-50"
+                    onClick={closeCurrentBox}
+                    disabled={!boxId || boxes.find(b => b.id === boxId)?.status === "closed"}
+                  >Cerrar caja</button>
+                </div>
+                <div className="rounded border p-3">
+                  <div className="text-sm font-medium mb-2">Verificar peso</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                    <div>
+                      <label className="block text-xs text-neutral-500 mb-1">Peso en libras (lb)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={verifyLb}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setVerifyLb(v);
+                          const n = Number(v);
+                          setVerifyKg(Number.isFinite(n) ? lbToKg(n, 2).toFixed(2) : "");
+                        }}
+                        className="w-full border rounded px-3 h-10"
+                        placeholder="0.00"
+                        inputMode="decimal"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-neutral-500 mb-1">Peso en kilogramos (kg)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={verifyKg}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setVerifyKg(v);
+                          const n = Number(v);
+                          setVerifyLb(Number.isFinite(n) ? kgToLb(n, 2).toFixed(2) : "");
+                        }}
+                        className="w-full border rounded px-3 h-10"
+                        placeholder="0.00"
+                        inputMode="decimal"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      className="inline-flex items-center gap-2 rounded bg-[#005f40] px-3 py-1.5 text-white disabled:opacity-50"
+                      onClick={() => {
+                        const n = Number(verifyLb);
+                        if (Number.isFinite(n) && n > 0) {
+                          void confirmVerifiedWeight(n);
+                          setVerifyLb("");
+                          setVerifyKg("");
+                        }
+                      }}
+                      disabled={!verifyLb || Number(verifyLb) <= 0}
+                    >
+                      Confirmar
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-2 rounded border px-3 py-1.5"
+                      onClick={() => { setVerifyLb(""); setVerifyKg(""); }}
+                      type="button"
+                    >
+                      Re-pesar
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-2 rounded border px-3 py-1.5"
+                      type="button"
+                      onClick={() => {/* noop */}}
+                    >
+                      Adjuntar foto
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">Creá o elegí una caja para registrar el peso de balanza.</p>
+            )}
+          </div>
+        </div>
+
+        <section className="space-y-3">
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <label className="text-xs text-neutral-500">Tipo de envío</label>
+              <BrandSelect
+                value={boxType}
+                onChange={(val) => setBoxType(val as ShipmentType)}
+                options={[
+                  { value: "COMERCIAL", label: "COMERCIAL" },
+                  { value: "FRANQUICIA", label: "FRANQUICIA" },
+                ]}
+                placeholder="Seleccionar tipo de envío"
+              />
+            </div>
+          </div>
+
+          {anySelected ? (
+            <div className="flex items-center gap-2 rounded border bg-neutral-50 p-2">
+              <span className="text-sm">Caja destino:</span>
+              <BrandSelect
+                value={bulkBoxId}
+                onChange={(val) => {
+                  if (val === "__new__") {
+                    (async () => {
+                      const id = await createBox();
+                      if (id) setBulkBoxId(id);
+                    })();
+                  } else {
+                    setBulkBoxId(val);
+                  }
+                }}
+                options={[
+                  { value: "", label: "Elegí caja…" },
+                  ...eligibleBoxes.map((b) => ({
+                    value: b.id,
+                    label: `${b.code} · ${fmtWeightPairFromLb(Number(b.weightLb || 0), 2, 2)} · ${b.itemIds?.length || 0} items`,
+                  })),
+                  { value: "__new__", label: "+ Agregar caja" },
+                ]}
+                placeholder="Elegí caja…"
+                disabled={!eligibleBoxes.length}
+              />
+              <button
+                className="ml-1 px-3 py-1.5 rounded bg-[#eb6619] text-white text-sm font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50"
+                onClick={() => addSelectedToBox(bulkBoxId)}
+                disabled={!bulkBoxId || !anySelected}
+              >
+                Agregar seleccionados
+              </button>
+              <span className="ml-auto text-xs text-neutral-600">Total: {fmtWeightPairFromLb(totalLb, 2, 2)}</span>
+            </div>
+          ) : null}
+
+          <div className="overflow-x-auto border rounded">
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="p-2">Selec.</th>
+                  <th className="text-left p-2">Fecha</th>
+                  <th className="text-left p-2">Tracking</th>
+                  <th className="text-left p-2">Peso</th>
+                  <th className="text-left p-2">Caja</th>
+                  <th className="text-left p-2">Foto</th>
+                  <th className="text-left p-2">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleInbounds.map(r => (
+                  <tr key={r.id} className="border-t">
+                    <td className="p-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          disabled={r.status === "boxed"}
+                          checked={!!selected[r.id]}
+                          onChange={(e) => setSelected(s => ({ ...s, [r.id]: e.target.checked }))}
+                          aria-label="Seleccionar tracking"
+                          form={undefined}
+                        />
+                        {selected[r.id] && r.status !== "boxed" ? (
+                          <BrandSelect
+                            value={rowBoxChoice[r.id] ?? ""}
+                            onChange={(val) => {
+                              setRowBoxChoice((m) => ({ ...m, [r.id]: val }));
+                              void handleAssignInbound(r.id, val);
+                            }}
+                            options={[
+                              { value: "", label: "Elegí caja…" },
+                              ...eligibleBoxes.map((b) => ({
+                                value: b.id,
+                                label: `${b.code} · ${fmtWeightPairFromLb(Number(b.weightLb || 0), 2, 2)} · ${b.itemIds?.length || 0} items`,
+                              })),
+                              { value: "__new__", label: "+ Agregar caja" },
+                            ]}
+                            placeholder="Elegí caja…"
+                            disabled={!eligibleBoxes.length}
+                          />
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : "-"}</td>
+                    <td className="p-2 font-mono">{r.tracking}</td>
+                    <td className="p-2">{fmtWeightPairFromLb(Number(r.weightLb||0), 2, 2)}</td>
+                    <td className="p-2">{boxByInbound[r.id]?.code || "-"}</td>
+                    <td className="p-2">
+                      {r.photoUrl ? (
+                        <a href={r.photoUrl} target="_blank" rel="noreferrer" title="Ver foto" aria-label="Ver foto">📷</a>
+                      ) : ("—")}
+                    </td>
+                    <td className="p-2">
+                      {r.status === "void" ? (
+                        <StatusBadge scope="package" status="void" />
+                      ) : boxByInbound[r.id]?.code ? (
+                        <StatusBadge scope="package" status="boxed" />
+                      ) : (
+                        <StatusBadge scope="package" status="received" />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {!visibleInbounds.length ? (<tr><td className="p-3 text-neutral-500" colSpan={7}>Sin trackings.</td></tr>) : null}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

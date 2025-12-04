@@ -1,4 +1,4 @@
-// /src/app/admin/estado-envios/page.tsx
+// src/app/admin/estado-envios/page.tsx
 "use client";
 import { useEffect, useMemo, useState, Fragment } from "react";
 import RequireAuth from "@/components/RequireAuth";

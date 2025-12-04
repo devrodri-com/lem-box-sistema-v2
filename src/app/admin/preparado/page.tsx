@@ -78,23 +78,44 @@ function PageInner() {
   const linkCls = "text-sky-700 underline hover:text-sky-800 focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm";
 
   return (
-    <main className="p-4 md:p-8 space-y-6">
-      <h1 className="text-2xl font-semibold">Preparado de carga</h1>
+    <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
+      <div className="w-full max-w-6xl space-y-6">
+        <h1 className="text-2xl font-semibold">Preparado de carga</h1>
 
-      <div role="tablist" aria-label="Vistas" className="inline-flex items-center gap-1 rounded-full bg-neutral-100 p-1 ring-1 ring-slate-200">
-        <button role="tab" aria-selected={tab === "consolidar"} className={tabBtn(tab === "consolidar")} onClick={() => setTab("consolidar")}>Consolidar</button>
-        <button role="tab" aria-selected={tab === "cargas"} className={tabBtn(tab === "cargas")} onClick={() => setTab("cargas")}>Cargas</button>
+        <div
+          role="tablist"
+          aria-label="Vistas"
+          className="inline-flex items-center gap-1 rounded-full bg-neutral-100 p-1 ring-1 ring-slate-200"
+        >
+          <button
+            role="tab"
+            aria-selected={tab === "consolidar"}
+            className={tabBtn(tab === "consolidar")}
+            onClick={() => setTab("consolidar")}
+          >
+            Consolidar
+          </button>
+          <button
+            role="tab"
+            aria-selected={tab === "cargas"}
+            className={tabBtn(tab === "cargas")}
+            onClick={() => setTab("cargas")}
+          >
+            Cargas
+          </button>
+        </div>
+
+        {tab === "consolidar" ? (
+          <ConsolidarSearchView />
+        ) : (
+          <EmbarquesView
+            btnPrimaryCls={btnPrimaryCls}
+            btnSecondaryCls={btnSecondaryCls}
+            linkCls={linkCls}
+          />
+        )}
       </div>
 
-      {tab === "consolidar" ? (
-        <ConsolidarSearchView />
-      ) : (
-        <EmbarquesView
-          btnPrimaryCls={btnPrimaryCls}
-          btnSecondaryCls={btnSecondaryCls}
-          linkCls={linkCls}
-        />
-      )}
       <Script
         src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
         strategy="lazyOnload"
@@ -170,6 +191,72 @@ function ConsolidarSearchView() {
         </div>
       </div>
     </section>
+  );
+}
+
+interface BrandOption {
+  value: string;
+  label: string;
+}
+
+interface BrandSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: BrandOption[];
+  placeholder: string;
+  disabled?: boolean;
+}
+
+function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
+  const [open, setOpen] = useState(false);
+
+  const showLabel = value
+    ? options.find((o) => o.value === value)?.label ?? value
+    : placeholder;
+
+  const baseClasses =
+    "mt-1 h-12 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
+
+  return (
+    <div
+      className="relative"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        className={baseClasses + (!value ? " text-slate-400" : "")}
+        onClick={() => {
+          if (!disabled) setOpen((prev) => !prev);
+        }}
+      >
+        <span className="truncate text-left">{showLabel}</span>
+        <span className="ml-2 text-slate-500">▾</span>
+      </button>
+      {open && !disabled && options.length > 0 && (
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+          {options.map((opt) => (
+            <li key={opt.value}>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -472,18 +559,24 @@ function printBoxLabel(box: Box) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
           <div>
             <label className="text-xs text-neutral-500">País</label>
-            <select className="border rounded p-2 w-full" value={country} onChange={(e)=> setCountry(e.target.value)}>
-            {COUNTRY_OPTIONS.map(c => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-            </select>
+            <BrandSelect
+              value={country}
+              onChange={(val) => setCountry(val)}
+              options={COUNTRY_OPTIONS.map((c) => ({ value: c.value, label: c.label }))}
+              placeholder="Seleccionar país"
+            />
           </div>
           <div>
             <label className="text-xs text-neutral-500">Tipo de envío</label>
-            <select className="border rounded p-2 w-full" value={type} onChange={(e)=> setType(e.target.value as ShipmentType)}>
-              <option value="COMERCIAL">COMERCIAL</option>
-              <option value="FRANQUICIA">FRANQUICIA</option>
-            </select>
+            <BrandSelect
+              value={type}
+              onChange={(val) => setType(val as ShipmentType)}
+              options={[
+                { value: "COMERCIAL", label: "COMERCIAL" },
+                { value: "FRANQUICIA", label: "FRANQUICIA" },
+              ]}
+              placeholder="Seleccionar tipo"
+            />
           </div>
           <div className="md:col-span-2 flex items-center justify-end gap-2">
             <button className={btnSecondaryCls} onClick={exportCSV}>
@@ -497,13 +590,22 @@ function printBoxLabel(box: Box) {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
           <div className="md:col-span-3">
-            <label className="text-xs text-neutral-500">Agregar cajas seleccionadas a embarque abierto</label>
-            <select className="border rounded p-2 w-full" value={targetShipmentId} onChange={(e)=> setTargetShipmentId(e.target.value)}>
-              <option value="">Seleccionar embarque (abierto)…</option>
-              {shipments.map(s => (
-                <option key={s.id} value={s.id}>{s.code} · {s.country} / {s.type}</option>
-              ))}
-            </select>
+            <label className="text-xs text-neutral-500">
+              Agregar cajas seleccionadas a embarque abierto
+            </label>
+            <BrandSelect
+              value={targetShipmentId}
+              onChange={(val) => setTargetShipmentId(val)}
+              options={[
+                { value: "", label: "Seleccionar embarque (abierto)..." },
+                ...shipments.map((s) => ({
+                  value: s.id,
+                  label: `${s.code} · ${s.country} / ${s.type}`,
+                })),
+              ]}
+              placeholder="Seleccionar embarque (abierto)..."
+              disabled={!shipments.length}
+            />
           </div>
           <div className="flex gap-2">
             <button className={btnSecondaryCls} onClick={addPickedToShipment} disabled={!Object.values(picked).some(Boolean) || !targetShipmentId}>Agregar a embarque</button>
