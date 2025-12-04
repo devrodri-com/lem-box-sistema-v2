@@ -54,7 +54,7 @@ export default function UsuariosPage() {
   const [cPerms, setCPerms] = useState<AdminPermissions>({ ...DEFAULT_PERMS });
   const canCreate = useMemo(() => meIsSuper && /@/.test(cEmail) && cPassword.length >= 8, [meIsSuper, cEmail, cPassword]);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [msg, setMsg] = useState<string>("");
 
   // edit modal
   const [editing, setEditing] = useState<AdminUser | null>(null);
@@ -64,7 +64,7 @@ export default function UsuariosPage() {
 
   // permissions helpers
   const PermRow = ({ label, k, state, setState }: { label: string; k: keyof AdminPermissions; state: AdminPermissions; setState: (s: AdminPermissions) => void }) => (
-    <label className="flex items-center gap-2 text-sm">
+    <label className="flex items-center gap-2 text-sm text-neutral-800">
       <input type="checkbox" checked={!!state[k]} onChange={(e) => setState({ ...state, [k]: e.target.checked })} />
       <span>{label}</span>
     </label>
@@ -152,55 +152,80 @@ export default function UsuariosPage() {
   }
 
   if (!claimsChecked) return null;
-  if (!meIsSuper) return notFound();
+  if (!meIsSuper) {
+    notFound();
+    return null;
+  }
 
   return (
     <RequireAuth requireAdmin>
-      <main className="p-4 md:p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Usuarios</h1>
-          {meIsSuper && (
-            <button className="px-3 py-2 rounded border" onClick={() => setOpenCreate(true)}>Crear nuevo usuario</button>
-          )}
-        </div>
+      <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
+        <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold">Usuarios</h1>
+            {meIsSuper && (
+              <button className="px-3 py-2 rounded border" onClick={() => setOpenCreate(true)}>
+                Crear nuevo usuario
+              </button>
+            )}
+          </div>
 
-        <div className="overflow-x-auto border rounded">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50">
-              <tr>
-                <th className="text-left p-2">Rol</th>
-                <th className="text-left p-2">Nombre</th>
-                <th className="text-left p-2">Email</th>
-                <th className="text-left p-2">Permisos</th>
-                <th className="text-left p-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (<tr><td className="p-3" colSpan={5}>Cargando…</td></tr>) : null}
-              {!loading && !items.length ? (<tr><td className="p-3 text-neutral-500" colSpan={5}>Sin usuarios aún.</td></tr>) : null}
-              {items.map(u => (
-                <tr key={u.id} className="border-t">
-                  <td className="p-2">{u.role}</td>
-                  <td className="p-2">{u.name || "—"}</td>
-                  <td className="p-2">{u.email}</td>
-                  <td className="p-2">
-                    <div className="flex flex-wrap gap-1 text-xs">
-                      {Object.entries(u.permissions || {}).filter(([,v]) => v).map(([k]) => (
-                        <span key={k} className="px-2 py-0.5 rounded border">{permLabel(k as keyof AdminPermissions)}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    {meIsSuper ? (
-                      <button className="px-2 py-1 rounded border" onClick={() => openEdit(u)}>Ver/editar permisos</button>
-                    ) : (
-                      <span className="text-neutral-400">—</span>
-                    )}
-                  </td>
+          <div className="overflow-x-auto border rounded">
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="text-left p-2">Rol</th>
+                  <th className="text-left p-2">Nombre</th>
+                  <th className="text-left p-2">Email</th>
+                  <th className="text-left p-2">Permisos</th>
+                  <th className="text-left p-2">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td className="p-3" colSpan={5}>
+                      Cargando…
+                    </td>
+                  </tr>
+                ) : null}
+                {!loading && !items.length ? (
+                  <tr>
+                    <td className="p-3 text-neutral-500" colSpan={5}>
+                      Sin usuarios aún.
+                    </td>
+                  </tr>
+                ) : null}
+                {items.map((u) => (
+                  <tr key={u.id} className="border-t">
+                    <td className="p-2">{u.role}</td>
+                    <td className="p-2">{u.name || "—"}</td>
+                    <td className="p-2">{u.email}</td>
+                    <td className="p-2">
+                      <div className="flex flex-wrap gap-1 text-xs">
+                        {Object.entries(u.permissions || {})
+                          .filter(([, v]) => v)
+                          .map(([k]) => (
+                            <span key={k} className="px-2 py-0.5 rounded border">
+                              {permLabel(k as keyof AdminPermissions)}
+                            </span>
+                          ))}
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      {meIsSuper ? (
+                        <button className="px-2 py-1 rounded border" onClick={() => openEdit(u)}>
+                          Ver/editar permisos
+                        </button>
+                      ) : (
+                        <span className="text-neutral-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Create Modal */}
@@ -209,21 +234,28 @@ export default function UsuariosPage() {
             <div className="bg-white w-[95vw] max-w-2xl rounded-lg shadow-xl p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Crear usuario administrador</h3>
-                <button className="px-3 py-2 rounded border" onClick={() => setOpenCreate(false)}>Cerrar</button>
+                <button className="px-3 py-2 rounded border" onClick={() => setOpenCreate(false)}>
+                  Cerrar
+                </button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-3">
                 <label className="grid gap-1">
                   <span className="text-xs text-neutral-500">Nombre</span>
-                  <input className="border rounded p-2" value={cName} onChange={(e)=> setCName(e.target.value)} />
+                  <input className="border rounded p-2" value={cName} onChange={(e) => setCName(e.target.value)} />
                 </label>
                 <label className="grid gap-1">
                   <span className="text-xs text-neutral-500">Email</span>
-                  <input className="border rounded p-2" value={cEmail} onChange={(e)=> setCEmail(e.target.value)} />
+                  <input className="border rounded p-2" value={cEmail} onChange={(e) => setCEmail(e.target.value)} />
                 </label>
                 <label className="grid gap-1 md:col-span-2">
                   <span className="text-xs text-neutral-500">Contraseña (min 8)</span>
-                  <input type="password" className="border rounded p-2" value={cPassword} onChange={(e)=> setCPassword(e.target.value)} />
+                  <input
+                    type="password"
+                    className="border rounded p-2"
+                    value={cPassword}
+                    onChange={(e) => setCPassword(e.target.value)}
+                  />
                 </label>
               </div>
 
@@ -239,13 +271,24 @@ export default function UsuariosPage() {
                     <PermRow label="Eliminar clientes" k="deleteClients" state={cPerms} setState={setCPerms} />
                     <PermRow label="Ingresar paquetes" k="ingestPackages" state={cPerms} setState={setCPerms} />
                     <PermRow label="Eliminar tracking" k="deleteTracking" state={cPerms} setState={setCPerms} />
-                    <PermRow label="Eliminar tracking de cajas" k="deleteTrackingFromBoxes" state={cPerms} setState={setCPerms} />
+                    <PermRow
+                      label="Eliminar tracking de cajas"
+                      k="deleteTrackingFromBoxes"
+                      state={cPerms}
+                      setState={setCPerms}
+                    />
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 flex items-center gap-3">
-                <button className="px-4 py-2 rounded bg-black text-white disabled:opacity-50" disabled={!canCreate || busy} onClick={handleCreate}>{busy ? "Creando…" : "Crear"}</button>
+                <button
+                  className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+                  disabled={!canCreate || busy}
+                  onClick={handleCreate}
+                >
+                  {busy ? "Creando…" : "Crear"}
+                </button>
                 <span className="text-xs text-neutral-500">{msg}</span>
               </div>
             </div>
@@ -258,12 +301,14 @@ export default function UsuariosPage() {
             <div className="bg-white w-[95vw] max-w-2xl rounded-lg shadow-xl p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Editar permisos</h3>
-                <button className="px-3 py-2 rounded border" onClick={() => setEditing(null)}>Cerrar</button>
+                <button className="px-3 py-2 rounded border" onClick={() => setEditing(null)}>
+                  Cerrar
+                </button>
               </div>
               <div className="grid md:grid-cols-2 gap-3">
                 <label className="grid gap-1">
                   <span className="text-xs text-neutral-500">Nombre</span>
-                  <input className="border rounded p-2" value={eName} onChange={(e)=> setEName(e.target.value)} />
+                  <input className="border rounded p-2" value={eName} onChange={(e) => setEName(e.target.value)} />
                 </label>
                 <div />
               </div>
@@ -277,11 +322,22 @@ export default function UsuariosPage() {
                   <PermRow label="Eliminar clientes" k="deleteClients" state={ePerms} setState={setEPerms} />
                   <PermRow label="Ingresar paquetes" k="ingestPackages" state={ePerms} setState={setEPerms} />
                   <PermRow label="Eliminar tracking" k="deleteTracking" state={ePerms} setState={setEPerms} />
-                  <PermRow label="Eliminar tracking de cajas" k="deleteTrackingFromBoxes" state={ePerms} setState={setEPerms} />
+                  <PermRow
+                    label="Eliminar tracking de cajas"
+                    k="deleteTrackingFromBoxes"
+                    state={ePerms}
+                    setState={setEPerms}
+                  />
                 </div>
               </div>
               <div className="mt-4 flex items-center gap-3">
-                <button className="px-4 py-2 rounded bg-black text-white disabled:opacity-50" disabled={!canSaveEdit || busy} onClick={handleSaveEdit}>{busy ? "Guardando…" : "Guardar permisos"}</button>
+                <button
+                  className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+                  disabled={!canSaveEdit || busy}
+                  onClick={handleSaveEdit}
+                >
+                  {busy ? "Guardando…" : "Guardar permisos"}
+                </button>
                 <span className="text-xs text-neutral-500">{msg}</span>
               </div>
             </div>

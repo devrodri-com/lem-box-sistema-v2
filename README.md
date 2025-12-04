@@ -316,12 +316,7 @@ Backend services managed with Firebase (Firestore, Auth, Storage).
 Project: [lem-box.com.uy](https://lem-box.com.uy)  
 Repository: [github.com/softbmllc/lem-box-sistema-v2](https://github.com/softbmllc/lem-box-sistema-v2)
 
-LEM-BOX V2 is a modern logistics platform built with performance, accessibility, and data security in mind.
-
-## 👨‍💻 Team
-
-- Technical direction: **Rodrigo**  
-- Development assisted with **AI + VSCode (OBOE)**  
+LEM-BOX V2 is a modern logistics platform built with performance, accessibility, and data security in mind. 
 
 ---
 

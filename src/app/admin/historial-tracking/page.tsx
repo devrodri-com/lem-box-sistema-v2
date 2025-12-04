@@ -311,230 +311,421 @@ async function handleExportCsv() {
       });
   }, [boxes, statusFilter, clientsById, qClient]);
 
-  return (
-    <main className="p-4 md:p-8 space-y-6">
-      <h1 className="text-2xl font-semibold">Historial de tracking</h1>
-      <p className="text-sm text-neutral-600">
-        Todos los trackings: empacados (en caja) y sin empacar (sueltos en warehouse).
-      </p>
+  // --- BrandSelect helper types and component ---
+  interface BrandOption {
+    value: string;
+    label: string;
+  }
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-        <input
-          className="border rounded p-2"
-          placeholder="Buscar por cliente"
-          value={qClient}
-          onChange={(e) => setQClient(e.target.value)}
-        />
-        <input
-          className="border rounded p-2"
-          placeholder="Buscar por tracking"
-          value={qTracking}
-          onChange={(e) => setQTracking(e.target.value)}
-        />
-        {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
-        <input
-          type="date"
-          className="border rounded p-2"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          title="Desde"
-        />
-        {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
-        <input
-          type="date"
-          className="border rounded p-2"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          title="Hasta"
-        />
-        <select className="border rounded p-2" value={statusFilter} onChange={(e)=> setStatusFilter(e.target.value as any)}>
-          <option value="all">Todos</option>
-          <option value="received">Recibido</option>
-          <option value="boxed">Consolidado</option>
-        </select>
-      </div>
+  interface BrandSelectProps {
+    value: string;
+    onChange: (value: string) => void;
+    options: BrandOption[];
+    placeholder: string;
+    disabled?: boolean;
+  }
 
-      <div className="flex flex-row gap-2 mb-2">
+  function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
+    const [open, setOpen] = useState(false);
+
+    const showLabel = value
+      ? options.find((o) => o.value === value)?.label ?? value
+      : placeholder;
+
+    const baseClasses =
+      inputCls +
+      " flex items-center justify-between pr-8 bg-white text-slate-900" +
+      (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
+
+    return (
+      <div
+        className="relative"
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+            setOpen(false);
+          }
+        }}
+      >
         <button
           type="button"
-          className="inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
-          onClick={handleExportCsv}
+          disabled={disabled}
+          className={baseClasses + (!value ? " text-slate-400" : "")}
+          onClick={() => {
+            if (!disabled) setOpen((prev) => !prev);
+          }}
         >
-          Exportar CSV
+          <span className="truncate text-left">{showLabel}</span>
+          <span className="ml-2 text-slate-500">▾</span>
         </button>
-      </div>
-      <div className="overflow-x-auto border rounded">
-        {statusFilter === 'boxed' ? (
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50">
-              <tr>
-                <th className="text-left p-2">Caja</th>
-                <th className="text-left p-2">Cliente</th>
-                <th className="text-left p-2">Tipo</th>
-                <th className="text-left p-2">Items</th>
-                <th className="text-left p-2">Peso</th>
-                <th className="text-left p-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBoxes.map(b => {
-                const c = clientsById[b.clientId];
-                const cliente = c?.code ? `${c.code} — ${c.name}` : b.clientId;
-                return (
-                  <tr key={b.id} className="border-t">
-                    <td className="p-2">
-                      <button className="underline text-sm text-neutral-700 hover:text-black" onClick={() => openBoxDetailByBoxId(b.id)}>{b.code}</button>
-                    </td>
-                    <td className="p-2">{cliente}</td>
-                    <td className="p-2">{b.type === 'FRANQUICIA' ? 'Franquicia' : 'Comercial'}</td>
-                    <td className="p-2">{b.itemIds?.length || 0}</td>
-                    <td className="p-2">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
-                    <td className="p-2">
-                      <button className="px-2 py-1 border rounded" onClick={() => openBoxDetailByBoxId(b.id)}>Ver</button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!filteredBoxes.length ? (
-                <tr><td className="p-3 text-neutral-500" colSpan={6}>Sin cajas.</td></tr>
-              ) : null}
-            </tbody>
-          </table>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50">
-              <tr>
-                <th className="text-left p-2">Fecha</th>
-                <th className="text-left p-2">Tracking</th>
-                <th className="text-left p-2">Cliente</th>
-                <th className="text-left p-2">Carrier</th>
-                <th className="text-left p-2">Peso</th>
-                <th className="text-left p-2">Caja</th>
-                <th className="text-left p-2">Estado</th>
-                <th className="text-left p-2">Foto</th>
-                <th className="text-left p-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(statusFilter === 'received' ? filtered.filter(r => !boxByInbound[r.id]) : filtered).map(r => {
-                const c = clientsById[r.clientId];
-                const cliente = c?.code ? `${c.code} — ${c.name}` : r.clientId;
-                return (
-                  <tr key={r.id} className="border-t">
-                    <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : "-"}</td>
-                    <td className="p-2 font-mono text-sm"><a className="underline text-neutral-700 hover:text-black" href={`/admin/trackings/${r.id}`}>{r.tracking}</a></td>
-                    <td className="p-2">{cliente}</td>
-                    <td className="p-2">{r.carrier}</td>
-                    <td className="p-2">{fmtWeightPairFromLb(Number(r.weightLb || 0))}</td>
-                    <td className="p-2">
-                      {boxByInbound[r.id]?.code ? (
-                        <button className="underline text-sm text-neutral-700 hover:text-black" onClick={() => openBoxDetailByInbound(r.id)}>{boxByInbound[r.id]?.code}</button>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="p-2">
-                      {r.status === 'boxed' ? (
-                        <StatusBadge scope="package" status="boxed" />
-                      ) : r.status === 'received' ? (
-                        <StatusBadge scope="package" status="received" />
-                      ) : (
-                        <span className="text-xs">{r.status}</span>
-                      )}
-                    </td>
-                    <td className="p-2">
-                      {r.photoUrl ? (
-                        <a href={r.photoUrl} target="_blank" title="Ver foto" aria-label="Ver foto" className="inline-flex items-center justify-center text-neutral-700 hover:text-black">
-                          <IconPhoto />
-                        </a>
-                      ) : (
-                        <span className="text-neutral-400">—</span>
-                      )}
-                    </td>
-                    <td className="p-2">
-                      {(!boxByInbound[r.id] && r.status === 'received') ? (
-                        <button className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-neutral-700 hover:text-red-600 hover:border-red-400" title="Eliminar" onClick={() => deleteTracking(r)}>
-                          <IconTrash />
-                        </button>
-                      ) : (
-                        <span className="text-neutral-400">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {!rows.length ? (
-                <tr><td className="p-3 text-neutral-500" colSpan={9}>Sin datos aún.</td></tr>
-              ) : null}
-            </tbody>
-          </table>
+        {open && !disabled && options.length > 0 && (
+          <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+            {options.map((opt) => (
+              <li key={opt.value}>
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
+    );
+  }
 
+  return (
+    <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
+      <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-6">
+        <h1 className="text-2xl font-semibold">Historial de tracking</h1>
+        <p className="text-sm text-neutral-600">
+          Todos los trackings: empacados (en caja) y sin empacar (sueltos en warehouse).
+        </p>
 
-      {boxDetailOpen && detailBox ? (
-        <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
-          <div className="bg-white w-[95vw] max-w-3xl rounded-2xl shadow-xl ring-1 ring-slate-200 p-6">
-            <div className="flex flex-col gap-3 mb-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">CAJA: {detailBox.code}</h3>
-                <button className={btnSecondaryCls} onClick={() => { setBoxDetailOpen(false); setDetailBox(null); }}>Cerrar</button>
-              </div>
-              <div className="mt-3 flex items-center gap-3">
-                <label className="text-sm text-neutral-600">Tipo:</label>
-                <select className={inputCls} value={editType} onChange={(e)=> setEditType(e.target.value as any)}>
-                  <option value="COMERCIAL">Comercial</option>
-                  <option value="FRANQUICIA">Franquicia</option>
-                </select>
-                <button className={btnSecondaryCls} onClick={() => { void applyBoxTypeChange(); }}>Aplicar</button>
-              </div>
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                <label className="text-sm text-neutral-600 md:col-span-2">
-                  Referencia
-                  <input className={inputCls} value={labelRef} onChange={(e)=> setLabelRef(e.target.value)} onBlur={()=> { void saveLabelRef(); }} placeholder="Campo editable" />
-                </label>
-                <div className="flex justify-end">
-                  <button className={btnSecondaryCls} onClick={handlePrintLabel}>Imprimir etiqueta</button>
-                </div>
-              </div>
-            </div>
-            {loadingDetail ? (
-              <div className="text-sm text-neutral-500">Cargando…</div>
-            ) : (
-              <div className="overflow-x-auto border rounded">
-                <table className="w-full text-sm">
-                  <thead className="bg-neutral-50 text-neutral-700">
-                    <tr>
-                      <th className="text-left p-2">Tracking</th>
-                      <th className="text-left p-2">Peso</th>
-                      <th className="text-left p-2">Foto</th>
-                      <th className="text-left p-2">Acciones</th>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+          <input
+            className="border rounded p-2"
+            placeholder="Buscar por cliente"
+            value={qClient}
+            onChange={(e) => setQClient(e.target.value)}
+          />
+          <input
+            className="border rounded p-2"
+            placeholder="Buscar por tracking"
+            value={qTracking}
+            onChange={(e) => setQTracking(e.target.value)}
+          />
+          {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
+          <input
+            type="date"
+            className="border rounded p-2"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            title="Desde"
+          />
+          {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
+          <input
+            type="date"
+            className="border rounded p-2"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            title="Hasta"
+          />
+          <BrandSelect
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val as any)}
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "received", label: "Recibido" },
+              { value: "boxed", label: "Consolidado" },
+            ]}
+            placeholder="Filtrar estado"
+          />
+        </div>
+
+        <div className="flex flex-row gap-2 mb-2">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+            onClick={handleExportCsv}
+          >
+            Exportar CSV
+          </button>
+        </div>
+
+        <div className="overflow-x-auto border rounded">
+          {statusFilter === "boxed" ? (
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="text-left p-2">Caja</th>
+                  <th className="text-left p-2">Cliente</th>
+                  <th className="text-left p-2">Tipo</th>
+                  <th className="text-left p-2">Items</th>
+                  <th className="text-left p-2">Peso</th>
+                  <th className="text-left p-2">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBoxes.map((b) => {
+                  const c = clientsById[b.clientId];
+                  const cliente = c?.code ? `${c.code} — ${c.name}` : b.clientId;
+                  return (
+                    <tr key={b.id} className="border-t">
+                      <td className="p-2">
+                        <button
+                          className="underline text-sm text-neutral-700 hover:text-black"
+                          onClick={() => openBoxDetailByBoxId(b.id)}
+                        >
+                          {b.code}
+                        </button>
+                      </td>
+                      <td className="p-2">{cliente}</td>
+                      <td className="p-2">
+                        {b.type === "FRANQUICIA" ? "Franquicia" : "Comercial"}
+                      </td>
+                      <td className="p-2">{b.itemIds?.length || 0}</td>
+                      <td className="p-2">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
+                      <td className="p-2">
+                        <button
+                          className="px-2 py-1 border rounded"
+                          onClick={() => openBoxDetailByBoxId(b.id)}
+                        >
+                          Ver
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {detailItems.map((i) => (
-                      <tr key={i.id} className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50">
-                        <td className="p-2 font-mono">{i.tracking}</td>
-                        <td className="p-2">{fmtWeightPairFromLb(Number(i.weightLb || 0))}</td>
-                        <td className="p-2">{i.photoUrl ? (<a href={i.photoUrl} target="_blank" aria-label="Ver foto">📷</a>) : ("—")}</td>
-                        <td className="p-2">
-                          <button className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-neutral-700 hover:text-red-600 hover:border-red-400" title="Eliminar de la caja" onClick={() => { void removeItemFromBox(i.id); }}>
+                  );
+                })}
+                {!filteredBoxes.length ? (
+                  <tr>
+                    <td className="p-3 text-neutral-500" colSpan={6}>
+                      Sin cajas.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="text-left p-2">Fecha</th>
+                  <th className="text-left p-2">Tracking</th>
+                  <th className="text-left p-2">Cliente</th>
+                  <th className="text-left p-2">Carrier</th>
+                  <th className="text-left p-2">Peso</th>
+                  <th className="text-left p-2">Caja</th>
+                  <th className="text-left p-2">Estado</th>
+                  <th className="text-left p-2">Foto</th>
+                  <th className="text-left p-2">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(statusFilter === "received"
+                  ? filtered.filter((r) => !boxByInbound[r.id])
+                  : filtered
+                ).map((r) => {
+                  const c = clientsById[r.clientId];
+                  const cliente = c?.code
+                    ? `${c.code} — ${c.name}`
+                    : r.clientId;
+                  return (
+                    <tr key={r.id} className="border-t">
+                      <td className="p-2">
+                        {r.receivedAt
+                          ? new Date(r.receivedAt).toLocaleDateString()
+                          : "-"}
+                      </td>
+                      <td className="p-2 font-mono text-sm">
+                        <a
+                          className="underline text-neutral-700 hover:text-black"
+                          href={`/admin/trackings/${r.id}`}
+                        >
+                          {r.tracking}
+                        </a>
+                      </td>
+                      <td className="p-2">{cliente}</td>
+                      <td className="p-2">{r.carrier}</td>
+                      <td className="p-2">
+                        {fmtWeightPairFromLb(Number(r.weightLb || 0))}
+                      </td>
+                      <td className="p-2">
+                        {boxByInbound[r.id]?.code ? (
+                          <button
+                            className="underline text-sm text-neutral-700 hover:text-black"
+                            onClick={() => openBoxDetailByInbound(r.id)}
+                          >
+                            {boxByInbound[r.id]?.code}
+                          </button>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {r.status === "boxed" ? (
+                          <StatusBadge scope="package" status="boxed" />
+                        ) : r.status === "received" ? (
+                          <StatusBadge scope="package" status="received" />
+                        ) : (
+                          <span className="text-xs">{r.status}</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {r.photoUrl ? (
+                          <a
+                            href={r.photoUrl}
+                            target="_blank"
+                            title="Ver foto"
+                            aria-label="Ver foto"
+                            className="inline-flex items-center justify-center text-neutral-700 hover:text-black"
+                          >
+                            <IconPhoto />
+                          </a>
+                        ) : (
+                          <span className="text-neutral-400">—</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {!boxByInbound[r.id] && r.status === "received" ? (
+                          <button
+                            className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-neutral-700 hover:text-red-600 hover:border-red-400"
+                            title="Eliminar"
+                            onClick={() => deleteTracking(r)}
+                          >
                             <IconTrash />
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {!detailItems.length ? (
-                      <tr><td className="p-3 text-neutral-500" colSpan={4}>Caja sin items.</td></tr>
-                    ) : null}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <div className="mt-4 text-sm font-medium">Peso total: {fmtWeightPairFromLb(Number(detailBox.weightLb || 0))}</div>
-          </div>
+                        ) : (
+                          <span className="text-neutral-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!rows.length ? (
+                  <tr>
+                    <td className="p-3 text-neutral-500" colSpan={9}>
+                      Sin datos aún.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          )}
         </div>
-      ) : null}
+
+        {boxDetailOpen && detailBox ? (
+          <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
+            <div className="bg-white w-[95vw] max-w-3xl rounded-2xl shadow-xl ring-1 ring-slate-200 p-6">
+              <div className="flex flex-col gap-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold">
+                    CAJA: {detailBox.code}
+                  </h3>
+                  <button
+                    className={btnSecondaryCls}
+                    onClick={() => {
+                      setBoxDetailOpen(false);
+                      setDetailBox(null);
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <label className="text-sm text-neutral-600">Tipo:</label>
+                  <div className="min-w-[180px]">
+                    <BrandSelect
+                      value={editType}
+                      onChange={(val) => setEditType(val as any)}
+                      options={[
+                        { value: "COMERCIAL", label: "Comercial" },
+                        { value: "FRANQUICIA", label: "Franquicia" },
+                      ]}
+                      placeholder="Seleccionar tipo"
+                    />
+                  </div>
+                  <button
+                    className={btnSecondaryCls}
+                    onClick={() => {
+                      void applyBoxTypeChange();
+                    }}
+                  >
+                    Aplicar
+                  </button>
+                </div>
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                  <label className="text-sm text-neutral-600 md:col-span-2">
+                    Referencia
+                    <input
+                      className={inputCls}
+                      value={labelRef}
+                      onChange={(e) => setLabelRef(e.target.value)}
+                      onBlur={() => {
+                        void saveLabelRef();
+                      }}
+                      placeholder="Campo editable"
+                    />
+                  </label>
+                  <div className="flex justify-end">
+                    <button className={btnSecondaryCls} onClick={handlePrintLabel}>
+                      Imprimir etiqueta
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {loadingDetail ? (
+                <div className="text-sm text-neutral-500">Cargando…</div>
+              ) : (
+                <div className="overflow-x-auto border rounded">
+                  <table className="w-full text-sm">
+                    <thead className="bg-neutral-50 text-neutral-700">
+                      <tr>
+                        <th className="text-left p-2">Tracking</th>
+                        <th className="text-left p-2">Peso</th>
+                        <th className="text-left p-2">Foto</th>
+                        <th className="text-left p-2">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailItems.map((i) => (
+                        <tr
+                          key={i.id}
+                          className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50"
+                        >
+                          <td className="p-2 font-mono">{i.tracking}</td>
+                          <td className="p-2">
+                            {fmtWeightPairFromLb(Number(i.weightLb || 0))}
+                          </td>
+                          <td className="p-2">
+                            {i.photoUrl ? (
+                              <a
+                                href={i.photoUrl}
+                                target="_blank"
+                                aria-label="Ver foto"
+                              >
+                                📷
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <button
+                              className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-neutral-700 hover:text-red-600 hover:border-red-400"
+                              title="Eliminar de la caja"
+                              onClick={() => {
+                                void removeItemFromBox(i.id);
+                              }}
+                            >
+                              <IconTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {!detailItems.length ? (
+                        <tr>
+                          <td className="p-3 text-neutral-500" colSpan={4}>
+                            Caja sin items.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="mt-4 text-sm font-medium">
+                Peso total: {fmtWeightPairFromLb(Number(detailBox.weightLb || 0))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </main>
   );
 }

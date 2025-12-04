@@ -30,6 +30,72 @@ export default function ClientesPage() {
   );
 }
 
+interface BrandOption {
+  value: string;
+  label: string;
+}
+
+interface BrandSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: BrandOption[];
+  placeholder: string;
+  disabled?: boolean;
+}
+
+function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
+  const [open, setOpen] = useState(false);
+
+  const showLabel = value
+    ? options.find((o) => o.value === value)?.label ?? value
+    : placeholder;
+
+  const baseClasses =
+    "mt-1 h-11 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
+
+  return (
+    <div
+      className="relative"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        className={baseClasses + (!value ? " text-slate-400" : "")}
+        onClick={() => {
+          if (!disabled) setOpen((prev) => !prev);
+        }}
+      >
+        <span className="truncate text-left">{showLabel}</span>
+        <span className="ml-2 text-slate-500">▾</span>
+      </button>
+      {open && !disabled && options.length > 0 && (
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+          {options.map((opt) => (
+            <li key={opt.value}>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function PageInner() {
   const [rows, setRows] = useState<Client[]>([]);
   const [busyId, setBusyId] = useState<string>("");
@@ -177,53 +243,53 @@ function PageInner() {
   }
 
   return (
-    <main className="p-4 md:p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Clientes</h1>
-        <button
-          type="button"
-          onClick={() => setOpenCreate(true)}
-          className="h-10 px-4 rounded-md bg-brand-primary text-white shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-brand-primary"
-        >
-          + Crear nuevo cliente
-        </button>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="relative">
-          <label className="text-xs font-medium text-neutral-600">Buscar</label>
-          <input
-            className="mt-1 h-11 w-full rounded-md border border-slate-300 pl-10 pr-9"
-            placeholder="Nombre o Nº cliente"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <span className="absolute left-3 top-[38px] text-neutral-400" aria-hidden>🔎</span>
-          {q ? (
-            <button
-              type="button"
-              onClick={() => setQ("")}
-              className="absolute right-3 top-[34px] text-neutral-500"
-              aria-label="Limpiar búsqueda"
-            >
-              ✕
-            </button>
-          ) : null}
-        </div>
-        <div>
-          <label className="text-xs font-medium text-neutral-600">País</label>
-          <select
-            className="mt-1 h-11 w-full rounded-md border border-slate-300"
-            value={countryFilter}
-            onChange={(e) => setCountryFilter(e.target.value)}
+    <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
+      <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Clientes</h1>
+          <button
+            type="button"
+            onClick={() => setOpenCreate(true)}
+            className="h-10 px-4 rounded-md bg-brand-primary text-white shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-brand-primary"
           >
-            <option value="">Todos</option>
-            {COUNTRIES.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
+            + Crear nuevo cliente
+          </button>
         </div>
-      </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="relative">
+            <label className="text-xs font-medium text-neutral-600">Buscar</label>
+            <input
+              className="mt-1 h-11 w-full rounded-md border border-slate-300 pl-10 pr-9"
+              placeholder="Nombre o Nº cliente"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            <span className="absolute left-3 top-[38px] text-neutral-400" aria-hidden>🔎</span>
+            {q ? (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                className="absolute right-3 top-[34px] text-neutral-500"
+                aria-label="Limpiar búsqueda"
+              >
+                ✕
+              </button>
+            ) : null}
+          </div>
+          <div>
+            <label className="text-xs font-medium text-neutral-600">País</label>
+            <BrandSelect
+              value={countryFilter}
+              onChange={(val) => setCountryFilter(val)}
+              options={[
+                { value: "", label: "Todos" },
+                ...COUNTRIES.map((p) => ({ value: p, label: p })),
+              ]}
+              placeholder="Todos"
+            />
+          </div>
+        </div>
 
       
 
@@ -241,24 +307,32 @@ function PageInner() {
                   <input className="border rounded px-4 h-12 w-full" placeholder="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <div className="md:col-span-2">
-                  <select className="border rounded px-4 h-12 w-full" value={country} onChange={(e) => { setCountry(e.target.value); setStateName(""); }} required>
-                    <option value="" disabled>Seleccionar país…</option>
-                    {COUNTRIES.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
+                  <BrandSelect
+                    value={country}
+                    onChange={(val) => {
+                      setCountry(val);
+                      setStateName("");
+                    }}
+                    options={COUNTRIES.map((p) => ({ value: p, label: p }))}
+                    placeholder="Seleccionar país…"
+                  />
                 </div>
 
                 <div>
-                  <select className="border rounded px-4 h-12 w-full" value={documentType} onChange={(e) => setDocumentType(e.target.value)}>
-                    <option>Cédula</option>
-                    <option>Pasaporte</option>
-                    <option>RUT</option>
-                    <option>DNI</option>
-                    <option>CUIT</option>
-                    <option>CUIL</option>
-                    <option>Otro</option>
-                  </select>
+                  <BrandSelect
+                    value={documentType}
+                    onChange={(val) => setDocumentType(val)}
+                    options={[
+                      { value: "Cédula", label: "Cédula" },
+                      { value: "Pasaporte", label: "Pasaporte" },
+                      { value: "RUT", label: "RUT" },
+                      { value: "DNI", label: "DNI" },
+                      { value: "CUIT", label: "CUIT" },
+                      { value: "CUIL", label: "CUIL" },
+                      { value: "Otro", label: "Otro" },
+                    ]}
+                    placeholder="Tipo de documento"
+                  />
                 </div>
                 <div>
                   <input className="border rounded px-4 h-12 w-full" placeholder="Nº documento" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} />
@@ -424,6 +498,7 @@ function PageInner() {
           </div>
         </div>
       )}
+      </div>
     </main>
   );
 }

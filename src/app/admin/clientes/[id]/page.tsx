@@ -234,16 +234,16 @@ function PageInner() {
     }
   }
 
-  if (!client) {
-    return (
-      <main className="p-4 md:p-8">
-        <p className="text-sm text-neutral-500">Cargando cliente…</p>
-      </main>
-    );
-  }
-
+if (!client) {
   return (
-    <main className="p-4 md:p-8 space-y-6">
+    <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28">
+      <p className="text-sm text-neutral-500">Cargando cliente…</p>
+    </main>
+  );
+}
+
+return (
+  <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28 space-y-6">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/admin/clientes" className={btnSecondaryCls} aria-label="Volver a clientes">← Volver</Link>
@@ -287,14 +287,15 @@ function PageInner() {
             {/* Fila 2: Tipo doc 20% · Nº doc 40% (el resto queda libre para futuro) */}
             <label className="grid gap-1 md:col-span-4">
               <span className={labelCls}>Tipo de documento</span>
-              <select
-                className={inputCls}
+              <BrandSelect
                 value={(form as any).docType || ""}
-                onChange={(e) => setForm((f) => ({ ...f, docType: e.target.value }))}
-              >
-                <option value="" disabled>Seleccionar…</option>
-                {DOC_TYPES.map(t => (<option key={t} value={t}>{t}</option>))}
-              </select>
+                onChange={(val) => setForm((f) => ({ ...f, docType: val }))}
+                options={[
+                  { value: "", label: "Seleccionar…" },
+                  ...DOC_TYPES.map((t) => ({ value: t, label: t })),
+                ]}
+                placeholder="Seleccionar…"
+              />
             </label>
             <label className="grid gap-1 md:col-span-8">
               <span className={labelCls}>Número de documento</span>
@@ -305,30 +306,25 @@ function PageInner() {
             {/* Fila 3: País 30% · Estado 30% · Ciudad 40% */}
             <label className="grid gap-1 md:col-span-6">
               <span className={labelCls}>País</span>
-              <select
-                className={inputCls}
+              <BrandSelect
                 value={form.country || ""}
-                onChange={(e) => setForm((f) => ({ ...f, country: e.target.value, state: "" }))}
-              >
-                <option value="" disabled>Seleccionar país…</option>
-                {COUNTRIES.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
+                onChange={(val) => setForm((f) => ({ ...f, country: val, state: "" }))}
+                options={COUNTRIES.map((p) => ({ value: p, label: p }))}
+                placeholder="Seleccionar país…"
+              />
             </label>
             <label className="grid gap-1 md:col-span-6">
               <span className={labelCls}>Estado / Depto / Provincia</span>
-              <select
-                className={inputCls}
-                value={form.state || ''}
-                onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
+              <BrandSelect
+                value={form.state || ""}
+                onChange={(val) => setForm((f) => ({ ...f, state: val }))}
+                options={(STATES_BY_COUNTRY[form.country as string] || []).map((s) => ({
+                  value: s,
+                  label: s,
+                }))}
+                placeholder="Seleccionar…"
                 disabled={!form.country || !STATES_BY_COUNTRY[form.country as string]}
-              >
-                <option value="" disabled>Seleccionar…</option>
-                {(STATES_BY_COUNTRY[form.country as string] || []).map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              />
             </label>
             <label className="grid gap-1 md:col-span-8">
               <span className={labelCls}>Ciudad</span>
@@ -524,5 +520,71 @@ function PageInner() {
         </section>
       ) : null}
     </main>
+  );
+}
+
+interface BrandOption {
+  value: string;
+  label: string;
+}
+
+interface BrandSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: BrandOption[];
+  placeholder: string;
+  disabled?: boolean;
+}
+
+function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
+  const [open, setOpen] = useState(false);
+
+  const showLabel = value
+    ? options.find((o) => o.value === value)?.label ?? value
+    : placeholder;
+
+  const baseClasses =
+    "h-11 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
+
+  return (
+    <div
+      className="relative"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        className={baseClasses + (!value ? " text-slate-400" : "")}
+        onClick={() => {
+          if (!disabled) setOpen((prev) => !prev);
+        }}
+      >
+        <span className="truncate text-left">{showLabel}</span>
+        <span className="ml-2 text-slate-500">▾</span>
+      </button>
+      {open && !disabled && options.length > 0 && (
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+          {options.map((opt) => (
+            <li key={opt.value}>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

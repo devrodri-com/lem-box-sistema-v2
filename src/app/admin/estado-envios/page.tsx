@@ -145,101 +145,131 @@ export default function EstadoEnviosPage() {
 
   return (
     <RequireAuth requireAdmin>
-      <main className="p-4 md:p-8 space-y-6">
-        <h1 className="text-2xl font-semibold">Estado de envíos</h1>
-        {loading ? (
-          <p>Cargando embarques...</p>
-        ) : shipments.length === 0 ? (
-          <p>No hay embarques disponibles.</p>
-        ) : (
-          <div className="overflow-x-auto border rounded">
-            <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-3 py-2 text-left">Código</th>
-                  <th className="px-3 py-2 text-left">País</th>
-                  <th className="px-3 py-2 text-left">Tipo</th>
-                  <th className="px-3 py-2 text-left">Estado</th>
-                  <th className="px-3 py-2 text-left">Fecha</th>
-                  <th className="px-3 py-2 text-left">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shipments.map((s) => (
-                  <Fragment key={s.id}>
-                    <tr className="border-t">
-                      <td className="px-3 py-2">
-                        <button className="underline" onClick={() => toggleExpand(s)}>
-                          {s.code}
-                        </button>
-                      </td>
-                      <td className="px-3 py-2">{s.country}</td>
-                      <td className="px-3 py-2">{s.type}</td>
-                      <td className="px-3 py-2">{renderShipmentStatus(s.status)}</td>
-                      <td className="px-3 py-2">{s.openedAt ? new Date(s.openedAt).toLocaleDateString() : "-"}</td>
-                      <td className="px-3 py-2">
-                        {s.status === "open" && (
-                          <button className="px-2 py-1 rounded border" onClick={() => setStatus(s.id, "shipped")}>Marcar En Tránsito</button>
-                        )}
-                        {s.status === "shipped" && (
-                          <button className="px-2 py-1 rounded border" onClick={() => setStatus(s.id, "arrived")}>Marcar En Destino</button>
-                        )}
-                      </td>
-                    </tr>
-                    {expandedId === s.id && (
-                      <tr key={`${s.id}-expanded`}>
-                        <td colSpan={6} className="bg-neutral-50 p-3">
-                          {loadingDetail === s.id ? (
-                            <div className="text-neutral-500">Cargando cajas…</div>
-                          ) : (
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm border">
-                                <thead>
-                                  <tr className="bg-white">
-                                    <th className="px-2 py-1 text-left">Caja</th>
-                                    <th className="px-2 py-1 text-left">Cliente</th>
-                                    <th className="px-2 py-1 text-left">Items</th>
-                                    <th className="px-2 py-1 text-left">Peso</th>
-                                    <th className="px-2 py-1 text-left">Acciones</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {(boxesByShipment[s.id] || []).map((b) => (
-                                    <tr key={b.id} className="border-t">
-                                      <td className="px-2 py-1 font-mono">
-                                        <button className="underline" onClick={() => openBoxDetail(b)}>{b.code}</button>
-                                      </td>
-                                      <td className="px-2 py-1">{clientsById[b.clientId]?.name || b.clientId}</td>
-                                      <td className="px-2 py-1">{b.itemIds?.length || 0}</td>
-                                      <td className="px-2 py-1">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
-                                      <td className="px-2 py-1">
-                                        <button className="px-2 py-1 rounded border" onClick={() => removeBoxFromShipment(b, s)}>Eliminar de embarque</button>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                  {!boxesByShipment[s.id]?.length && (
-                                    <tr><td colSpan={5} className="px-2 py-2 text-neutral-500">Este embarque no tiene cajas (o no se han cargado).</td></tr>
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
+      <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
+        <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-6">
+          <h1 className="text-2xl font-semibold">Estado de envíos</h1>
+          {loading ? (
+            <p>Cargando embarques...</p>
+          ) : shipments.length === 0 ? (
+            <p>No hay embarques disponibles.</p>
+          ) : (
+            <div className="overflow-x-auto border rounded">
+              <table className="min-w-full text-sm">
+                {/* el contenido de la tabla queda exactamente igual */}
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Código</th>
+                    <th className="px-3 py-2 text-left">País</th>
+                    <th className="px-3 py-2 text-left">Tipo</th>
+                    <th className="px-3 py-2 text-left">Estado</th>
+                    <th className="px-3 py-2 text-left">Fecha</th>
+                    <th className="px-3 py-2 text-left">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shipments.map((s) => (
+                    <Fragment key={s.id}>
+                      <tr className="border-t">
+                        <td className="px-3 py-2">
+                          <button className="underline" onClick={() => toggleExpand(s)}>
+                            {s.code}
+                          </button>
+                        </td>
+                        <td className="px-3 py-2">{s.country}</td>
+                        <td className="px-3 py-2">{s.type}</td>
+                        <td className="px-3 py-2">{renderShipmentStatus(s.status)}</td>
+                        <td className="px-3 py-2">{s.openedAt ? new Date(s.openedAt).toLocaleDateString() : "-"}</td>
+                        <td className="px-3 py-2">
+                          {s.status === "open" && (
+                            <button className="px-2 py-1 rounded border" onClick={() => setStatus(s.id, "shipped")}>
+                              Marcar En Tránsito
+                            </button>
+                          )}
+                          {s.status === "shipped" && (
+                            <button className="px-2 py-1 rounded border" onClick={() => setStatus(s.id, "arrived")}>
+                              Marcar En Destino
+                            </button>
                           )}
                         </td>
                       </tr>
-                    )}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <Script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" strategy="lazyOnload" />
+                      {expandedId === s.id && (
+                        <tr key={`${s.id}-expanded`}>
+                          <td colSpan={6} className="bg-neutral-50 p-3">
+                            {loadingDetail === s.id ? (
+                              <div className="text-neutral-500">Cargando cajas…</div>
+                            ) : (
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm border">
+                                  <thead>
+                                    <tr className="bg-white">
+                                      <th className="px-2 py-1 text-left">Caja</th>
+                                      <th className="px-2 py-1 text-left">Cliente</th>
+                                      <th className="px-2 py-1 text-left">Items</th>
+                                      <th className="px-2 py-1 text-left">Peso</th>
+                                      <th className="px-2 py-1 text-left">Acciones</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(boxesByShipment[s.id] || []).map((b) => (
+                                      <tr key={b.id} className="border-t">
+                                        <td className="px-2 py-1 font-mono">
+                                          <button className="underline" onClick={() => openBoxDetail(b)}>
+                                            {b.code}
+                                          </button>
+                                        </td>
+                                        <td className="px-2 py-1">{clientsById[b.clientId]?.name || b.clientId}</td>
+                                        <td className="px-2 py-1">{b.itemIds?.length || 0}</td>
+                                        <td className="px-2 py-1">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
+                                        <td className="px-2 py-1">
+                                          <button
+                                            className="px-2 py-1 rounded border"
+                                            onClick={() => removeBoxFromShipment(b, s)}
+                                          >
+                                            Eliminar de embarque
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                    {!boxesByShipment[s.id]?.length && (
+                                      <tr>
+                                        <td colSpan={5} className="px-2 py-2 text-neutral-500">
+                                          Este embarque no tiene cajas (o no se han cargado).
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <Script
+            src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
+            strategy="lazyOnload"
+          />
+        </div>
+
         {boxDetailOpen && detailBox ? (
           <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
             <div className="bg-white w-[95vw] max-w-3xl rounded-lg shadow-xl p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Caja {detailBox.code}</h3>
-                <button className="px-3 py-2 rounded border" onClick={() => { setBoxDetailOpen(false); setDetailBox(null); }}>Cerrar</button>
+                <button
+                  className="px-3 py-2 rounded border"
+                  onClick={() => {
+                    setBoxDetailOpen(false);
+                    setDetailBox(null);
+                  }}
+                >
+                  Cerrar
+                </button>
               </div>
               {loadingBox ? (
                 <div className="text-sm text-neutral-500">Cargando…</div>
@@ -258,17 +288,31 @@ export default function EstadoEnviosPage() {
                         <tr key={i.id} className="border-t">
                           <td className="p-2 font-mono">{i.tracking}</td>
                           <td className="p-2">{fmtWeightPairFromLb(Number(i.weightLb || 0))}</td>
-                          <td className="p-2">{i.photoUrl ? (<a href={i.photoUrl} target="_blank" aria-label="Ver foto">📷</a>) : ("—")}</td>
+                          <td className="p-2">
+                            {i.photoUrl ? (
+                              <a href={i.photoUrl} target="_blank" aria-label="Ver foto">
+                                📷
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
                         </tr>
                       ))}
                       {!detailItems.length ? (
-                        <tr><td className="p-3 text-neutral-500" colSpan={3}>Caja sin items.</td></tr>
+                        <tr>
+                          <td className="p-3 text-neutral-500" colSpan={3}>
+                            Caja sin items.
+                          </td>
+                        </tr>
                       ) : null}
                     </tbody>
                   </table>
                 </div>
               )}
-              <div className="mt-3 text-sm">Peso total: {fmtWeightPairFromLb(Number(detailBox.weightLb || 0))}</div>
+              <div className="mt-3 text-sm">
+                Peso total: {fmtWeightPairFromLb(Number(detailBox.weightLb || 0))}
+              </div>
             </div>
           </div>
         ) : null}
