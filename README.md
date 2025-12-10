@@ -27,7 +27,7 @@ Enables end‑to‑end management of packages and boxes in the Miami warehouse, 
 - **ZXing** for scanning tracking barcodes  
 
 ## 🧭 Architecture (high level)
-- **Next.js (App Router)** as frontend + server (routes `/admin/*` and `/mi`).
+- **Next.js (App Router)** as frontend + server (routes `/admin/*` and client portal under `/mi/*`).
 - **Firebase Auth** manages the session (email/password).
 - **Firestore** stores entities (`users`, `clients`, `inboundPackages`, `boxes`, `shipments`, `trackingAlerts`).
 - **Storage** stores photos (packages/documents), accessed via URL.
@@ -63,6 +63,16 @@ src/
       clientes/
       usuarios/
     mi/
+      layout.tsx
+      page.tsx        (redirects to /mi/historial)
+      historial/
+        page.tsx
+      cajas/
+        page.tsx
+      envios/
+        page.tsx
+      cuenta/
+        page.tsx
     acceder/
     registro/
   components/
@@ -94,6 +104,8 @@ src/
 - **Account**: edit **Name, Phone, Country/State/City, Address, Postal code, Extra email, DocType/DocNumber**. **Code** and **Email** are read‑only.
 - **Report tracking**: creates a document in `trackingAlerts` for admin to handle.
 - **Auto‑linking**: if `users/{uid}` is missing, the system tries to associate by `clients.email == auth.email` and creates the profile.
+
+Internally, the client portal is split into nested routes: `/mi/historial`, `/mi/cajas`, `/mi/envios`, and `/mi/cuenta`, all sharing a common layout that handles authentication, header, and tabs.
 
 ### 6×4 label printing (horizontal)
 - 6×4 PDF generated with **jsPDF (CDN)** in `src/lib/printBoxLabel.ts`.

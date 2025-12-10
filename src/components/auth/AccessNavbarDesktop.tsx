@@ -3,8 +3,7 @@
 
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Instagram } from "lucide-react";
-import { FaWhatsapp } from "react-icons/fa";
+import { Instagram, MessageCircle } from "lucide-react";
 
 export default function AccessNavbarDesktop() {
   const navStyle: CSSProperties & { ["--nav-h"]?: string } = {
@@ -81,7 +80,7 @@ export default function AccessNavbarDesktop() {
             className="inline-flex items-center justify-center p-2 rounded-md text-white/90 no-underline hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005f40]/40 transition"
             title="WhatsApp"
           >
-            <FaWhatsapp className="w-5 h-5" />
+            <MessageCircle className="w-5 h-5" />
           </a>
         </div>
       </div>
