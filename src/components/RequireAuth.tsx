@@ -22,7 +22,12 @@ export default function RequireAuth({ children, requireAdmin = false }: { childr
         // 1) Intentar con custom claims
         const tok = await u.getIdTokenResult(true);
         const c = tok.claims as any;
-        isAdmin = Boolean(c?.superadmin || c?.role === "admin" || c?.role === "superadmin");
+        isAdmin = Boolean(
+          c?.superadmin ||
+            c?.role === "admin" ||
+            c?.role === "superadmin" ||
+            c?.role === "partner_admin"
+        );
 
         // 2) Si no hay rol en claims, mirar en Firestore users
         if (!isAdmin) {
@@ -37,7 +42,7 @@ export default function RequireAuth({ children, requireAdmin = false }: { childr
             const s = await getDocs(q);
             if (!s.empty) role = (s.docs[0].data() as any)?.role || null;
           }
-          isAdmin = role === "admin" || role === "superadmin";
+          isAdmin = role === "admin" || role === "superadmin" || role === "partner_admin";
         }
       } catch {
         isAdmin = false;

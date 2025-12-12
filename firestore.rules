@@ -19,7 +19,8 @@ service cloud.firestore {
     }
     function isSuperAdmin() { return role() == 'superadmin' || request.auth.token.superadmin == true; }
     function isAdmin()      { return role() == 'admin'      || request.auth.token.admin == true; }
-    function isStaff()      { return isSuperAdmin() || isAdmin(); }
+    function isStaff()      { return isSuperAdmin() || isAdmin() || role() == 'operador'; }
+    function isPartnerAdmin() { return role() == 'partner_admin' || request.auth.token.role == 'partner_admin'; }
     function isOwner(cid)   { return clientId() != null && clientId() == cid; }
 
     // ===== Validators / enums =====
@@ -47,21 +48,22 @@ service cloud.firestore {
     // ===== users =====
     match /users/{uid} {
       allow read:   if isStaff() || (hasAuth() && (uid == request.auth.uid || resource.data.uid == request.auth.uid));
-      allow create: if hasAuth() && (uid == request.auth.uid || request.resource.data.uid == request.auth.uid);
+      allow create: if isStaff() || isPartnerAdmin() || (hasAuth() && (uid == request.auth.uid || request.resource.data.uid == request.auth.uid));
       allow update: if isStaff() || (hasAuth() && (uid == request.auth.uid || resource.data.uid == request.auth.uid));
       allow delete: if isSuperAdmin();
     }
 
     // ===== clients =====
     match /clients/{id} {
-      allow read: if isStaff() || isOwner(id) || (hasAuth() && resource.data.email == request.auth.token.email);
-      allow update: if isStaff() || (isOwner(id) && resource.data.diff(request.resource.data).changedKeys().hasOnly(['name','phone','country','state','city','address']));
-      allow create, delete: if isStaff();
+      allow read: if isStaff() || isOwner(id) || (hasAuth() && resource.data.email == request.auth.token.email) || (hasAuth() && resource.data.managerUid == request.auth.uid);
+      allow create: if hasAuth();
+      allow update: if isStaff() || (isOwner(id) && resource.data.diff(request.resource.data).changedKeys().hasOnly(['name','phone','country','state','city','address'])) || (isPartnerAdmin() && resource.data.managerUid == request.auth.uid && request.resource.data.managerUid == resource.data.managerUid);
+      allow delete: if isStaff();
     }
 
     // ===== inboundPackages =====
     match /inboundPackages/{inbId} {
-      allow read: if isStaff() || isOwner(resource.data.clientId);
+      allow read: if isStaff() || isOwner(resource.data.clientId) || (hasAuth() && resource.data.managerUid == request.auth.uid);
 
       allow create: if isStaff() &&
         isNonEmptyString(request.resource.data.tracking) &&
@@ -96,7 +98,7 @@ service cloud.firestore {
 
     // ===== boxes =====
     match /boxes/{boxId} {
-      allow read: if isStaff() || isOwner(resource.data.clientId);
+      allow read: if isStaff() || isOwner(resource.data.clientId) || (hasAuth() && resource.data.managerUid == request.auth.uid);
 
       allow create: if isStaff() &&
         isNonEmptyString(request.resource.data.code) &&
@@ -113,24 +115,24 @@ service cloud.firestore {
 
     // ===== shipments =====
     match /shipments/{id} {
-      allow read: if isStaff() || (clientId() != null && clientId() in resource.data.clientIds);
+      allow read: if isStaff() || (clientId() != null && clientId() in resource.data.clientIds) || (hasAuth() && request.auth.uid in resource.data.managerUids);
       allow write: if isStaff();
     }
 
     // ===== trackingAlerts =====
     match /trackingAlerts/{id} {
-      allow create: if hasAuth() && request.resource.data.uid == request.auth.uid;
-      allow read, update, delete: if isStaff();
+      allow read: if isStaff() || (hasAuth() && resource.data.uid == request.auth.uid) || (hasAuth() && resource.data.managerUid == request.auth.uid);
+      allow create: if (hasAuth() && request.resource.data.uid == request.auth.uid) || (isPartnerAdmin() && request.resource.data.managerUid == request.auth.uid);
+      allow update, delete: if isStaff();
     }
 
     // ===== counters/admins =====
-    match /counters/{id} { allow read, write: if isStaff(); }
-    match /admins/{uid}  { allow read, write: if isSuperAdmin(); }
-
-    // ===== BYPASS GLOBAL SOLO PARA TU UID (temporal) =====
-    match /{document=**} {
-      allow write: if hasAuth() && request.auth.uid == '6zmyM2JUKVbnki3eHWtNnPoHQfs1';
-      allow read: if false;
+    match /counters/{id} {
+      // cualquier usuario autenticado puede leer contadores
+      allow read: if hasAuth();
+      // cualquier usuario autenticado puede escribir contadores (incluido clients)
+      allow write: if hasAuth();
     }
+    match /admins/{uid}  { allow read, write: if isSuperAdmin(); }
   }
 }

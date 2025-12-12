@@ -70,6 +70,11 @@ function PageInner() {
   const [pwSaving, setPwSaving] = useState<boolean>(false);
   const [pwMsg, setPwMsg] = useState<string>("");
 
+  // User role and partner admins
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isStaff, setIsStaff] = useState<boolean>(false);
+  const [partnerAdmins, setPartnerAdmins] = useState<Array<{ uid: string; email: string; displayName?: string }>>([]);
+
   // Unified styles
   const inputCls = "h-11 border border-slate-300 rounded-md px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
   const labelCls = "text-xs font-medium text-neutral-600";
@@ -149,9 +154,59 @@ function PageInner() {
     if (!u) { setIsSuperAdmin(false); return; }
     getIdTokenResult(u).then(r => {
       const claims = r.claims as Record<string, unknown>;
-      const ok = claims["role"] === "superadmin" || claims["superadmin"] === true || claims["admin"] === true;
+      const role = (claims["role"] as string) || null;
+      setUserRole(role);
+      const ok = role === "superadmin" || claims["superadmin"] === true || claims["admin"] === true || role === "admin" || role === "operador";
       setIsSuperAdmin(Boolean(ok));
-    }).catch(() => setIsSuperAdmin(false));
+      setIsStaff(ok || role === "operador");
+      
+      // If staff, load partner admins
+      if (ok || role === "operador") {
+        getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
+          .then((snap) => {
+            const admins = snap.docs.map((d) => {
+              const data = d.data();
+              return {
+                uid: d.id,
+                email: data.email || "",
+                displayName: data.displayName || "",
+              };
+            });
+            setPartnerAdmins(admins);
+          })
+          .catch(() => setPartnerAdmins([]));
+      }
+    }).catch(() => {
+      // Fallback: try Firestore
+      getDoc(doc(db, "users", u.uid))
+        .then((snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            const role = data.role || null;
+            setUserRole(role);
+            const ok = role === "superadmin" || role === "admin" || role === "operador";
+            setIsSuperAdmin(ok);
+            setIsStaff(ok);
+            
+            if (ok) {
+              getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
+                .then((snap) => {
+                  const admins = snap.docs.map((d) => {
+                    const data = d.data();
+                    return {
+                      uid: d.id,
+                      email: data.email || "",
+                      displayName: data.displayName || "",
+                    };
+                  });
+                  setPartnerAdmins(admins);
+                })
+                .catch(() => setPartnerAdmins([]));
+            }
+          }
+        })
+        .catch(() => {});
+    });
   }, []);
 
   const canSave = useMemo(() => !!form?.name && !!form?.code && !!form?.country, [form]);
@@ -178,6 +233,13 @@ function PageInner() {
         emailAlt: (form as any).emailAlt || undefined,
         activo: form.activo !== false,
       };
+      
+      // Solo staff puede modificar managerUid
+      if (isStaff && (form as any).managerUid !== undefined) {
+        (payload as any).managerUid = (form as any).managerUid || null;
+      }
+      // partner_admin NO puede cambiar managerUid (se mantiene el valor original)
+      
       const sanitized = Object.fromEntries(Object.entries(payload).filter(([, v]) => v !== undefined)) as Partial<Client>;
       await updateDoc(doc(db, "clients", String(client.id)), sanitized as any);
       setClient({ ...(client as Client), ...(payload as Partial<Client>) });
@@ -358,6 +420,28 @@ return (
               <span className={labelCls}>Email adicional</span>
               <input className={inputCls} value={(form as any).emailAlt || ""} onChange={(e) => setForm((f) => ({ ...f, emailAlt: e.target.value }))} />
             </label>
+
+            {isStaff && partnerAdmins.length > 0 ? (
+              <label className="grid gap-1 md:col-span-20">
+                <span className={labelCls}>Admin asociado</span>
+                <BrandSelect
+                  value={(form as any).managerUid || ""}
+                  onChange={(val) => setForm((f) => ({ ...f, managerUid: val || null }))}
+                  options={[
+                    { value: "", label: "Ninguno" },
+                    ...partnerAdmins.map((pa) => ({
+                      value: pa.uid,
+                      label: pa.displayName ? `${pa.displayName} (${pa.email})` : pa.email,
+                    })),
+                  ]}
+                  placeholder="Seleccionar admin asociado…"
+                />
+              </label>
+            ) : userRole === "partner_admin" ? (
+              <div className="md:col-span-20 text-xs text-neutral-500">
+                No puedes cambiar el admin asociado de este cliente.
+              </div>
+            ) : null}
 
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={form.activo !== false} onChange={(e) => setForm((f) => ({ ...f, activo: e.target.checked }))} />

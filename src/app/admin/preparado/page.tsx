@@ -17,7 +17,7 @@ import {
   runTransaction,
 } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
-import type { Client } from "@/types/lem";
+import type { Client, Shipment } from "@/types/lem";
 import { useRouter } from "next/navigation";
 
 // Types
@@ -34,6 +34,7 @@ type Box = {
   createdAt?: number;
   shipmentId?: string | null; // embarque asignado
   status?: "open" | "closed"; // estado caja
+  managerUid?: string | null;
 };
 
 const COUNTRY_OPTIONS: { value: string; label: string }[] = [
@@ -376,6 +377,12 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
         }
 
         const clientIds = Array.from(new Set(boxesData.map(b => b.clientId)));
+        // Construir array de managerUids sin duplicados y sin nulos
+        const managerUids = Array.from(new Set(
+          boxesData
+            .map(b => b.managerUid)
+            .filter((uid): uid is string => uid != null && uid !== "")
+        ));
         const code = await nextShipmentCode();
 
         // Crear doc de embarque con id auto
@@ -386,6 +393,7 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
           type: boxesData[0].type,
           boxIds: boxesData.map(b => b.id),
           clientIds,
+          managerUids,
           status: "open",
           openedAt: Date.now(),
         });
@@ -434,11 +442,26 @@ function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimary
           if (b.shipmentId) throw new Error(`Caja ${b.code} ya tiene embarque`);
         }
 
-        // Recomputar boxIds y clientIds
+        // Recomputar boxIds, clientIds y managerUids
         const newBoxIds: string[] = Array.from(new Set([...(ship.boxIds || []), ...boxesData.map(b => b.id)]));
         const newClientIds: string[] = Array.from(new Set([...(ship.clientIds || []), ...boxesData.map(b => b.clientId)]));
+        
+        // Obtener todas las boxes del shipment (las existentes + las nuevas)
+        const allBoxIds = newBoxIds;
+        const allBoxRefs = allBoxIds.map(id => doc(db, "boxes", id));
+        const allBoxSnaps = await Promise.all(allBoxRefs.map(r => tx.get(r)));
+        const allBoxesData = allBoxSnaps
+          .filter(s => s.exists())
+          .map(s => ({ id: s.id, ...(s.data() as any) } as Box));
+        
+        // Construir array de managerUids sin duplicados y sin nulos
+        const managerUids = Array.from(new Set(
+          allBoxesData
+            .map(b => b.managerUid)
+            .filter((uid): uid is string => uid != null && uid !== "")
+        ));
 
-        tx.update(shipRef, { boxIds: newBoxIds, clientIds: newClientIds });
+        tx.update(shipRef, { boxIds: newBoxIds, clientIds: newClientIds, managerUids });
         for (const r of boxRefs) tx.update(r, { shipmentId: shipRef.id });
       });
 

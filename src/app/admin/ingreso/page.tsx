@@ -5,6 +5,8 @@ import { db, storage } from "@/lib/firebase";
 import {
   addDoc,
   collection,
+  doc,
+  getDoc,
   getDocs,
   orderBy,
   query,
@@ -302,6 +304,21 @@ function PageInner() {
     const weightLbVal = computeWeightLb();
     if (weightLbVal <= 0) { setErrMsg("Ingrese un peso válido en lb o kg."); return false; }
 
+    // Leer el cliente para obtener managerUid
+    let managerUid: string | null = null;
+    if (form.clientId) {
+      try {
+        const clientSnap = await getDoc(doc(db, "clients", form.clientId));
+        if (clientSnap.exists()) {
+          const clientData = clientSnap.data() as Omit<Client, "id">;
+          managerUid = clientData.managerUid ?? null;
+        }
+      } catch (error) {
+        console.error("Error al leer el cliente:", error);
+        // Continuar sin managerUid si hay error
+      }
+    }
+
     let photoUrl: string | undefined;
     if (form.photo) {
       const blob = await processImage(form.photo);
@@ -318,6 +335,7 @@ function PageInner() {
       photoUrl,
       status: "received",
       receivedAt: Timestamp.now().toMillis(),
+      managerUid: managerUid,
     });
     setRows([{ id: docRef.id, tracking: trackingValue, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, receivedAt: Date.now(), status: "received" }, ...rows]);
     setForm({ tracking: "", carrier: form.carrier, clientId: form.clientId, weightLb: 0, weightKg: 0, photo: null });
