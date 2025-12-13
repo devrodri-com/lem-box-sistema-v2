@@ -2,7 +2,7 @@
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDocs, query, where, addDoc, updateDoc, runTransaction } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where, addDoc, updateDoc, runTransaction } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { Client } from "@/types/lem";
@@ -36,6 +36,7 @@ type Box = {
   shipmentId?: string | null;
   status?: "open" | "closed";
   verifiedWeightLb?: number;
+  managerUid?: string | null;
 };
 
 export default function ConsolidarClientePage() {
@@ -186,6 +187,22 @@ function ClienteInner() {
   async function createBox(presetType?: ShipmentType): Promise<string | null> {
     if (!client) return null;
     const t = presetType ?? boxType;
+    
+    // Leer el cliente para obtener managerUid
+    let managerUid: string | null = null;
+    if (clientId) {
+      try {
+        const clientSnap = await getDoc(doc(db, "clients", clientId));
+        if (clientSnap.exists()) {
+          const clientData = clientSnap.data() as Omit<Client, "id">;
+          managerUid = clientData.managerUid ?? null;
+        }
+      } catch (error) {
+        console.error("Error al leer el cliente:", error);
+        // Continuar sin managerUid si hay error
+      }
+    }
+    
     const payload: Omit<Box, "id"> & { status: "open" } = {
       code: await nextBoxCode(),
       clientId,
@@ -196,6 +213,7 @@ function ClienteInner() {
       status: "open",
       createdAt: Date.now(),
       shipmentId: null,
+      managerUid: managerUid,
     };
     const ref = await addDoc(collection(db, "boxes"), payload);
     setBoxes(prev => [{ id: ref.id, ...payload }, ...prev]);

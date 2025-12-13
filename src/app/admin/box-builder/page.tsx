@@ -117,6 +117,22 @@ function PageInner() {
     if (openBox) return openBox;
     // create an open box
     const code = `${Date.now()}`; // numérico legible y único
+    
+    // Leer el cliente para obtener managerUid
+    let managerUid: string | null = null;
+    if (clientId) {
+      try {
+        const clientSnap = await getDoc(doc(db, "clients", clientId));
+        if (clientSnap.exists()) {
+          const clientData = clientSnap.data() as Omit<Client, "id">;
+          managerUid = clientData.managerUid ?? null;
+        }
+      } catch (error) {
+        console.error("Error al leer el cliente:", error);
+        // Continuar sin managerUid si hay error
+      }
+    }
+    
     const ref = await addDoc(collection(db, "boxes"), {
       code,
       clientId,
@@ -124,6 +140,7 @@ function PageInner() {
       weightLb: 0,
       status: "open",
       createdAt: Timestamp.now().toMillis(),
+      managerUid: managerUid,
     });
     const box: Box = {
       id: ref.id,
@@ -133,6 +150,7 @@ function PageInner() {
       weightLb: 0,
       status: "open",
       createdAt: Date.now(),
+      managerUid: managerUid,
     };
     setOpenBox(box);
     return box;

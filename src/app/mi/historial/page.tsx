@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, query, where, orderBy, getDocs, addDoc } from "firebase/firestore";
+import { collection, doc, getDoc, query, where, orderBy, getDocs, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { useMiContext } from "../layout";
+import type { Client } from "@/types/lem";
 
 const btnSecondary =
   "inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
@@ -56,12 +57,26 @@ export default function MiHistorialPage() {
     if (!clientId || !uid || !alertTracking.trim()) return;
     setAlertSaving(true);
     try {
+      // Leer el cliente para obtener managerUid
+      let managerUid: string | null = null;
+      try {
+        const clientSnap = await getDoc(doc(db, "clients", clientId));
+        if (clientSnap.exists()) {
+          const clientData = clientSnap.data() as Omit<Client, "id">;
+          managerUid = clientData.managerUid ?? null;
+        }
+      } catch (error) {
+        console.error("Error al leer el cliente:", error);
+        // Continuar sin managerUid si hay error
+      }
+
       await addDoc(collection(db, "trackingAlerts"), {
         uid,
         clientId,
         tracking: alertTracking.trim().toUpperCase(),
         note: alertNote.trim() || "",
         createdAt: Date.now(),
+        managerUid: managerUid,
       });
       setAlertTracking("");
       setAlertNote("");

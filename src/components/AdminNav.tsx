@@ -57,7 +57,7 @@ export default function AdminNav() {
         }
 
         setIsSuper(superadmin);
-        setIsAdmin(superadmin || role === "admin");
+        setIsAdmin(superadmin || role === "admin" || role === "partner_admin");
         setEmail(user.email ?? null);
       } catch {
         setIsSuper(false);

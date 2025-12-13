@@ -5,6 +5,8 @@ import { db, storage } from "@/lib/firebase";
 import {
   addDoc,
   collection,
+  doc,
+  getDoc,
   getDocs,
   orderBy,
   query,
@@ -127,6 +129,7 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
   );
 }
 
+
 export default function IngresoPage() {
   return (
     <RequireAuth requireAdmin>
@@ -144,6 +147,7 @@ function PageInner() {
   }, [clients]);
 
   const [clientQuery, setClientQuery] = useState("");
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
   const filteredClients = useMemo(() => {
     const q = clientQuery.trim().toLowerCase();
     if (!q) return clients;
@@ -302,6 +306,21 @@ function PageInner() {
     const weightLbVal = computeWeightLb();
     if (weightLbVal <= 0) { setErrMsg("Ingrese un peso válido en lb o kg."); return false; }
 
+    // Leer el cliente para obtener managerUid
+    let managerUid: string | null = null;
+    if (form.clientId) {
+      try {
+        const clientSnap = await getDoc(doc(db, "clients", form.clientId));
+        if (clientSnap.exists()) {
+          const clientData = clientSnap.data() as Omit<Client, "id">;
+          managerUid = clientData.managerUid ?? null;
+        }
+      } catch (error) {
+        console.error("Error al leer el cliente:", error);
+        // Continuar sin managerUid si hay error
+      }
+    }
+
     let photoUrl: string | undefined;
     if (form.photo) {
       const blob = await processImage(form.photo);
@@ -318,6 +337,7 @@ function PageInner() {
       photoUrl,
       status: "received",
       receivedAt: Timestamp.now().toMillis(),
+      managerUid: managerUid,
     });
     setRows([{ id: docRef.id, tracking: trackingValue, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, receivedAt: Date.now(), status: "received" }, ...rows]);
     setForm({ tracking: "", carrier: form.carrier, clientId: form.clientId, weightLb: 0, weightKg: 0, photo: null });
@@ -349,32 +369,73 @@ function PageInner() {
           {/* removed client search and filter UI */}
 
           {/* CLIENTE SELECT + TRACKING */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="md:col-span-2">
+          <div className="flex flex-col gap-3">
+            <div>
               <label className="text-xs font-medium text-neutral-500">Cliente</label>
-              <input
-                className="mt-1 mb-1 border rounded-md px-4 h-10 w-full bg-white text-base"
-                placeholder="Escribir para buscar (código o nombre)"
-                value={clientQuery}
-                onChange={(e) => setClientQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const first = filteredClients[0];
-                    if (first?.id) setForm((f) => ({ ...f, clientId: String(first.id) }));
+              <div
+                className="relative mt-1 w-full"
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                    setClientPickerOpen(false);
                   }
                 }}
-              />
-              <BrandSelect
-                value={form.clientId}
-                onChange={(val) => setForm((f) => ({ ...f, clientId: val }))}
-                options={filteredClients
-                  .filter((c) => c.id)
-                  .map((c) => ({
-                    value: String(c.id),
-                    label: `${c.code} — ${c.name}`,
-                  }))}
-                placeholder="Seleccionar…"
-              />
+              >
+                <div className="flex w-full rounded-md border border-slate-300 bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#005f40] focus-within:border-[#005f40]">
+                  <input
+                    className="h-11 flex-1 border-0 px-3 focus:outline-none"
+                    placeholder="Escribir para buscar (código o nombre)"
+                    value={clientQuery}
+                    onChange={(e) => setClientQuery(e.target.value)}
+                    onFocus={() => setClientPickerOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const first = filteredClients[0];
+                        if (first?.id) setForm((f) => ({ ...f, clientId: String(first.id) }));
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="h-11 w-[220px] border-0 border-l border-slate-300 bg-white px-3 text-sm focus:outline-none flex items-center justify-between"
+                    onClick={() => setClientPickerOpen((v) => !v)}
+                    aria-haspopup="listbox"
+                    aria-expanded={clientPickerOpen}
+                  >
+                    <span className="truncate text-left">
+                      {(() => {
+                        const sel = (filteredClients || []).find((c: any) => c.id === form.clientId) || (clients || []).find((c: any) => c.id === form.clientId);
+                        return sel ? `${sel.code} — ${sel.name}` : "Seleccionar…";
+                      })()}
+                    </span>
+                    <span className="ml-2 text-slate-500">▾</span>
+                  </button>
+                </div>
+                {clientPickerOpen && (
+                  <div className="absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+                    {(filteredClients || []).length === 0 ? (
+                      <div className="px-3 py-2 text-slate-500">Sin resultados…</div>
+                    ) : (
+                      (filteredClients || []).map((c: any) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className={
+                            "block w-full px-3 py-2 text-left hover:bg-slate-100 " +
+                            (form.clientId === c.id ? "bg-[#005f4015] text-[#005f40] font-medium" : "text-slate-900")
+                          }
+                          onClick={() => {
+                            setForm((f: any) => ({ ...f, clientId: c.id }));
+                            setClientPickerOpen(false);
+                          }}
+                        >
+                          <span className="font-medium">{c.code}</span>
+                          <span className="text-slate-500"> — {c.name}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
               <p className="mt-1 text-[11px] text-neutral-500">Mostrando {filteredClients.length} de {clients.length}</p>
             </div>
             <div>
@@ -451,7 +512,7 @@ function PageInner() {
           </div>
 
           {/* FOTO */}
-          <div className="flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => (photoActive ? stopPhoto() : startPhoto())}
@@ -502,8 +563,8 @@ function PageInner() {
 
           {/* BOTÓN GUARDAR sticky en mobile */}
           <div className="md:static fixed left-0 right-0 bottom-0 bg-white/90 backdrop-blur border-t p-3 z-10">
-            <div className="max-w-3xl mx-auto text-right">
-              <button disabled={saving} className={btnPrimaryCls}>
+            <div className="max-w-3xl mx-auto mt-4 flex justify-center">
+              <button disabled={saving} className={`${btnPrimaryCls} h-11 px-8 rounded-md`}>
                 {saving ? 'Guardando…' : 'Enviar'}
               </button>
             </div>

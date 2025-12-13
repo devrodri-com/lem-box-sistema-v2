@@ -9,9 +9,15 @@ import { printBoxLabel as openPrintLabel } from "@/lib/printBoxLabel";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmtWeightPairFromLb, lbToKg } from "@/lib/weight";
 
+const CONTROL_BORDER = "border-[#1f3f36]";
 const btnPrimaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed";
-const btnSecondaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
-const inputCls = "h-10 w-full rounded-md border border-slate-300 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+const btnSecondaryCls = `inline-flex items-center justify-center h-10 px-4 rounded-md border ${CONTROL_BORDER} bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed`;
+const inputCls = `h-10 w-full rounded-md border ${CONTROL_BORDER} bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]`;
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
 
 const TZ = "America/New_York";
 function tzOffsetMs(date: Date, timeZone: string): number {
@@ -334,7 +340,7 @@ async function handleExportCsv() {
 
     const baseClasses =
       inputCls +
-      " flex items-center justify-between pr-8 bg-white text-slate-900" +
+      " flex items-center justify-between pr-8" +
       (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
 
     return (
@@ -349,21 +355,21 @@ async function handleExportCsv() {
         <button
           type="button"
           disabled={disabled}
-          className={baseClasses + (!value ? " text-slate-400" : "")}
+          className={baseClasses + (!value ? " text-white/50" : "")}
           onClick={() => {
             if (!disabled) setOpen((prev) => !prev);
           }}
         >
           <span className="truncate text-left">{showLabel}</span>
-          <span className="ml-2 text-slate-500">▾</span>
+          <span className="ml-2 text-[#005f40]">▾</span>
         </button>
         {open && !disabled && options.length > 0 && (
-          <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+          <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
             {options.map((opt) => (
               <li key={opt.value}>
                 <button
                   type="button"
-                  className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                  className="block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5"
                   onClick={() => {
                     onChange(opt.value);
                     setOpen(false);
@@ -381,21 +387,30 @@ async function handleExportCsv() {
 
   return (
     <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
-      <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-6">
+      <style jsx global>{`
+        .lem-date { color-scheme: dark; }
+        .lem-date::-webkit-calendar-picker-indicator {
+          filter: invert(1) brightness(1.8) !important;
+          opacity: 0.95;
+        }
+      `}</style>
+      <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6 space-y-6">
         <h1 className="text-2xl font-semibold">Historial de tracking</h1>
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-white/60">
           Todos los trackings: empacados (en caja) y sin empacar (sueltos en warehouse).
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
           <input
-            className="border rounded p-2"
+            className={inputCls}
+            style={INPUT_BG_STYLE}
             placeholder="Buscar por cliente"
             value={qClient}
             onChange={(e) => setQClient(e.target.value)}
           />
           <input
-            className="border rounded p-2"
+            className={inputCls}
+            style={INPUT_BG_STYLE}
             placeholder="Buscar por tracking"
             value={qTracking}
             onChange={(e) => setQTracking(e.target.value)}
@@ -403,7 +418,8 @@ async function handleExportCsv() {
           {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
           <input
             type="date"
-            className="border rounded p-2"
+            className={inputCls + " lem-date"}
+            style={INPUT_BG_STYLE}
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             title="Desde"
@@ -411,7 +427,8 @@ async function handleExportCsv() {
           {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
           <input
             type="date"
-            className="border rounded p-2"
+            className={inputCls + " lem-date"}
+            style={INPUT_BG_STYLE}
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             title="Hasta"
@@ -431,7 +448,7 @@ async function handleExportCsv() {
         <div className="flex flex-row gap-2 mb-2">
           <button
             type="button"
-            className="inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+            className={btnSecondaryCls}
             onClick={handleExportCsv}
           >
             Exportar CSV
@@ -441,7 +458,7 @@ async function handleExportCsv() {
         <div className="overflow-x-auto border rounded">
           {statusFilter === "boxed" ? (
             <table className="w-full text-sm">
-              <thead className="bg-neutral-50">
+              <thead className="bg-white/5 text-white/80">
                 <tr>
                   <th className="text-left p-2">Caja</th>
                   <th className="text-left p-2">Cliente</th>
@@ -454,12 +471,12 @@ async function handleExportCsv() {
               <tbody>
                 {filteredBoxes.map((b) => {
                   const c = clientsById[b.clientId];
-                  const cliente = c?.code ? `${c.code} — ${c.name}` : b.clientId;
+                  const cliente = c?.code ? `${c.code} ${c.name}` : b.clientId;
                   return (
-                    <tr key={b.id} className="border-t">
+                    <tr key={b.id} className="border-t border-white/10">
                       <td className="p-2">
                         <button
-                          className="underline text-sm text-neutral-700 hover:text-black"
+                          className="underline text-sm text-white/80 hover:text-white"
                           onClick={() => openBoxDetailByBoxId(b.id)}
                         >
                           {b.code}
@@ -484,7 +501,7 @@ async function handleExportCsv() {
                 })}
                 {!filteredBoxes.length ? (
                   <tr>
-                    <td className="p-3 text-neutral-500" colSpan={6}>
+                    <td className="p-3 text-white/40" colSpan={6}>
                       Sin cajas.
                     </td>
                   </tr>
@@ -493,11 +510,11 @@ async function handleExportCsv() {
             </table>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-neutral-50">
+              <thead className="bg-white/5 text-white/80">
                 <tr>
                   <th className="text-left p-2">Fecha</th>
-                  <th className="text-left p-2">Tracking</th>
                   <th className="text-left p-2">Cliente</th>
+                  <th className="text-left p-2">Tracking</th>
                   <th className="text-left p-2">Carrier</th>
                   <th className="text-left p-2">Peso</th>
                   <th className="text-left p-2">Caja</th>
@@ -513,24 +530,24 @@ async function handleExportCsv() {
                 ).map((r) => {
                   const c = clientsById[r.clientId];
                   const cliente = c?.code
-                    ? `${c.code} — ${c.name}`
+                    ? `${c.code} ${c.name}`
                     : r.clientId;
                   return (
-                    <tr key={r.id} className="border-t">
+                    <tr key={r.id} className="border-t border-white/10">
                       <td className="p-2">
                         {r.receivedAt
                           ? new Date(r.receivedAt).toLocaleDateString()
                           : "-"}
                       </td>
+                      <td className="p-2">{cliente}</td>
                       <td className="p-2 font-mono text-sm">
                         <a
-                          className="underline text-neutral-700 hover:text-black"
+                          className="underline text-white/80 hover:text-white"
                           href={`/admin/trackings/${r.id}`}
                         >
                           {r.tracking}
                         </a>
                       </td>
-                      <td className="p-2">{cliente}</td>
                       <td className="p-2">{r.carrier}</td>
                       <td className="p-2">
                         {fmtWeightPairFromLb(Number(r.weightLb || 0))}
@@ -538,7 +555,7 @@ async function handleExportCsv() {
                       <td className="p-2">
                         {boxByInbound[r.id]?.code ? (
                           <button
-                            className="underline text-sm text-neutral-700 hover:text-black"
+                            className="underline text-sm text-white/80 hover:text-white"
                             onClick={() => openBoxDetailByInbound(r.id)}
                           >
                             {boxByInbound[r.id]?.code}
@@ -563,25 +580,25 @@ async function handleExportCsv() {
                             target="_blank"
                             title="Ver foto"
                             aria-label="Ver foto"
-                            className="inline-flex items-center justify-center text-neutral-700 hover:text-black"
+                            className="inline-flex items-center justify-center text-white/80 hover:text-white"
                           >
                             <IconPhoto />
                           </a>
                         ) : (
-                          <span className="text-neutral-400">—</span>
+                          <span className="text-white/40">-</span>
                         )}
                       </td>
                       <td className="p-2">
                         {!boxByInbound[r.id] && r.status === "received" ? (
                           <button
-                            className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-neutral-700 hover:text-red-600 hover:border-red-400"
+                            className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-white/80 hover:text-red-400 hover:border-red-400"
                             title="Eliminar"
                             onClick={() => deleteTracking(r)}
                           >
                             <IconTrash />
                           </button>
                         ) : (
-                          <span className="text-neutral-400">—</span>
+                          <span className="text-white/40">-</span>
                         )}
                       </td>
                     </tr>
@@ -589,7 +606,7 @@ async function handleExportCsv() {
                 })}
                 {!rows.length ? (
                   <tr>
-                    <td className="p-3 text-neutral-500" colSpan={9}>
+                    <td className="p-3 text-white/40" colSpan={9}>
                       Sin datos aún.
                     </td>
                   </tr>
@@ -692,7 +709,7 @@ async function handleExportCsv() {
                                 📷
                               </a>
                             ) : (
-                              "—"
+                              "-"
                             )}
                           </td>
                           <td className="p-2">
@@ -710,7 +727,7 @@ async function handleExportCsv() {
                       ))}
                       {!detailItems.length ? (
                         <tr>
-                          <td className="p-3 text-neutral-500" colSpan={4}>
+                          <td className="p-3 text-white/40" colSpan={4}>
                             Caja sin items.
                           </td>
                         </tr>

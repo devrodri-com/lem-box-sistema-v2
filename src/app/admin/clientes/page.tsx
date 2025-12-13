@@ -1,10 +1,11 @@
 // src/app/admin/clientes/page.tsx
 "use client";
 import RequireAuth from "@/components/RequireAuth";
-import { db } from "@/lib/firebase";
-import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, Timestamp, updateDoc, runTransaction } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc, runTransaction, where, limit, type QueryConstraint } from "firebase/firestore";
 import { useEffect, useState, useMemo } from "react";
 import type { Client } from "@/types/lem";
+import { getIdTokenResult } from "firebase/auth";
 
 const COUNTRIES: string[] = [
   'Uruguay','Argentina','United States'
@@ -120,6 +121,13 @@ function PageInner() {
   const [city, setCity] = useState<string>("");
   const [postalCode, setPostalCode] = useState<string>("");
   const [contact, setContact] = useState<string>("");
+  const [managerUid, setManagerUid] = useState<string>("");
+
+  // User role and partner admins
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isStaff, setIsStaff] = useState<boolean>(false);
+  const [partnerAdmins, setPartnerAdmins] = useState<Array<{ uid: string; email: string; displayName?: string }>>([]);
 
   const [openCreate, setOpenCreate] = useState(false);
   function resetForm() {
@@ -136,19 +144,109 @@ function PageInner() {
     setCity("");
     setPostalCode("");
     setContact("");
+    setManagerUid("");
   }
 
+  // Get user role and uid
   useEffect(() => {
-    const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
-    getDocs(q).then((s) =>
+    const u = auth.currentUser;
+    if (!u) return;
+    setUserId(u.uid);
+    getIdTokenResult(u)
+      .then(async (r) => {
+        const claims = r.claims as Record<string, unknown>;
+        let role = (claims.role as string) || null;
+
+        // Si no hay rol en los claims, intentar obtenerlo desde Firestore
+        if (!role) {
+          try {
+            const snap = await getDoc(doc(db, "users", u.uid));
+            if (snap.exists()) {
+              const data = snap.data() as any;
+              role = (data.role as string) || null;
+            }
+          } catch {
+            // ignorar errores aquí, role se queda como está (null)
+          }
+        }
+
+        setUserRole(role);
+        const staff = role !== "partner_admin";
+        setIsStaff(staff);
+
+        // Si es staff (admin/superadmin/operador), cargar lista de partner_admins
+        if (staff) {
+          getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
+            .then((snap) => {
+              const admins = snap.docs.map((d) => {
+                const data = d.data() as any;
+                return {
+                  uid: d.id,
+                  email: (data.email as string) || "",
+                  displayName: (data.displayName as string) || "",
+                };
+              });
+              setPartnerAdmins(admins);
+            })
+            .catch(() => setPartnerAdmins([]));
+        }
+      })
+      .catch(() => {
+        // Fallback duro: intentar solo Firestore
+        getDoc(doc(db, "users", u.uid))
+          .then((snap) => {
+            if (snap.exists()) {
+              const data = snap.data() as any;
+              const role = (data.role as string) || null;
+              setUserRole(role);
+              const staff = role !== "partner_admin";
+              setIsStaff(staff);
+
+              if (staff) {
+                getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
+                  .then((snap) => {
+                    const admins = snap.docs.map((d) => {
+                      const data = d.data() as any;
+                      return {
+                        uid: d.id,
+                        email: (data.email as string) || "",
+                        displayName: (data.displayName as string) || "",
+                      };
+                    });
+                    setPartnerAdmins(admins);
+                  })
+                  .catch(() => setPartnerAdmins([]));
+              }
+            }
+          })
+          .catch(() => {});
+      });
+  }, []);
+
+  useEffect(() => {
+    // Esperar a tener información de usuario antes de consultar
+    if (!isStaff && !userId) return;
+
+    const run = async () => {
+      const constraints: QueryConstraint[] = [orderBy("createdAt", "desc")];
+
+      // Si no es staff (partner), solo ver clientes con su managerUid
+      if (!isStaff && userId) {
+        constraints.push(where("managerUid", "==", userId));
+      }
+
+      const qClients = query(collection(db, "clients"), ...constraints);
+      const snap = await getDocs(qClients);
       setRows(
-        s.docs.map((d) => {
+        snap.docs.map((d) => {
           const data = d.data() as Omit<Client, "id">;
           return { id: d.id, ...data } as Client;
         })
-      )
-    );
-  }, []);
+      );
+    };
+
+    void run();
+  }, [isStaff, userId]);
 
   useEffect(() => {
     setPage(0);
@@ -196,8 +294,44 @@ function PageInner() {
   async function createClient(e: React.FormEvent) {
     e.preventDefault();
     if (!name || !country || !email || !password) return;
-    const code = await nextClientCode();
-    const payload: Omit<Client, 'id'> & { documento: { tipo: string; numero: string | null } } = {
+
+    console.log("[DEBUG createClient] userId:", userId, "userRole:", userRole);
+
+    let code: string;
+    // Staff: usa contador global (transacción)
+    if (isStaff) {
+      try {
+        code = await nextClientCode();
+        console.log("[DEBUG createClient] nextClientCode OK (staff):", code);
+      } catch (err) {
+        console.error("[DEBUG createClient] Error in nextClientCode / counters/clients transaction", err);
+        alert("No se pudo generar un número correlativo (counters/clients). Revisá reglas de Firestore / App Check.");
+        return;
+      }
+    } else {
+      // Partner: correlativo LOCAL dentro de sus clientes (no toca counters)
+      const nums = rows
+        .map((r) => parseInt(String(r.code ?? ""), 10))
+        .filter((n) => Number.isFinite(n));
+      let next = (nums.length ? Math.max(...nums) : 1200) + 1;
+      // Asegurar que no choque con un número ya usado en su lista local
+      const used = new Set(nums);
+      while (used.has(next)) next += 1;
+      code = String(next);
+      console.log("[DEBUG createClient] partner local code:", code, "max:", nums.length ? Math.max(...nums) : 1200);
+    }
+
+    // Si es partner_admin, setear automáticamente managerUid
+    let finalManagerUid: string | null = null;
+    if (userRole === "partner_admin" && userId) {
+      finalManagerUid = userId;
+    } else if (isStaff && managerUid) {
+      finalManagerUid = managerUid || null;
+    }
+
+    const payload: Omit<Client, "id"> & {
+      documento: { tipo: string; numero: string | null };
+    } = {
       code,
       name,
       country,
@@ -212,12 +346,23 @@ function PageInner() {
       contact: contact || undefined,
       activo: true,
       createdAt: Timestamp.now().toMillis(),
+      ...(finalManagerUid ? { managerUid: finalManagerUid } : {}),
     };
-    const sanitized = Object.fromEntries(Object.entries(payload).filter(([, v]) => v != null));
-    const ref = await addDoc(collection(db, 'clients'), sanitized as any);
-    setRows([{ id: ref.id, ...(sanitized as any) }, ...rows]);
-    resetForm();
-    setOpenCreate(false);
+
+    const sanitized = Object.fromEntries(
+      Object.entries(payload).filter(([, v]) => v != null)
+    );
+
+    try {
+      const ref = await addDoc(collection(db, "clients"), sanitized as any);
+      console.log("[DEBUG createClient] addDoc clients OK:", ref.path);
+      setRows([{ id: ref.id, ...(sanitized as any) }, ...rows]);
+      resetForm();
+      setOpenCreate(false);
+    } catch (err) {
+      console.error("[DEBUG createClient] Error creating client in clients collection", err);
+      alert("Error de permisos al crear el cliente en la colección clients. Revisar reglas de Firestore.");
+    }
   }
 
   async function toggleActivo(id: string, current: boolean) {
@@ -391,6 +536,30 @@ function PageInner() {
                   <input className="border rounded px-4 h-12 w-full" placeholder="Código postal" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
                 </div>
 
+                {isStaff && partnerAdmins.length > 0 ? (
+                  <div className="md:col-span-4">
+                    <label className="text-xs font-medium text-neutral-600 mb-1 block">Admin asociado (opcional)</label>
+                    <BrandSelect
+                      value={managerUid}
+                      onChange={(val) => setManagerUid(val)}
+                      options={[
+                        { value: "", label: "Ninguno" },
+                        ...partnerAdmins.map((pa) => ({
+                          value: pa.uid,
+                          label: pa.displayName ? `${pa.displayName} (${pa.email})` : pa.email,
+                        })),
+                      ]}
+                      placeholder="Seleccionar admin asociado…"
+                    />
+                  </div>
+                ) : null}
+
+                {userRole === "partner_admin" ? (
+                  <div className="md:col-span-4 text-xs text-neutral-500">
+                    Este cliente será asociado automáticamente a tu cuenta.
+                  </div>
+                ) : null}
+
                 <div className="md:col-span-4 flex justify-end gap-2 mt-2">
                   <button type="button" onClick={() => { resetForm(); setOpenCreate(false); }} className="h-12 px-4 rounded border">Cancelar</button>
                   <button className="h-12 px-6 rounded text-white" style={{ backgroundColor: '#005f40' }}>Crear</button>
@@ -501,4 +670,4 @@ function PageInner() {
       </div>
     </main>
   );
-}
+} 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, Fragment } from "react";
 import RequireAuth from "@/components/RequireAuth";
 import { collection, doc, getDoc, getDocs, getFirestore, orderBy, query, updateDoc, where } from "firebase/firestore";
 import Script from "next/script";
-import type { Client } from "@/types/lem";
+import type { Client, Shipment as ShipmentType } from "@/types/lem";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 
@@ -28,6 +28,7 @@ type Box = {
   itemIds: string[];
   weightLb?: number;
   shipmentId?: string | null;
+  managerUid?: string | null;
 };
 
 
@@ -104,13 +105,28 @@ export default function EstadoEnviosPage() {
   async function removeBoxFromShipment(box: Box, shipment: Shipment) {
     // 1) detach box from shipment
     await updateDoc(doc(db, "boxes", box.id), { shipmentId: null });
-    // 2) update shipment boxIds
+    // 2) update shipment boxIds y recalcular managerUids
     const shRef = doc(db, "shipments", shipment.id);
     const shSnap = await getDoc(shRef);
     if (shSnap.exists()) {
       const prev: string[] = (shSnap.data() as any).boxIds || [];
       const next = prev.filter(x => x !== box.id);
-      await updateDoc(shRef, { boxIds: next });
+      
+      // Obtener todas las boxes restantes para recalcular managerUids
+      const remainingBoxRefs = next.map(id => doc(db, "boxes", id));
+      const remainingBoxSnaps = await Promise.all(remainingBoxRefs.map(r => getDoc(r)));
+      const remainingBoxes = remainingBoxSnaps
+        .filter(s => s.exists())
+        .map(s => ({ id: s.id, ...(s.data() as any) } as Box));
+      
+      // Construir array de managerUids sin duplicados y sin nulos
+      const managerUids = Array.from(new Set(
+        remainingBoxes
+          .map(b => b.managerUid)
+          .filter((uid): uid is string => uid != null && uid !== "")
+      ));
+      
+      await updateDoc(shRef, { boxIds: next, managerUids });
       setShipments(list => list.map(s => s.id === shipment.id ? { ...s, boxIds: next } : s));
     }
     // 3) update local boxes list for that shipment

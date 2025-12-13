@@ -19,6 +19,7 @@ export interface Client {
   emailAlt?: string;    // Email adicional
   activo?: boolean;
   createdAt?: number;
+  managerUid?: string | null;
 }
 
 export interface Inbound {
@@ -32,6 +33,7 @@ export interface Inbound {
   invoiceUrl?: string;
   status?: "received" | "boxed" | "void";
   receivedAt?: number;
+  managerUid?: string | null;
 }
 
 export interface Box {
@@ -45,4 +47,29 @@ export interface Box {
   closedAt?: number;
   shippedAt?: number;
   deliveredAt?: number;
+  managerUid?: string | null;
+}
+
+export interface Shipment {
+  id?: string;
+  code: string;
+  country: string;
+  type: "COMERCIAL" | "FRANQUICIA";
+  status: "open" | "shipped" | "arrived" | "closed";
+  boxIds?: string[];
+  clientIds?: string[];
+  managerUids?: string[];
+  openedAt?: number;
+  closedAt?: number;
+  arrivedAt?: number;
+}
+
+export interface TrackingAlert {
+  id?: string;
+  uid: string;
+  clientId: string;
+  tracking: string;
+  note?: string;
+  createdAt?: number;
+  managerUid?: string | null;
 }
