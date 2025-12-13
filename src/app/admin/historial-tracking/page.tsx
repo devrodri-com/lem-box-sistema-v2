@@ -496,8 +496,8 @@ async function handleExportCsv() {
               <thead className="bg-neutral-50">
                 <tr>
                   <th className="text-left p-2">Fecha</th>
-                  <th className="text-left p-2">Tracking</th>
                   <th className="text-left p-2">Cliente</th>
+                  <th className="text-left p-2">Tracking</th>
                   <th className="text-left p-2">Carrier</th>
                   <th className="text-left p-2">Peso</th>
                   <th className="text-left p-2">Caja</th>
@@ -513,7 +513,7 @@ async function handleExportCsv() {
                 ).map((r) => {
                   const c = clientsById[r.clientId];
                   const cliente = c?.code
-                    ? `${c.code} — ${c.name}`
+                    ? `${c.code} ${c.name}`
                     : r.clientId;
                   return (
                     <tr key={r.id} className="border-t">
@@ -522,6 +522,7 @@ async function handleExportCsv() {
                           ? new Date(r.receivedAt).toLocaleDateString()
                           : "-"}
                       </td>
+                      <td className="p-2">{cliente}</td>
                       <td className="p-2 font-mono text-sm">
                         <a
                           className="underline text-neutral-700 hover:text-black"
@@ -530,7 +531,6 @@ async function handleExportCsv() {
                           {r.tracking}
                         </a>
                       </td>
-                      <td className="p-2">{cliente}</td>
                       <td className="p-2">{r.carrier}</td>
                       <td className="p-2">
                         {fmtWeightPairFromLb(Number(r.weightLb || 0))}

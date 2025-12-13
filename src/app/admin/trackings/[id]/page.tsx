@@ -1,5 +1,3 @@
-// src/app/admin/trackings/[id]/page.tsx
-
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { db } from "@/lib/firebase";
@@ -20,6 +18,79 @@ import type { Client, Carrier } from "@/types/lem";
 const LB_TO_KG = 0.45359237;
 const CARRIERS: Carrier[] = ["UPS","FedEx","USPS","DHL","Amazon","Other"];
 
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+type LemOption = { value: string; label: string };
+
+type LemSelectProps = {
+  value: string;
+  onChange: (value: string) => void;
+  options: LemOption[];
+  placeholder?: string;
+  selectedTextClassName?: string;
+};
+
+function LemSelect({ value, onChange, options, placeholder = "Seleccionar…", selectedTextClassName }: LemSelectProps) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value)?.label;
+
+  return (
+    <div
+      className="relative"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        className={cx(
+          "h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 pr-10 shadow-sm",
+          "text-left flex items-center justify-between",
+          "focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+        )}
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span
+          className={cx(
+            "truncate",
+            value ? "text-white" : "text-white/50",
+            value && selectedTextClassName
+          )}
+        >
+          {selected || placeholder}
+        </span>
+        <span className="text-[#005f40]">▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={cx(
+                "block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5",
+                value === opt.value && "bg-[#005f4015] font-medium",
+                value === opt.value && (selectedTextClassName || "text-[#005f40]")
+              )}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Shape of a tracking (inbound package)
 interface Inbound {
   id?: string;
@@ -31,6 +102,12 @@ interface Inbound {
   photoUrl?: string;
   invoiceUrl?: string;
   receivedAt?: number;
+}
+
+function statusTone(status: string) {
+  if (status === "boxed") return "text-[#005f40]";
+  if (status === "void") return "text-rose-400";
+  return "text-white/80"; // received/default
 }
 
 export default function TrackingDetailPage() {
@@ -76,7 +153,7 @@ function PageInner() {
   }, [row]);
 
   const kg = useMemo(() => Number(((Number(form.weightLb) || 0) * LB_TO_KG).toFixed(2)), [form.weightLb]);
-  const clientLabel = row?.clientId && clientsById[row.clientId] ? `${clientsById[row.clientId].code} — ${clientsById[row.clientId].name}` : "-";
+  const clientLabel = row?.clientId && clientsById[row.clientId] ? `${clientsById[row.clientId].code} ${clientsById[row.clientId].name}` : "-";
 
   async function save() {
     if (!row?.id) return;
@@ -97,112 +174,130 @@ function PageInner() {
 
   if (!row) {
     return (
-      <main className="p-4 md:p-8">
-        <p className="text-sm text-neutral-500">Cargando tracking…</p>
+      <main className="min-h-screen bg-[#02120f] text-white p-4 md:p-8">
+        <p className="text-sm text-white/60">Cargando tracking…</p>
       </main>
     );
   }
 
   return (
-    <main className="p-4 md:p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/admin/historial-tracking" className="px-3 py-2 text-sm rounded border">← Volver</Link>
-          <h1 className="text-2xl font-semibold">Tracking: {row.tracking}</h1>
+    <main className="min-h-screen bg-[#02120f] text-white p-4 md:p-8 pb-12">
+      <div className="mx-auto w-full max-w-3xl space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link href="/admin/historial-tracking" className="text-sm text-white/70 hover:text-white">← Volver al historial</Link>
+            <h1 className="text-2xl font-semibold">Tracking: {row.tracking}</h1>
+          </div>
         </div>
-      </div>
 
-      <section className="grid gap-3 md:max-w-3xl md:grid-cols-2">
+        <section className="flex flex-col gap-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-5">
         <label className="grid gap-1">
-          <span className="text-xs text-neutral-500">ID</span>
-          <input className="border rounded p-3 bg-neutral-100 text-neutral-600" value={row.id || ""} readOnly />
-        </label>
-        <label className="grid gap-1">
-          <span className="text-xs text-neutral-500">Carrier</span>
-          <select
-            className="border rounded p-3"
-            value={form.carrier || row.carrier}
-            onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value as Carrier }))}
-          >
-            {CARRIERS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className="grid gap-1 md:col-span-2">
-          <span className="text-xs text-neutral-500">Cliente actual</span>
-          <input className="border rounded p-3 bg-neutral-100 text-neutral-600" value={clientLabel} readOnly />
+          <span className="text-xs text-white/60">Cliente actual</span>
+          <div className="rounded-md bg-white/5 border border-white/10 px-4 py-3 text-white font-medium">
+            {clientLabel}
+          </div>
         </label>
 
         <label className="grid gap-1">
-          <span className="text-xs text-neutral-500">Reasignar a cliente</span>
-          <select
-            className="border rounded p-3"
-            value={form.clientId || row.clientId}
-            onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
-          >
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>{`${c.code} — ${c.name}`}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-xs text-neutral-500">Peso (lb)</span>
-          <input
-            className="border rounded p-3"
-            inputMode="decimal"
-            value={typeof form.weightLb === "number" ? String(form.weightLb) : String(row.weightLb || 0)}
-            onChange={(e) => setForm((f) => ({ ...f, weightLb: Number(e.target.value || 0) }))}
-          />
-        </label>
-        <label className="grid gap-1">
-          <span className="text-xs text-neutral-500">Peso (kg)</span>
-          <input
-            className="border rounded p-3"
-            inputMode="decimal"
-            value={kg}
-            onChange={(e) => {
-              const v = Number(e.target.value || 0);
-              const lb = Number((v / LB_TO_KG).toFixed(2));
-              setForm((f) => ({ ...f, weightLb: lb }));
-            }}
+          <span className="text-xs text-white/60">Reasignar a cliente</span>
+          <LemSelect
+            value={String(form.clientId || row.clientId)}
+            onChange={(v) => setForm((f) => ({ ...f, clientId: v }))}
+            options={clients
+              .filter((c) => Boolean(c.id))
+              .map((c) => ({ value: String(c.id), label: `${c.code} ${c.name}` }))}
           />
         </label>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className="grid gap-1">
+            <span className="text-xs text-white/60">Carrier</span>
+            <LemSelect
+              value={String(form.carrier || row.carrier)}
+              onChange={(v) => setForm((f) => ({ ...f, carrier: v as Carrier }))}
+              options={CARRIERS.map((c) => ({ value: c, label: c }))}
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="text-xs text-white/60">Estado</span>
+            <LemSelect
+              value={String(form.status || row.status)}
+              onChange={(v) => setForm((f) => ({ ...f, status: v as Inbound["status"] }))}
+              options={[
+                { value: "received", label: "Recibido" },
+                { value: "boxed", label: "Consolidado" },
+                { value: "void", label: "Anulado" },
+              ]}
+              selectedTextClassName={statusTone(String(form.status || row.status))}
+            />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className="grid gap-1">
+            <span className="text-xs text-white/60">Peso (lb)</span>
+            <input
+              className="h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+              inputMode="decimal"
+              value={typeof form.weightLb === "number" ? String(form.weightLb) : String(row.weightLb || 0)}
+              onChange={(e) => setForm((f) => ({ ...f, weightLb: Number(e.target.value || 0) }))}
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="text-xs text-white/60">Peso (kg)</span>
+            <input
+              className="h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+              inputMode="decimal"
+              value={kg}
+              onChange={(e) => {
+                const v = Number(e.target.value || 0);
+                const lb = Number((v / LB_TO_KG).toFixed(2));
+                setForm((f) => ({ ...f, weightLb: lb }));
+              }}
+            />
+          </label>
+        </div>
+
         <label className="grid gap-1">
-          <span className="text-xs text-neutral-500">Estado</span>
-          <select
-            className="border rounded p-3"
-            value={form.status || row.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Inbound["status"] }))}
+          <span className="text-xs text-white/60">Fecha de llegada</span>
+          <input className="h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 text-white/70" value={row.receivedAt ? new Date(row.receivedAt).toLocaleString() : "-"} readOnly />
+        </label>
+
+        <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {row.photoUrl ? (
+              <a
+                className="px-4 py-2 rounded-md border border-[#eb6619] text-[#eb6619] font-medium hover:bg-[#eb6619]/10 focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
+                href={row.photoUrl}
+                target="_blank"
+              >
+                Ver foto
+              </a>
+            ) : (
+              <span className="text-sm text-white/40">Sin foto adjunta</span>
+            )}
+
+            {row.invoiceUrl ? (
+              <a
+                className="px-3 py-2 rounded-md border border-white/15 text-white/80 hover:bg-white/5"
+                href={row.invoiceUrl}
+                target="_blank"
+              >
+                Ver factura
+              </a>
+            ) : null}
+          </div>
+
+          <button
+            onClick={save}
+            disabled={saving}
+            className="px-5 py-2.5 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
           >
-            <option value="received">received</option>
-            <option value="boxed">boxed</option>
-            <option value="void">void</option>
-          </select>
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-xs text-neutral-500">Fecha de llegada</span>
-          <input className="border rounded p-3 bg-neutral-100 text-neutral-600" value={row.receivedAt ? new Date(row.receivedAt).toLocaleString() : "-"} readOnly />
-        </label>
-
-        <div className="md:col-span-2 flex items-center gap-3 pt-2">
-          {row.photoUrl ? (
-            <a className="px-3 py-2 rounded border" href={row.photoUrl} target="_blank">Ver foto</a>
-          ) : (
-            <span className="text-sm text-neutral-500">Sin foto adjunta</span>
-          )}
-          {row.invoiceUrl ? (
-            <a className="px-3 py-2 rounded border" href={row.invoiceUrl} target="_blank">Ver factura</a>
-          ) : null}
-          <button onClick={save} disabled={saving} className="px-4 py-2 rounded bg-black text-white disabled:opacity-50">
             {saving ? "Guardando…" : "Guardar cambios"}
           </button>
         </div>
       </section>
+      </div>
     </main>
   );
 }
