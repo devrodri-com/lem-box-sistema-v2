@@ -1,3 +1,4 @@
+// src/app/admin/trackings/[id]/page.tsx
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { db } from "@/lib/firebase";
@@ -17,6 +18,18 @@ import type { Client, Carrier } from "@/types/lem";
 
 const LB_TO_KG = 0.45359237;
 const CARRIERS: Carrier[] = ["UPS","FedEx","USPS","DHL","Amazon","Other"];
+const CONTROL_BORDER = "border-[#1f3f36]";
+
+const DARK_INPUT =
+  `h-11 w-full rounded-md border ${CONTROL_BORDER} bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:border-[#1f3f36]`;
+const DARK_INPUT_READONLY =
+  `h-11 w-full rounded-md border ${CONTROL_BORDER} bg-[#0f2a22] px-4 text-white/70`;
+
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -46,9 +59,9 @@ function LemSelect({ value, onChange, options, placeholder = "Seleccionar…", s
       <button
         type="button"
         className={cx(
-          "h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 pr-10 shadow-sm",
+          `h-11 w-full rounded-md border ${CONTROL_BORDER} bg-[#0f2a22] px-4 pr-10`,
           "text-left flex items-center justify-between",
-          "focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+          "focus:outline-none focus:border-[#1f3f36]"
         )}
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
@@ -160,10 +173,7 @@ function PageInner() {
     setSaving(true);
     try {
       const payload: Partial<Inbound> = {
-        clientId: form.clientId || row.clientId,
-        weightLb: Number(form.weightLb) || 0,
-        carrier: (form.carrier as Carrier) || row.carrier,
-        status: (form.status as Inbound["status"]) || row.status,
+        weightLb: typeof form.weightLb === "number" ? form.weightLb : row.weightLb,
       };
       await updateDoc(doc(db, "inboundPackages", String(row.id)), payload);
       setRow({ ...row, ...payload });
@@ -193,7 +203,7 @@ function PageInner() {
         <section className="flex flex-col gap-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-5">
         <label className="grid gap-1">
           <span className="text-xs text-white/60">Cliente actual</span>
-          <div className="rounded-md bg-white/5 border border-white/10 px-4 py-3 text-white font-medium">
+          <div className={`rounded-md bg-[#0f2a22] border ${CONTROL_BORDER} px-4 py-3 text-white font-medium`}>
             {clientLabel}
           </div>
         </label>
@@ -237,7 +247,8 @@ function PageInner() {
           <label className="grid gap-1">
             <span className="text-xs text-white/60">Peso (lb)</span>
             <input
-              className="h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+              className={DARK_INPUT}
+              style={INPUT_BG_STYLE}
               inputMode="decimal"
               value={typeof form.weightLb === "number" ? String(form.weightLb) : String(row.weightLb || 0)}
               onChange={(e) => setForm((f) => ({ ...f, weightLb: Number(e.target.value || 0) }))}
@@ -246,7 +257,8 @@ function PageInner() {
           <label className="grid gap-1">
             <span className="text-xs text-white/60">Peso (kg)</span>
             <input
-              className="h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+              className={DARK_INPUT}
+              style={INPUT_BG_STYLE}
               inputMode="decimal"
               value={kg}
               onChange={(e) => {
@@ -260,7 +272,7 @@ function PageInner() {
 
         <label className="grid gap-1">
           <span className="text-xs text-white/60">Fecha de llegada</span>
-          <input className="h-11 w-full rounded-md border border-white/10 bg-white/5 px-3 text-white/70" value={row.receivedAt ? new Date(row.receivedAt).toLocaleString() : "-"} readOnly />
+          <input className={DARK_INPUT_READONLY} style={INPUT_BG_STYLE} value={row.receivedAt ? new Date(row.receivedAt).toLocaleString() : "-"} readOnly />
         </label>
 
         <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

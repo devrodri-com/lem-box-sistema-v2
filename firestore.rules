@@ -72,26 +72,10 @@ service cloud.firestore {
         isPositive(request.resource.data.weightLb) &&
         isInboundStatus(request.resource.data.status);
 
-      allow update: if isStaff() &&
-        request.resource.data.tracking == resource.data.tracking &&
-        request.resource.data.clientId == resource.data.clientId &&
-        isInboundStatus(request.resource.data.status) &&
-        inboundTransition(resource.data.status, request.resource.data.status) &&
-        (request.resource.data.weightLb is number) &&
-        eqTsOrInt(request.resource.data.receivedAt, resource.data.receivedAt) &&
-        (
-          request.resource.data.boxedAt == resource.data.boxedAt ||
-          (
-            resource.data.boxedAt == null &&
-            resource.data.status == 'received' &&
-            request.resource.data.status == 'boxed' &&
-            isNonNegNumber(request.resource.data.boxedAt)
-          )
-        ) &&
-        (
-          !(resource.data.status == 'boxed' && request.resource.data.status == 'void') ||
-          isNonEmptyString(request.resource.data.voidReason)
-        );
+      allow update: if isStaff()
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'weightLb'
+        ]);
 
       allow delete: if isStaff();
     }
