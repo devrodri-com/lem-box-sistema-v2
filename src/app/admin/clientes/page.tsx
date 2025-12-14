@@ -160,10 +160,6 @@ function PageInner() {
     if (claims.superadmin === true) {
       return "superadmin";
     }
-    // Opcional: si claims.admin === true, devolver "admin"
-    if (claims.admin === true) {
-      return "admin";
-    }
     return null;
   }
 
