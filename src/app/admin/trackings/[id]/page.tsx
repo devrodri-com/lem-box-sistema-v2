@@ -172,9 +172,18 @@ function PageInner() {
     if (!row?.id) return;
     setSaving(true);
     try {
+      const nextCarrier = (form.carrier as Carrier | undefined) ?? row.carrier;
+      const nextClientId = (typeof form.clientId === "string" && form.clientId) ? String(form.clientId) : row.clientId;
+      const nextStatus = (form.status as Inbound["status"] | undefined) ?? row.status;
+      const nextWeightLb = typeof form.weightLb === "number" ? form.weightLb : row.weightLb;
+
       const payload: Partial<Inbound> = {
-        weightLb: typeof form.weightLb === "number" ? form.weightLb : row.weightLb,
+        weightLb: nextWeightLb,
+        carrier: nextCarrier,
+        clientId: nextClientId,
+        status: nextStatus,
       };
+
       await updateDoc(doc(db, "inboundPackages", String(row.id)), payload);
       setRow({ ...row, ...payload });
     } finally {

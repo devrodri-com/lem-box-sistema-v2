@@ -3,9 +3,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import AuthHero from "@/components/auth/AuthHero";
 import LoginCard from "@/components/auth/LoginCard";
 import AccessNavbarDesktop from "@/components/auth/AccessNavbarDesktop";
@@ -37,15 +36,20 @@ export default function AccederPage() {
     try {
       const cred = await signInWithEmailAndPassword(auth, email.trim(), pw);
       try {
+        // Canonical redirect based on Auth custom claims ONLY
+        // (Firestore fallbacks are intentionally avoided for security/consistency)
         const tok = await cred.user.getIdTokenResult(true);
         const claims = (tok?.claims ?? {}) as Record<string, unknown>;
         const claimRole = typeof claims["role"] === "string" ? (claims["role"] as string) : undefined;
-        const isAdmin = Boolean(claims["superadmin"] === true || claimRole === "admin" || claimRole === "superadmin");
-        if (isAdmin) { router.replace("/admin/ingreso"); return; }
-        const snap = await getDoc(doc(db, "users", cred.user.uid));
-        const role = snap.exists() ? ((snap.data() as { role?: string }).role) : undefined;
-        router.replace(role === "admin" || role === "superadmin" ? "/admin/ingreso" : "/mi");
+        const isAdmin = Boolean(
+          claims["superadmin"] === true ||
+          claimRole === "admin" ||
+          claimRole === "superadmin" ||
+          claimRole === "partner_admin"
+        );
+        router.replace(isAdmin ? "/admin/ingreso" : "/mi");
       } catch {
+        // If we can't read token claims, safest default is client portal
         router.replace("/mi");
       }
     } catch (e: unknown) {
