@@ -23,7 +23,7 @@ type AdminUser = {
   id: string; // uid or doc id
   email: string;
   name?: string;
-  role: "admin" | "superadmin";
+  role: "admin" | "superadmin" | "partner_admin";
   createdAt?: any;
   permissions: AdminPermissions;
 };
@@ -56,6 +56,12 @@ export default function UsuariosPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string>("");
 
+  // partner admin tooling (superadmin only)
+  const [pEmail, setPEmail] = useState("");
+  const [pUid, setPUid] = useState("");
+  const [pClientIdsRaw, setPClientIdsRaw] = useState("");
+  const [pMsg, setPMsg] = useState<string>("");
+  const [pBusy, setPBusy] = useState(false);
   // edit modal
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const [ePerms, setEPerms] = useState<AdminPermissions>({ ...DEFAULT_PERMS });
@@ -121,8 +127,68 @@ export default function UsuariosPage() {
       setOpenCreate(false);
       setCEmail(""); setCPassword(""); setCName(""); setCPerms({ ...DEFAULT_PERMS });
     } catch (e: any) {
-      setMsg(`Error: ${e.message || e}`);
+      const m = String(e?.message || e);
+      if (m.toLowerCase().includes("email") && m.toLowerCase().includes("exist")) {
+        setMsg("Error: el email ya existe. Usá la sección 'Convertir usuario existente a Partner Admin' (abajo) o editá ese usuario.");
+      } else {
+        setMsg(`Error: ${m}`);
+      }
     } finally { setBusy(false); }
+  }
+  async function promotePartner() {
+    if (!meIsSuper) return;
+    setPBusy(true);
+    setPMsg("");
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/admin/promote-partner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ email: pEmail.trim().toLowerCase() }),
+      });
+      const js = await res.json();
+      if (!res.ok) throw new Error(js?.error || `HTTP ${res.status}`);
+      if (js?.uid) setPUid(String(js.uid));
+      setPMsg("Partner promovido. Cerrá sesión y volvé a iniciar para refrescar permisos.");
+    } catch (e: any) {
+      setPMsg(`Error: ${e.message || e}`);
+    } finally {
+      setPBusy(false);
+    }
+  }
+
+  async function assignPartnerClients() {
+    if (!meIsSuper) return;
+    const ids = pClientIdsRaw
+      .split(/[\n,\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!ids.length) {
+      setPMsg("Pegá al menos un Client Doc ID (de Firestore/clients).");
+      return;
+    }
+
+    setPBusy(true);
+    setPMsg("");
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/admin/assign-partner-clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          partnerUidOrDocId: pUid || pEmail.trim().toLowerCase(),
+          managedClientIds: ids,
+        }),
+      });
+      const js = await res.json();
+      if (!res.ok) throw new Error(js?.error || `HTTP ${res.status}`);
+      if (js?.partnerUid) setPUid(String(js.partnerUid));
+      setPMsg(`Clientes asignados: ${js?.count ?? ids.length}.`);
+    } catch (e: any) {
+      setPMsg(`Error: ${e.message || e}`);
+    } finally {
+      setPBusy(false);
+    }
   }
 
   function openEdit(u: AdminUser) {
@@ -233,6 +299,73 @@ export default function UsuariosPage() {
             </table>
           </div>
         </div>
+
+          {meIsSuper ? (
+            <section className="rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-5 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-white">Partner Admin (usuario existente)</h2>
+                <span className="text-xs text-white/60">Usar cuando el email ya existe en Auth</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/60">Email del partner</span>
+                  <input
+                    className="h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    value={pEmail}
+                    onChange={(e) => setPEmail(e.target.value)}
+                    placeholder="partner@perez.com"
+                  />
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/60">UID (opcional)</span>
+                  <input
+                    className="h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    value={pUid}
+                    onChange={(e) => setPUid(e.target.value)}
+                    placeholder="Se autocompleta al promover"
+                  />
+                </label>
+
+                <div className="flex items-end gap-2">
+                  <button
+                    type="button"
+                    className="h-11 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
+                    onClick={promotePartner}
+                    disabled={pBusy || !pEmail.trim()}
+                  >
+                    Promover a Partner
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                <label className="grid gap-1 md:col-span-2">
+                  <span className="text-xs text-white/60">Client Doc IDs asignados (pegar IDs de Firestore/clients, separados por coma o líneas)</span>
+                  <textarea
+                    className="min-h-[88px] w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 py-2 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    value={pClientIdsRaw}
+                    onChange={(e) => setPClientIdsRaw(e.target.value)}
+                    placeholder="6zmyM2JUKVbnki3eHWtNnPoHQf...
+LxNQ35NhaodFqDP7M3RF5AP5cC..."
+                  />
+                </label>
+                <div className="flex items-end gap-2 justify-end">
+                  <button
+                    type="button"
+                    className="h-11 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    onClick={assignPartnerClients}
+                    disabled={pBusy || (!pUid.trim() && !pEmail.trim())}
+                  >
+                    Asignar clientes
+                  </button>
+                </div>
+              </div>
+
+              {pMsg ? <div className="text-sm text-white/70">{pMsg}</div> : null}
+            </section>
+          ) : null}
 
         {/* Create Modal */}
         {openCreate && (
