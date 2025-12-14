@@ -76,7 +76,7 @@ export async function printBoxLabel({ reference, clientCode, boxCode }: PrintBox
 
   // ===== TOP: Referencia =====
   const refTitle = '#REFERENCIA';
-  const refText = (reference || '').toUpperCase() || '—';
+  const refText = (reference || '').toUpperCase() || ' ';
 
   // Rect del bloque superior
   doc.rect(m, m, W - 2 * m, topH, 'S');

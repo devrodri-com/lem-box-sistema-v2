@@ -24,7 +24,7 @@ export default function WeightCheckCard({
     tolerancePct,
   });
 
-  const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(2) : "—");
+  const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(2) : " ");
 
   const conf = getStatusConf(status);
 

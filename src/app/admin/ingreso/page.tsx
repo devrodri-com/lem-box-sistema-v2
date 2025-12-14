@@ -84,7 +84,7 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
 
   const showLabel = value ? options.find((o) => o.value === value)?.label ?? value : placeholder;
   const baseClasses =
-    "mt-1 h-12 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    "mt-1 h-11 w-full rounded-md border border-[#1f3f36] !bg-[#0f2a22] px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] flex items-center justify-between" +
     (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
 
   return (
@@ -99,21 +99,21 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
       <button
         type="button"
         disabled={disabled}
-        className={baseClasses + (!value ? " text-slate-400" : "")}
+        className={baseClasses + (!value ? " text-white/50" : "")}
         onClick={() => {
           if (!disabled) setOpen((prev) => !prev);
         }}
       >
         <span className="truncate text-left">{showLabel}</span>
-        <span className="ml-2 text-slate-500">▾</span>
+        <span className="ml-2 text-[#005f40]">▾</span>
       </button>
       {open && !disabled && options.length > 0 && (
-        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+        <ul className="absolute left-0 right-0 z-30 mt-1 max-h-72 w-full overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
           {options.map((opt) => (
             <li key={opt.value}>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                className="block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5"
                 onClick={() => {
                   onChange(opt.value);
                   setOpen(false);
@@ -183,8 +183,8 @@ function PageInner() {
   const videoRefPhoto = useRef<HTMLVideoElement | null>(null);
   const [photoActive, setPhotoActive] = useState(false);
   // Botones LEM-BOX (paleta: #005f40, #eb6619, #cf6934)
-  const btnPrimaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
-  const btnSecondaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  const btnPrimaryCls = "inline-flex items-center justify-center h-11 px-8 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#eb6619]";
+  const btnSecondaryCls = "inline-flex items-center justify-center h-11 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
 
   // cortar cámara al desmontar
   useEffect(() => () => {
@@ -357,13 +357,14 @@ function PageInner() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28 space-y-6">
-      <h1 className="text-2xl font-semibold">Ingreso de paquetes</h1>
-      {errMsg ? (
-        <div className="p-3 rounded border border-red-300 bg-red-50 text-sm text-red-700">{errMsg}</div>
-      ) : null}
+    <main className="min-h-screen bg-[#02120f] text-white p-4 md:p-8">
+      <div className="mx-auto w-full max-w-3xl space-y-6">
+        <h1 className="text-2xl font-semibold">Ingreso de paquetes</h1>
+        {errMsg ? (
+          <div className="p-3 rounded border border-red-400 bg-red-900/30 text-sm text-red-300">{errMsg}</div>
+        ) : null}
 
-      <div className="bg-white text-neutral-900 rounded-lg shadow p-4">
+        <section className="flex flex-col gap-4 rounded-xl bg-white/5 border border-[#1f3f36] backdrop-blur-sm p-5">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* BUSCAR CLIENTE + SELECT */}
           {/* removed client search and filter UI */}
@@ -371,7 +372,7 @@ function PageInner() {
           {/* CLIENTE SELECT + TRACKING */}
           <div className="flex flex-col gap-3">
             <div>
-              <label className="text-xs font-medium text-neutral-500">Cliente</label>
+              <label className="text-xs font-medium text-white/60">Cliente</label>
               <div
                 className="relative mt-1 w-full"
                 onBlur={(e) => {
@@ -380,9 +381,9 @@ function PageInner() {
                   }
                 }}
               >
-                <div className="flex w-full rounded-md border border-slate-300 bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#005f40] focus-within:border-[#005f40]">
+                <div className="flex w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] shadow-sm focus-within:ring-2 focus-within:ring-[#005f40] focus-within:border-[#005f40]">
                   <input
-                    className="h-11 flex-1 border-0 px-3 focus:outline-none"
+                    className="h-11 flex-1 border-0 px-3 !bg-[#0f2a22] !text-white caret-white placeholder:text-white/40 focus:outline-none appearance-none"
                     placeholder="Escribir para buscar (código o nombre)"
                     value={clientQuery}
                     onChange={(e) => setClientQuery(e.target.value)}
@@ -396,7 +397,7 @@ function PageInner() {
                   />
                   <button
                     type="button"
-                    className="h-11 w-[220px] border-0 border-l border-slate-300 bg-white px-3 text-sm focus:outline-none flex items-center justify-between"
+                    className="h-11 w-[220px] border-0 border-l border-[#1f3f36] bg-transparent px-3 text-sm text-white/90 focus:outline-none flex items-center justify-between"
                     onClick={() => setClientPickerOpen((v) => !v)}
                     aria-haspopup="listbox"
                     aria-expanded={clientPickerOpen}
@@ -404,24 +405,24 @@ function PageInner() {
                     <span className="truncate text-left">
                       {(() => {
                         const sel = (filteredClients || []).find((c: any) => c.id === form.clientId) || (clients || []).find((c: any) => c.id === form.clientId);
-                        return sel ? `${sel.code} — ${sel.name}` : "Seleccionar…";
+                        return sel ? `${sel.code} ${sel.name}` : "Seleccionar…";
                       })()}
                     </span>
-                    <span className="ml-2 text-slate-500">▾</span>
+                    <span className="ml-2 text-[#005f40]">▾</span>
                   </button>
                 </div>
                 {clientPickerOpen && (
-                  <div className="absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+                  <div className="absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
                     {(filteredClients || []).length === 0 ? (
-                      <div className="px-3 py-2 text-slate-500">Sin resultados…</div>
+                      <div className="px-3 py-2 text-white/40">Sin resultados…</div>
                     ) : (
                       (filteredClients || []).map((c: any) => (
                         <button
                           key={c.id}
                           type="button"
                           className={
-                            "block w-full px-3 py-2 text-left hover:bg-slate-100 " +
-                            (form.clientId === c.id ? "bg-[#005f4015] text-[#005f40] font-medium" : "text-slate-900")
+                            "block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5 " +
+                            (form.clientId === c.id ? "bg-[#005f4015] text-[#005f40] font-medium" : "")
                           }
                           onClick={() => {
                             setForm((f: any) => ({ ...f, clientId: c.id }));
@@ -429,26 +430,26 @@ function PageInner() {
                           }}
                         >
                           <span className="font-medium">{c.code}</span>
-                          <span className="text-slate-500"> — {c.name}</span>
+                          <span className="text-white/60"> {c.name}</span>
                         </button>
                       ))
                     )}
                   </div>
                 )}
               </div>
-              <p className="mt-1 text-[11px] text-neutral-500">Mostrando {filteredClients.length} de {clients.length}</p>
+              <p className="mt-1 text-[11px] text-white/40">Mostrando {filteredClients.length} de {clients.length}</p>
             </div>
             <div>
-              <label className="text-xs font-medium text-neutral-500">Ingreso de tracking</label>
+              <label className="text-xs font-medium text-white/60">Ingreso de tracking</label>
               <input
-                className="mt-1 border rounded-md px-4 h-12 w-full bg-white text-base"
+                className="h-11 w-full rounded-md border border-[#1f3f36] !bg-[#0f2a22] px-4 !text-white caret-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                 placeholder="Escanear o escribir tracking"
                 value={form.tracking}
                 onChange={(e) => setForm((f) => ({ ...f, tracking: e.target.value }))}
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-neutral-500">Carrier</label>
+              <label className="text-xs font-medium text-white/60">Carrier</label>
               <BrandSelect
                 value={form.carrier}
                 onChange={(val) => setForm((f) => ({ ...f, carrier: val as Carrier }))}
@@ -461,10 +462,10 @@ function PageInner() {
           {/* PESO: tarjetas grandes */}
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-start gap-4">
             {/* Libra */}
-            <div className="rounded-lg border ring-1 ring-slate-200 overflow-hidden">
-              <div className="p-4">
+            <div className="rounded-lg border border-[#1f3f36] overflow-hidden">
+              <div className="p-4 bg-[#0f2a22]">
                 <input
-                  className="w-full text-center text-3xl md:text-4xl font-semibold outline-none"
+                  className="w-full text-center text-3xl md:text-4xl font-semibold outline-none !bg-transparent !text-white caret-white placeholder:text-white/40"
                   type="number"
                   step="0.01"
                   placeholder="0.00"
@@ -484,13 +485,13 @@ function PageInner() {
               </div>
             </div>
 
-            <div className="hidden md:grid place-items-center text-3xl font-bold select-none">=</div>
+            <div className="hidden md:grid place-items-center text-3xl font-bold select-none text-white/60">=</div>
 
             {/* Kilogramo */}
-            <div className="rounded-lg border ring-1 ring-slate-200 overflow-hidden">
-              <div className="p-4">
+            <div className="rounded-lg border border-[#1f3f36] overflow-hidden">
+              <div className="p-4 bg-[#0f2a22]">
                 <input
-                  className="w-full text-center text-3xl md:text-4xl font-semibold outline-none"
+                  className="w-full text-center text-3xl md:text-4xl font-semibold outline-none !bg-transparent !text-white caret-white placeholder:text-white/40"
                   type="number"
                   step="0.001"
                   placeholder="0.000"
@@ -552,50 +553,48 @@ function PageInner() {
             />
             {photoPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoPreview} alt="preview" className="h-12 w-12 object-cover rounded-md border" />
+              <img src={photoPreview} alt="preview" className="h-12 w-12 object-cover rounded-md border border-[#1f3f36]" />
             ) : null}
             {photoActive ? (
               <div className="mt-2">
-                <video ref={videoRefPhoto} className="w-full rounded-md border" autoPlay muted playsInline />
+                <video ref={videoRefPhoto} className="w-full rounded-md border border-[#1f3f36]" autoPlay muted playsInline />
               </div>
             ) : null}
           </div>
 
-          {/* BOTÓN GUARDAR sticky en mobile */}
-          <div className="md:static fixed left-0 right-0 bottom-0 bg-white/90 backdrop-blur border-t p-3 z-10">
-            <div className="max-w-3xl mx-auto mt-4 flex justify-center">
-              <button disabled={saving} className={`${btnPrimaryCls} h-11 px-8 rounded-md`}>
-                {saving ? 'Guardando…' : 'Enviar'}
-              </button>
-            </div>
+          {/* BOTÓN GUARDAR */}
+          <div className="mt-4 flex justify-center">
+            <button disabled={saving} className={btnPrimaryCls}>
+              {saving ? 'Guardando…' : 'Enviar'}
+            </button>
           </div>
         </form>
-      </div>
+      </section>
 
       <section>
-        <h2 className="font-medium mb-2">Hoy</h2>
+        <h2 className="font-medium mb-2 text-white">Hoy</h2>
         <div className="grid gap-2">
           {rows.map((r) => (
             <div
               key={r.id}
-              className="border rounded p-3 flex items-center gap-3"
+              className="border border-[#1f3f36] rounded-lg bg-white/5 p-3 flex items-center gap-3"
             >
               {r.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={r.photoUrl}
                   alt=""
-                  className="w-16 h-16 object-cover rounded"
+                  className="w-16 h-16 object-cover rounded border border-[#1f3f36]"
                 />
               ) : (
-                <div className="w-16 h-16 bg-neutral-100 rounded" />
+                <div className="w-16 h-16 bg-white/5 rounded border border-[#1f3f36]" />
               )}
               <div className="flex-1">
-                <div className="text-sm">
+                <div className="text-sm text-white">
                   #{r.tracking} · {r.carrier} · {r.weightLb} lb
                 </div>
-                <div className="text-xs text-neutral-500">
-                  Cliente: {clientsById[r.clientId]?.code ? `${clientsById[r.clientId]?.code} — ${clientsById[r.clientId]?.name}` : r.clientId}
+                <div className="text-xs text-white/60">
+                  Cliente: {clientsById[r.clientId]?.code ? `${clientsById[r.clientId]?.code} ${clientsById[r.clientId]?.name}` : r.clientId}
                 </div>
               </div>
               <span className="text-xs px-2 py-1 rounded bg-emerald-600 text-white">
@@ -605,6 +604,7 @@ function PageInner() {
           ))}
         </div>
       </section>
+      </div>
     </main>
   );
 }

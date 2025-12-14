@@ -76,15 +76,15 @@ function PageInner() {
   const [partnerAdmins, setPartnerAdmins] = useState<Array<{ uid: string; email: string; displayName?: string }>>([]);
 
   // Unified styles
-  const inputCls = "h-11 border border-slate-300 rounded-md px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
-  const labelCls = "text-xs font-medium text-neutral-600";
-  const cardCls = "rounded-lg border bg-white p-4";
+  const inputCls = "h-11 w-full rounded-md border border-[#1f3f36] !bg-[#0f2a22] px-3 !text-white caret-white placeholder:text-white/40 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+  const labelCls = "text-xs font-medium text-white/60";
+  const cardCls = "rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6";
 
   // Button utility classes
   const btnPrimaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
-  const btnSecondaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  const btnSecondaryCls = "inline-flex items-center justify-center h-11 px-5 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 font-medium shadow-sm hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
   const tabBtn = (active: boolean) =>
-    `px-3 h-9 text-sm font-semibold rounded-full ${active ? 'bg-[#005f40] !text-white font-bold shadow' : 'text-slate-800 hover:bg-white'}`;
+    `px-3 h-9 text-sm font-semibold rounded-full transition ${active ? 'bg-[#005f40] text-white shadow' : 'text-white/80 hover:bg-white/10'}`;
 
   // cargar cliente y movimientos
   useEffect(() => {
@@ -299,7 +299,7 @@ function PageInner() {
 if (!client) {
   return (
     <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28">
-      <p className="text-sm text-neutral-500">Cargando cliente…</p>
+      <p className="text-sm text-white/60">Cargando cliente…</p>
     </main>
   );
 }
@@ -308,11 +308,11 @@ return (
   <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28 space-y-6">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link href="/admin/clientes" className={btnSecondaryCls} aria-label="Volver a clientes">← Volver</Link>
-          <h1 className="text-2xl font-semibold">Cliente: {client.code} — {client.name}</h1>
+          <Link href="/admin/clientes" className="text-sm text-white/70 hover:text-white" aria-label="Volver a clientes">← Volver a clientes</Link>
+          <h1 className="text-2xl font-semibold text-white">Cliente: {client.code} {client.name}</h1>
         </div>
         <div>
-          <div className="inline-flex items-center gap-1 rounded-full bg-neutral-100 p-1 ring-1 ring-slate-200">
+          <div className="inline-flex items-center gap-1 rounded-full bg-[#0f2a22] p-1 ring-1 ring-[#1f3f36]">
             <button onClick={() => setTab("datos")} className={tabBtn(tab === "datos")}>
               Datos personales
             </button>
@@ -335,7 +335,7 @@ return (
             {/* Fila 1: Código 20% · Nombre 40% · Contacto/Referencia 40% */}
             <label className="grid gap-1 md:col-span-4">
               <span className={labelCls}>Código</span>
-              <input className={`${inputCls} bg-neutral-100 text-neutral-600`} value={form.code || ""} readOnly aria-readonly="true" />
+              <input className={`${inputCls} !bg-[#071f19] !text-white/70`} value={form.code || ""} readOnly aria-readonly="true" />
             </label>
             <label className="grid gap-1 md:col-span-8">
               <span className={labelCls}>Nombre</span>
@@ -457,9 +457,9 @@ return (
           </form>
 
           {isSuperAdmin ? (
-            <div className="mt-6 rounded-md border p-4 grid gap-3 md:max-w-xl">
+            <div className="mt-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6 grid gap-3 md:max-w-xl">
               <h3 className="font-medium">Administración · Resetear contraseña</h3>
-              <p className="text-xs text-neutral-600">Solo super admin. Mínimo 8 caracteres. Esto cambia la contraseña del usuario del cliente.</p>
+              <p className="text-xs text-white/60">Solo super admin. Mínimo 8 caracteres. Esto cambia la contraseña del usuario del cliente.</p>
               <label className="grid gap-1">
                 <span className={labelCls}>Nueva contraseña</span>
                 <input type="password" className={inputCls} value={pw1} onChange={(e)=> setPw1(e.target.value)} />
@@ -472,7 +472,7 @@ return (
                 <button onClick={setNewPassword} disabled={!canSetPassword || pwSaving} className={btnPrimaryCls}>
                   {pwSaving ? "Actualizando…" : "Actualizar contraseña"}
                 </button>
-                <span className="text-xs text-neutral-500">{pwMsg}</span>
+                <span className="text-xs text-white/60">{pwMsg}</span>
               </div>
             </div>
           ) : null}
@@ -481,31 +481,31 @@ return (
         <section className="space-y-6">
           <div>
             <h2 className="font-medium mb-2">Trackings del cliente</h2>
-            <div className="overflow-x-auto border rounded">
-              <table className="w-full text-sm">
-                <thead className="bg-neutral-50">
+            <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
+              <table className="w-full text-sm tabular-nums">
+                <thead className="sticky top-0 z-10 bg-[#0f2a22] shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]">
                   <tr>
-                    <th className="text-left p-2">Fecha de llegada</th>
-                    <th className="text-left p-2">Tracking</th>
-                    <th className="text-left p-2">Peso</th>
-                    <th className="text-left p-2">Estado</th>
-                    <th className="text-left p-2">Caja</th>
-                    <th className="text-left p-2">Factura</th>
-                    <th className="text-left p-2">Warehouse</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Fecha de llegada</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Tracking</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Peso</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Estado</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Caja</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Factura</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Warehouse</th>
                   </tr>
                 </thead>
                 <tbody>
                   {inbounds.map((r) => (
-                    <tr key={r.id} className="border-t">
-                      <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : '-'}</td>
-                      <td className="p-2 font-mono">{r.tracking}</td>
-                      <td className="p-2">{Number(r.weightLb || 0).toFixed(2)} lb / {Number(r.weightKg || 0).toFixed(2)} kg</td>
-                      <td className="p-2">{r.status === 'boxed' ? 'consolidado' : r.status === 'received' ? 'recibido' : r.status}</td>
-                      <td className="p-2">
+                    <tr key={r.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                      <td className="p-2 text-white">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : '-'}</td>
+                      <td className="p-2 font-mono text-white">{r.tracking}</td>
+                      <td className="p-2 text-white">{Number(r.weightLb || 0).toFixed(2)} lb / {Number(r.weightKg || 0).toFixed(2)} kg</td>
+                      <td className="p-2 text-white">{r.status === 'boxed' ? 'consolidado' : r.status === 'received' ? 'recibido' : r.status}</td>
+                      <td className="p-2 text-white">
                         {r.id ? (boxByInbound[r.id as string]?.code || '-') : '-'}
                       </td>
-                      <td className="p-2">{r.invoiceUrl ? '✔︎' : '-'}</td>
-                      <td className="p-2">
+                      <td className="p-2 text-white">{r.invoiceUrl ? '✔︎' : '-'}</td>
+                      <td className="p-2 text-white">
                         {r.photoUrl ? (
                           <a
                             href={r.photoUrl}
@@ -513,18 +513,18 @@ return (
                             rel="noreferrer"
                             title="Ver foto"
                             aria-label="Ver foto"
-                            className="underline"
+                            className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
                           >
                             📷
                           </a>
                         ) : (
-                          '—'
+                          ' '
                         )}
                       </td>
                     </tr>
                   ))}
                   {!inbounds.length ? (
-                    <tr><td className="p-3 text-neutral-500" colSpan={7}>Sin paquetes aún.</td></tr>
+                    <tr><td className="p-3 text-white/60" colSpan={7}>Sin paquetes aún.</td></tr>
                   ) : null}
                 </tbody>
               </table>
@@ -537,35 +537,35 @@ return (
         <section className="space-y-6">
           <div>
             <h2 className="font-medium mb-2">Cajas del cliente</h2>
-            <div className="overflow-x-auto border rounded">
-              <table className="w-full text-sm">
-                <thead className="bg-neutral-50">
+            <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
+              <table className="w-full text-sm tabular-nums">
+                <thead className="sticky top-0 z-10 bg-[#0f2a22] shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]">
                   <tr>
-                    <th className="text-left p-2">Código</th>
-                    <th className="text-left p-2">Estado</th>
-                    <th className="text-left p-2">Items</th>
-                    <th className="text-left p-2">Creada</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Código</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Estado</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Items</th>
+                    <th className="text-left p-2 text-white/80 text-xs font-medium">Creada</th>
                   </tr>
                 </thead>
                 <tbody>
                   {boxes.map((b) => (
-                    <tr key={b.id} className="border-t">
-                      <td className="p-2">
+                    <tr key={b.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                      <td className="p-2 text-white">
                         <button
-                          className="underline"
+                          className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
                           title="Ver caja"
                           onClick={() => { if (b.id) openBoxDetailByBoxId(b.id as string); }}
                         >
                           {b.code}
                         </button>
                       </td>
-                      <td className="p-2">{b.status}</td>
-                      <td className="p-2">{b.itemIds?.length || 0}</td>
-                      <td className="p-2">{b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '-'}</td>
+                      <td className="p-2 text-white">{b.status}</td>
+                      <td className="p-2 text-white">{b.itemIds?.length || 0}</td>
+                      <td className="p-2 text-white">{b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '-'}</td>
                     </tr>
                   ))}
                   {!boxes.length ? (
-                    <tr><td className="p-3 text-neutral-500" colSpan={4}>Sin cajas aún.</td></tr>
+                    <tr><td className="p-3 text-white/60" colSpan={4}>Sin cajas aún.</td></tr>
                   ) : null}
                 </tbody>
               </table>
@@ -574,28 +574,28 @@ return (
 
           {boxDetailOpen && detailBox ? (
             <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
-              <div className="bg-white w-[95vw] max-w-3xl rounded-lg shadow-xl p-4 md:p-6">
+              <div className="w-[95vw] max-w-3xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-xl p-4 md:p-6 text-white">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Caja {detailBox.code}</h3>
                   <button className={btnSecondaryCls} onClick={() => { setBoxDetailOpen(false); setDetailBox(null); }}>Cerrar</button>
                 </div>
                 <table className="w-full text-sm">
-                  <thead className="bg-neutral-50">
+                  <thead className="bg-[#0f2a22]">
                     <tr>
-                      <th className="text-left p-2">Tracking</th>
-                      <th className="text-left p-2">Peso</th>
-                      <th className="text-left p-2">Foto</th>
+                      <th className="text-left p-2 text-white/80 text-xs font-medium">Tracking</th>
+                      <th className="text-left p-2 text-white/80 text-xs font-medium">Peso</th>
+                      <th className="text-left p-2 text-white/80 text-xs font-medium">Foto</th>
                     </tr>
                   </thead>
                   <tbody>
                     {detailItems.map(i => (
-                      <tr key={i.id} className="border-t">
-                        <td className="p-2 font-mono">{i.tracking}</td>
-                        <td className="p-2">{(Number(i.weightLb||0)).toFixed(2)} lb</td>
-                        <td className="p-2">{i.photoUrl ? (<a href={i.photoUrl} target="_blank" aria-label="Ver foto">📷</a>) : ('—')}</td>
+                      <tr key={i.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                        <td className="p-2 font-mono text-white">{i.tracking}</td>
+                        <td className="p-2 text-white">{(Number(i.weightLb||0)).toFixed(2)} lb</td>
+                        <td className="p-2 text-white">{i.photoUrl ? (<a href={i.photoUrl} target="_blank" aria-label="Ver foto" className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm">📷</a>) : (' ')}</td>
                       </tr>
                     ))}
-                    {!detailItems.length ? (<tr><td className="p-3 text-neutral-500" colSpan={3}>Caja vacía.</td></tr>) : null}
+                    {!detailItems.length ? (<tr><td className="p-3 text-white/60" colSpan={3}>Caja vacía.</td></tr>) : null}
                   </tbody>
                 </table>
               </div>
@@ -628,7 +628,7 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
     : placeholder;
 
   const baseClasses =
-    "h-11 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    "h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] flex items-center justify-between" +
     (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
 
   return (
@@ -649,15 +649,15 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
         }}
       >
         <span className="truncate text-left">{showLabel}</span>
-        <span className="ml-2 text-slate-500">▾</span>
+        <span className="ml-2 text-white/50">▾</span>
       </button>
       {open && !disabled && options.length > 0 && (
-        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
           {options.map((opt) => (
             <li key={opt.value}>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                className="block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5"
                 onClick={() => {
                   onChange(opt.value);
                   setOpen(false);

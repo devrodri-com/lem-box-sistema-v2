@@ -42,7 +42,7 @@ service cloud.firestore {
     function inboundTransition(old, neu) {
       return (old == neu)
           || (old == 'received' && (neu == 'boxed' || neu == 'void'))
-          || (old == 'boxed' && neu == 'void');
+          || (old == 'boxed' && (neu == 'void' || neu == 'received'));
     }
 
     // ===== users =====
@@ -72,9 +72,18 @@ service cloud.firestore {
         isPositive(request.resource.data.weightLb) &&
         isInboundStatus(request.resource.data.status);
 
+      // Updates allowed for staff:
+      // - weight corrections
+      // - status transitions (received -> boxed/void; boxed -> void; and no-op)
+      // - (un)linking to a box when consolidating / removing from a box
       allow update: if isStaff()
+        && inboundTransition(resource.data.status, request.resource.data.status)
         && request.resource.data.diff(resource.data).changedKeys().hasOnly([
-          'weightLb'
+          'weightLb',
+          'status',
+          'boxId',
+          'boxedAt',
+          'updatedAt'
         ]);
 
       allow delete: if isStaff();

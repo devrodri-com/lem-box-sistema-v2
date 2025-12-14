@@ -52,7 +52,7 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
     : placeholder;
 
   const baseClasses =
-    "mt-1 h-11 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    "mt-1 h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] flex items-center justify-between" +
     (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
 
   return (
@@ -73,15 +73,15 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
         }}
       >
         <span className="truncate text-left">{showLabel}</span>
-        <span className="ml-2 text-slate-500">▾</span>
+        <span className="ml-2 text-white/50">▾</span>
       </button>
       {open && !disabled && options.length > 0 && (
-        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
           {options.map((opt) => (
             <li key={opt.value}>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                className="block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5"
                 onClick={() => {
                   onChange(opt.value);
                   setOpen(false);
@@ -389,13 +389,13 @@ function PageInner() {
 
   return (
     <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
-      <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-6">
+      <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Clientes</h1>
+          <h1 className="text-2xl font-semibold text-white">Clientes</h1>
           <button
             type="button"
             onClick={() => setOpenCreate(true)}
-            className="h-10 px-4 rounded-md bg-brand-primary text-white shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            className="h-10 px-4 rounded-md bg-[#eb6619] text-white shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
           >
             + Crear nuevo cliente
           </button>
@@ -403,19 +403,19 @@ function PageInner() {
 
         <div className="grid gap-3 md:grid-cols-3">
           <div className="relative">
-            <label className="text-xs font-medium text-neutral-600">Buscar</label>
+            <label className="text-xs font-medium text-white/60">Buscar</label>
             <input
-              className="mt-1 h-11 w-full rounded-md border border-slate-300 pl-10 pr-9"
+              className="mt-1 h-11 w-full rounded-md border border-[#1f3f36] !bg-[#0f2a22] pl-10 pr-9 !text-white caret-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
               placeholder="Nombre o Nº cliente"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
-            <span className="absolute left-3 top-[38px] text-neutral-400" aria-hidden>🔎</span>
+            <span className="absolute left-3 top-[38px] text-white/40" aria-hidden>🔎</span>
             {q ? (
               <button
                 type="button"
                 onClick={() => setQ("")}
-                className="absolute right-3 top-[34px] text-neutral-500"
+                className="absolute right-3 top-[34px] text-white/50 hover:text-white"
                 aria-label="Limpiar búsqueda"
               >
                 ✕
@@ -423,7 +423,7 @@ function PageInner() {
             ) : null}
           </div>
           <div>
-            <label className="text-xs font-medium text-neutral-600">País</label>
+            <label className="text-xs font-medium text-white/60">País</label>
             <BrandSelect
               value={countryFilter}
               onChange={(val) => setCountryFilter(val)}
@@ -441,15 +441,15 @@ function PageInner() {
       {/* Modal de creación */}
       {openCreate ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40">
-          <div className="bg-white w-[95vw] max-w-3xl rounded-lg shadow-xl p-4 md:p-6">
+          <div className="w-[95vw] max-w-3xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-xl p-4 md:p-6 text-white">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Crear cliente</h2>
-              <button className="text-sm" onClick={() => { resetForm(); setOpenCreate(false); }}>Cerrar</button>
+              <button className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]" onClick={() => { resetForm(); setOpenCreate(false); }}>Cerrar</button>
             </div>
             <form onSubmit={createClient} className="grid gap-3 md:grid-cols-4">
               <div className="grid gap-3 md:grid-cols-4 md:col-span-4">
                 <div className="md:col-span-2">
-                  <input className="border rounded px-4 h-12 w-full" placeholder="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} required />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" placeholder="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <div className="md:col-span-2">
                   <BrandSelect
@@ -480,17 +480,17 @@ function PageInner() {
                   />
                 </div>
                 <div>
-                  <input className="border rounded px-4 h-12 w-full" placeholder="Nº documento" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" placeholder="Nº documento" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} />
                 </div>
                 <div className="md:col-span-2">
-                  <input className="border rounded px-4 h-12 w-full" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="md:col-span-2">
-                  <input className="border rounded px-4 h-12 w-full" type="password" placeholder="Contraseña (provisional)" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" type="password" placeholder="Contraseña (provisional)" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <div className="md:col-span-2">
                   <input
-                    className="border rounded px-4 h-12 w-full"
+                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                     type="tel"
                     inputMode="tel"
                     placeholder="Teléfono"
@@ -500,18 +500,18 @@ function PageInner() {
                 </div>
 
                 <div className="md:col-span-3">
-                  <input className="border rounded px-4 h-12 w-full" placeholder="Dirección" value={address} onChange={(e) => setAddress(e.target.value)} />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" placeholder="Dirección" value={address} onChange={(e) => setAddress(e.target.value)} />
                 </div>
                 <div>
-                  <input className="border rounded px-4 h-12 w-full" placeholder="Contacto / Referente (ej: Danny, IFS)" value={contact} onChange={(e) => setContact(e.target.value)} />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" placeholder="Contacto / Referente (ej: Danny, IFS)" value={contact} onChange={(e) => setContact(e.target.value)} />
                 </div>
                 <div>
-                  <input className="border rounded px-4 h-12 w-full" type="email" placeholder="Email adicional (opcional)" value={emailAlt} onChange={(e) => setEmailAlt(e.target.value)} />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" type="email" placeholder="Email adicional (opcional)" value={emailAlt} onChange={(e) => setEmailAlt(e.target.value)} />
                 </div>
 
                 <div>
                   <select
-                    className="border rounded p-3"
+                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                     value={stateName}
                     onChange={(e) => setStateName(e.target.value)}
                     hidden={!country || !STATES_BY_COUNTRY[country]}
@@ -522,7 +522,7 @@ function PageInner() {
                     ))}
                   </select>
                   <input
-                    className="border rounded p-3"
+                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                     value={stateName}
                     onChange={(e) => setStateName(e.target.value)}
                     hidden={!!(country && STATES_BY_COUNTRY[country])}
@@ -530,15 +530,15 @@ function PageInner() {
                   />
                 </div>
                 <div>
-                  <input className="border rounded px-4 h-12 w-full" placeholder="Ciudad" value={city} onChange={(e) => setCity(e.target.value)} />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" placeholder="Ciudad" value={city} onChange={(e) => setCity(e.target.value)} />
                 </div>
                 <div>
-                  <input className="border rounded px-4 h-12 w-full" placeholder="Código postal" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+                  <input className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" placeholder="Código postal" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
                 </div>
 
                 {isStaff && partnerAdmins.length > 0 ? (
                   <div className="md:col-span-4">
-                    <label className="text-xs font-medium text-neutral-600 mb-1 block">Admin asociado (opcional)</label>
+                    <label className="text-xs font-medium text-white/60 mb-1 block">Admin asociado (opcional)</label>
                     <BrandSelect
                       value={managerUid}
                       onChange={(val) => setManagerUid(val)}
@@ -555,14 +555,14 @@ function PageInner() {
                 ) : null}
 
                 {userRole === "partner_admin" ? (
-                  <div className="md:col-span-4 text-xs text-neutral-500">
+                  <div className="md:col-span-4 text-xs text-white/60">
                     Este cliente será asociado automáticamente a tu cuenta.
                   </div>
                 ) : null}
 
                 <div className="md:col-span-4 flex justify-end gap-2 mt-2">
-                  <button type="button" onClick={() => { resetForm(); setOpenCreate(false); }} className="h-12 px-4 rounded border">Cancelar</button>
-                  <button className="h-12 px-6 rounded text-white" style={{ backgroundColor: '#005f40' }}>Crear</button>
+                  <button type="button" onClick={() => { resetForm(); setOpenCreate(false); }} className="h-12 px-5 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]">Cancelar</button>
+                  <button className="h-12 px-6 rounded-md text-white bg-[#eb6619] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]">Crear</button>
                 </div>
               </div>
             </form>
@@ -572,17 +572,17 @@ function PageInner() {
 
       <section className="grid gap-2">
         {paginatedRows.map((c) => (
-          <div key={c.id} className="border rounded p-4 flex items-center justify-between gap-3">
+          <div key={c.id} className="rounded-lg border border-white/10 bg-[#071f19] p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm"><b>{c.code}</b> — {c.name}</div>
-              <div className="text-xs text-neutral-500">País: {c.country} · Estado: {c.activo ? "Activo" : "Inactivo"}</div>
+              <div className="text-sm text-white"><b>{c.code}</b> {c.name}</div>
+              <div className="text-xs text-white/60">País: {c.country} · Estado: {c.activo ? "Activo" : "Inactivo"}</div>
             </div>
             <div className="flex items-center gap-2">
-              <a href={`/admin/clientes/${c.id}`} className="px-2 py-1 text-xs rounded border" aria-label="Ver perfil">Ver perfil</a>
+              <a href={`/admin/clientes/${c.id}`} className="h-9 px-3 inline-flex items-center justify-center text-xs rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]" aria-label="Ver perfil">Ver perfil</a>
               <button
                 onClick={() => toggleActivo(c.id!, c.activo !== false)}
                 disabled={busyId === c.id}
-                className={`px-2 py-1 text-xs rounded border ${ c.activo !== false ? "border-red-500 text-red-600" : "border-emerald-600 text-emerald-700"}`}
+                className={`h-9 px-3 text-xs rounded-md border bg-[#0f2a22] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40] ${c.activo !== false ? "border-red-500/70 text-red-300" : "border-emerald-500/70 text-emerald-300"}`}
                 aria-label={c.activo !== false ? "Desactivar" : "Activar"}
                 title={c.activo !== false ? "Desactivar" : "Activar"}
               >
@@ -591,7 +591,7 @@ function PageInner() {
               <button
                 onClick={() => removeClient(c.id!, c.code)}
                 disabled={busyId === c.id}
-                className="px-2 py-1 text-xs rounded border border-neutral-400"
+                className="h-9 px-3 text-xs rounded-md border border-red-500/70 bg-[#0f2a22] text-red-300 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-red-500"
                 aria-label="Eliminar"
                 title="Eliminar definitivamente"
               >
@@ -601,29 +601,26 @@ function PageInner() {
           </div>
         ))}
         {rows.length === 0 ? (
-          <div className="text-sm text-neutral-500">Sin clientes aún.</div>
+          <div className="text-sm text-white/60">Sin clientes aún.</div>
         ) : filteredRows.length === 0 ? (
-          <div className="text-sm text-neutral-500">Sin resultados para la búsqueda.</div>
+          <div className="text-sm text-white/60">Sin resultados para la búsqueda.</div>
         ) : null}
       </section>
       {totalRows > 0 && (
-        <div className="mt-4 flex flex-col items-center justify-center gap-2 text-xs text-neutral-600">
+        <div className="mt-4 flex flex-col items-center justify-center gap-2 text-xs text-white/60">
           <div className="flex items-center gap-2">
             <span>Mostrar</span>
-            <select
-              className="h-8 rounded border border-slate-300 px-2"
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setPage(0);
-              }}
-            >
-              {[10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
+            <div className="w-[96px]">
+              <BrandSelect
+                value={String(pageSize)}
+                onChange={(val) => {
+                  setPageSize(Number(val));
+                  setPage(0);
+                }}
+                options={[10, 20, 50].map((size) => ({ value: String(size), label: String(size) }))}
+                placeholder={String(pageSize)}
+              />
+            </div>
             <span>por página</span>
           </div>
           <div className="flex items-center gap-2">
@@ -631,7 +628,7 @@ function PageInner() {
               type="button"
               onClick={() => setPage(0)}
               disabled={page === 0}
-              className="px-2 py-1 rounded border text-xs disabled:opacity-40"
+              className="h-8 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
             >
               «
             </button>
@@ -639,7 +636,7 @@ function PageInner() {
               type="button"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-2 py-1 rounded border text-xs disabled:opacity-40"
+              className="h-8 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
             >
               Anterior
             </button>
@@ -652,7 +649,7 @@ function PageInner() {
                 setPage((p) => Math.min(totalPages - 1, p + 1))
               }
               disabled={page >= totalPages - 1 || totalRows === 0}
-              className="px-2 py-1 rounded border text-xs disabled:opacity-40"
+              className="h-8 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
             >
               Siguiente
             </button>
@@ -660,7 +657,7 @@ function PageInner() {
               type="button"
               onClick={() => setPage(totalPages - 1)}
               disabled={page >= totalPages - 1 || totalRows === 0}
-              className="px-2 py-1 rounded border text-xs disabled:opacity-40"
+              className="h-8 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
             >
               »
             </button>
