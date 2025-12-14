@@ -78,8 +78,13 @@ service cloud.firestore {
       // - (un)linking to a box when consolidating / removing from a box
       allow update: if isStaff()
         && inboundTransition(resource.data.status, request.resource.data.status)
+        && isInboundStatus(request.resource.data.status)
+        && isCarrier(request.resource.data.carrier)
+        && isNonEmptyString(request.resource.data.clientId)
         && request.resource.data.diff(resource.data).changedKeys().hasOnly([
           'weightLb',
+          'carrier',
+          'clientId',
           'status',
           'boxId',
           'boxedAt',

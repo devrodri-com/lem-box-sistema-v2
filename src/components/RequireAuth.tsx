@@ -44,6 +44,12 @@ export default function RequireAuth({ children, requireAdmin = false }: { childr
           }
           isAdmin = role === "admin" || role === "superadmin" || role === "partner_admin";
         }
+
+        // 3) Último fallback: si existe un doc en `admins/{uid}`, tratarlo como admin
+        if (!isAdmin) {
+          const a = await getDoc(doc(db, "admins", u.uid));
+          if (a.exists()) isAdmin = true;
+        }
       } catch {
         isAdmin = false;
       }
