@@ -1,8 +1,8 @@
 // src/app/admin/historial-tracking/page.tsx
 "use client";
 import RequireAuth from "@/components/RequireAuth";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import type { Carrier, Client } from "@/types/lem";
 import { printBoxLabel as openPrintLabel } from "@/lib/printBoxLabel";
@@ -121,25 +121,122 @@ function PageInner() {
     return m;
   }, [boxes]);
 
+  // --- Partner-safe data loading ---
+  function chunk<T>(arr: T[], size: number) {
+    const out: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  }
+
+  async function getMyRole(): Promise<string | undefined> {
+    const u = auth.currentUser;
+    if (!u) return undefined;
+    const tok = await u.getIdTokenResult(true);
+    const claims = (tok?.claims ?? {}) as Record<string, unknown>;
+    const role = typeof claims["role"] === "string" ? (claims["role"] as string) : undefined;
+    if (claims["superadmin"] === true) return "superadmin";
+    return role;
+  }
+
+  async function getManagedClientIds(): Promise<string[]> {
+    const u = auth.currentUser;
+    if (!u) return [];
+    const snap = await getDoc(doc(db, "users", u.uid));
+    if (!snap.exists()) return [];
+    const data = snap.data() as any;
+    const ids = Array.isArray(data?.managedClientIds) ? data.managedClientIds.filter((x: any) => typeof x === "string") : [];
+    return ids;
+  }
+
   useEffect(() => {
+    let alive = true;
+
     async function load() {
-            let inboundQ: any = query(collection(db, "inboundPackages"), orderBy("receivedAt", "desc"));
-      if (dateFrom) {
-        inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+      const role = await getMyRole();
+      const isStaff = role === "admin" || role === "superadmin";
+
+      let managedIds: string[] = [];
+      if (role === "partner_admin" || !isStaff) {
+        try {
+          managedIds = await getManagedClientIds();
+        } catch (e) {
+          managedIds = [];
+        }
       }
-      if (dateTo) {
-        inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+
+      const isPartner = role === "partner_admin" || (!isStaff && managedIds.length > 0);
+      console.log("[HistorialTracking] role:", role, "isStaff:", isStaff, "isPartner:", isPartner);
+      if (managedIds.length) console.log("[HistorialTracking] managedClientIds:", managedIds);
+
+      // Partner: scope everything to managedClientIds to avoid permission errors.
+      if (isPartner) {
+        if (!alive) return;
+
+        if (!managedIds.length) {
+          setClients([]);
+          setRows([]);
+          setBoxes([]);
+          return;
+        }
+
+        // Clients (by doc id)
+        const clientSnaps = await Promise.all(
+          chunk(managedIds, 10).map((ids) => getDocs(query(collection(db, "clients"), where(documentId(), "in", ids))))
+        );
+        const clientDocs = clientSnaps.flatMap((s) => s.docs);
+        const nextClients = clientDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, "id">) }));
+
+        // Inbounds (by clientId)
+        const inboundQueries = chunk(managedIds, 10).map((ids) => {
+          let qBase: any = query(collection(db, "inboundPackages"), where("clientId", "in", ids), orderBy("receivedAt", "desc"));
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+          return getDocs(qBase);
+        });
+        const inboundSnaps = await Promise.all(inboundQueries);
+        const inboundDocs = inboundSnaps.flatMap((s) => s.docs);
+        const nextRows = inboundDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) }));
+        nextRows.sort((a, b) => Number(b.receivedAt || 0) - Number(a.receivedAt || 0));
+
+        // Boxes (by clientId)
+        const boxSnaps = await Promise.all(
+          chunk(managedIds, 10).map((ids) => getDocs(query(collection(db, "boxes"), where("clientId", "in", ids))))
+        );
+        const boxDocs = boxSnaps.flatMap((s) => s.docs);
+        const nextBoxes = boxDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
+
+        if (!alive) return;
+        setClients(nextClients);
+        setRows(nextRows);
+        setBoxes(nextBoxes);
+        return;
       }
+
+      // Antes de correr queries globales, verificar que es staff/admin
+      if (!isStaff) {
+        throw new Error("No autorizado para ver historial global");
+      }
+      // Staff/admin: existing global behavior
+      let inboundQ: any = query(collection(db, "inboundPackages"), orderBy("receivedAt", "desc"));
+      if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+      if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+
       const [cs, is, bs] = await Promise.all([
         getDocs(collection(db, "clients")),
         getDocs(inboundQ),
         getDocs(collection(db, "boxes")),
       ]);
-      setClients(cs.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Client,"id">) })));
-      setRows(is.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Inbound,"id">) })));
-      setBoxes(bs.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Box,"id">) })));
+
+      if (!alive) return;
+      setClients(cs.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, "id">) })));
+      setRows(is.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) })));
+      setBoxes(bs.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) })));
     }
+
     void load();
+    return () => {
+      alive = false;
+    };
   }, [dateFrom, dateTo]);
 
   async function openBoxDetailByInbound(inboundId: string) {

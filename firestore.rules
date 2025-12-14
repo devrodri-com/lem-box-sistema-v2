@@ -2,135 +2,146 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
 
-    // ===== Helpers =====
+    /* ===================== HELPERS ===================== */
     function hasAuth() { return request.auth != null; }
-    function userDoc() { return hasAuth() ? get(/databases/$(db)/documents/users/$(request.auth.uid)) : null; }
+
+    function userDoc() {
+      return hasAuth()
+        ? get(/databases/$(db)/documents/users/$(request.auth.uid))
+        : null;
+    }
+
+    /* ROLE: SIEMPRE CLAIMS PRIMERO */
     function role() {
       return hasAuth()
-        ? (userDoc().data.role != null ? userDoc().data.role
-           : (request.auth.token.role != null ? request.auth.token.role : null))
+        ? (request.auth.token.role != null
+            ? request.auth.token.role
+            : (userDoc() != null && userDoc().data.role != null
+                ? userDoc().data.role
+                : null))
         : null;
     }
+
     function clientId() {
       return hasAuth()
-        ? (userDoc().data.clientId != null ? userDoc().data.clientId
-           : (request.auth.token.clientId != null ? request.auth.token.clientId : null))
+        ? (userDoc() != null && userDoc().data.clientId != null
+            ? userDoc().data.clientId
+            : null)
         : null;
     }
-    function isSuperAdmin() { return role() == 'superadmin' || request.auth.token.superadmin == true; }
-    function isAdmin()      { return role() == 'admin'      || request.auth.token.admin == true; }
-    function isStaff()      { return isSuperAdmin() || isAdmin() || role() == 'operador'; }
-    function isPartnerAdmin() { return role() == 'partner_admin' || request.auth.token.role == 'partner_admin'; }
-    function isOwner(cid)   { return clientId() != null && clientId() == cid; }
 
-    // ===== Validators / enums =====
-    function isNonEmptyString(s) { return s is string && s.size() > 0; }
-    function isPositive(n) { return n is number && n > 0; }
-    function isNonNegNumber(n) { return n is number && n >= 0; }
-    function isCarrier(c) { return ['UPS','FedEx','USPS','DHL','Amazon','Other'].hasAny([c]); }
-    function isInboundStatus(s) { return ['received','boxed','void'].hasAny([s]); }
-    function isBoxStatus(s) { return ['open','closed'].hasAny([s]); }
-
-    // Timestamp == milisegundos
-    function eqTsOrInt(a, b) {
-      return (a == b)
-        || (a is int && b is timestamp && a == b.toMillis())
-        || (a is timestamp && b is int && b == a.toMillis());
+    function managedClientIds() {
+      return hasAuth()
+        && userDoc() != null
+        && userDoc().data.managedClientIds is list
+        ? userDoc().data.managedClientIds
+        : [];
     }
 
-    // Transiciones válidas
-    function inboundTransition(old, neu) {
-      return (old == neu)
-          || (old == 'received' && (neu == 'boxed' || neu == 'void'))
-          || (old == 'boxed' && (neu == 'void' || neu == 'received'));
+    function isSuperAdmin() {
+      return request.auth.token.superadmin == true || role() == 'superadmin';
     }
 
-    // ===== users =====
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    /* STAFF = SOLO ADMIN / SUPERADMIN */
+    function isStaff() {
+      return isSuperAdmin() || isAdmin();
+    }
+
+    /* PARTNER = SOLO PARTNER_ADMIN */
+    function isPartnerAdmin() {
+      return role() == 'partner_admin';
+    }
+
+    function isManagedClient(cid) {
+      return isPartnerAdmin() && managedClientIds().hasAny([cid]);
+    }
+
+    function isOwner(cid) {
+      return clientId() != null && clientId() == cid;
+    }
+
+    /* ===================== USERS ===================== */
     match /users/{uid} {
-      allow read:   if isStaff() || (hasAuth() && (uid == request.auth.uid || resource.data.uid == request.auth.uid));
-      allow create: if isStaff() || isPartnerAdmin() || (hasAuth() && (uid == request.auth.uid || request.resource.data.uid == request.auth.uid));
-      allow update: if isStaff() || (hasAuth() && (uid == request.auth.uid || resource.data.uid == request.auth.uid));
+      allow read: if isStaff() || (hasAuth() && uid == request.auth.uid);
+
+      allow create: if isStaff() || (hasAuth() && uid == request.auth.uid);
+
+      /* SELF UPDATE MUY LIMITADO (NO ROLE, NO managedClientIds) */
+      allow update: if isStaff()
+        || (hasAuth() && uid == request.auth.uid
+            && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+              'displayName',
+              'phone',
+              'photoUrl',
+              'updatedAt'
+            ]));
+
       allow delete: if isSuperAdmin();
     }
 
-    // ===== clients =====
+    /* ===================== CLIENTS ===================== */
     match /clients/{id} {
-      allow read: if isStaff() || isOwner(id) || (hasAuth() && resource.data.email == request.auth.token.email) || (hasAuth() && resource.data.managerUid == request.auth.uid);
-      allow create: if hasAuth();
-      allow update: if isStaff() || (isOwner(id) && resource.data.diff(request.resource.data).changedKeys().hasOnly(['name','phone','country','state','city','address'])) || (isPartnerAdmin() && resource.data.managerUid == request.auth.uid && request.resource.data.managerUid == resource.data.managerUid);
-      allow delete: if isStaff();
-    }
+      allow read: if isStaff()
+        || isOwner(id)
+        || isManagedClient(id);
 
-    // ===== inboundPackages =====
-    match /inboundPackages/{inbId} {
-      allow read: if isStaff() || isOwner(resource.data.clientId) || (hasAuth() && resource.data.managerUid == request.auth.uid);
+      /* Partner puede crear clientes SOLO para sí */
+      allow create: if isStaff()
+        || (isPartnerAdmin() && request.resource.data.managerUid == request.auth.uid);
 
-      allow create: if isStaff() &&
-        isNonEmptyString(request.resource.data.tracking) &&
-        isCarrier(request.resource.data.carrier) &&
-        isNonEmptyString(request.resource.data.clientId) &&
-        isPositive(request.resource.data.weightLb) &&
-        isInboundStatus(request.resource.data.status);
-
-      // Updates allowed for staff:
-      // - weight corrections
-      // - status transitions (received -> boxed/void; boxed -> void; and no-op)
-      // - (un)linking to a box when consolidating / removing from a box
       allow update: if isStaff()
-        && inboundTransition(resource.data.status, request.resource.data.status)
-        && isInboundStatus(request.resource.data.status)
-        && isCarrier(request.resource.data.carrier)
-        && isNonEmptyString(request.resource.data.clientId)
-        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
-          'weightLb',
-          'carrier',
-          'clientId',
-          'status',
-          'boxId',
-          'boxedAt',
-          'updatedAt'
-        ]);
+        || (isOwner(id) && request.resource.data.diff(resource.data)
+            .changedKeys().hasOnly(['name','phone','country','state','city','address']))
+        || (isPartnerAdmin()
+            && resource.data.managerUid == request.auth.uid
+            && request.resource.data.managerUid == resource.data.managerUid);
 
       allow delete: if isStaff();
     }
 
-    // ===== boxes =====
+    /* ===================== INBOUND PACKAGES ===================== */
+    match /inboundPackages/{inbId} {
+      allow read: if isStaff()
+        || isOwner(resource.data.clientId)
+        || isManagedClient(resource.data.clientId);
+
+      /* Partner NO puede crear */
+      allow create: if isStaff();
+
+      allow update: if isStaff();
+
+      allow delete: if isStaff();
+    }
+
+    /* ===================== BOXES ===================== */
     match /boxes/{boxId} {
-      allow read: if isStaff() || isOwner(resource.data.clientId) || (hasAuth() && resource.data.managerUid == request.auth.uid);
+      allow read: if isStaff()
+        || isOwner(resource.data.clientId)
+        || isManagedClient(resource.data.clientId);
 
-      allow create: if isStaff() &&
-        isNonEmptyString(request.resource.data.code) &&
-        isNonEmptyString(request.resource.data.clientId) &&
-        (request.resource.data.itemIds is list) &&
-        isBoxStatus(request.resource.data.status);
-
-      allow update: if isStaff() &&
-        request.resource.data.clientId == resource.data.clientId &&
-        isBoxStatus(request.resource.data.status);
-
+      allow create: if isStaff();
+      allow update: if isStaff();
       allow delete: if isStaff();
     }
 
-    // ===== shipments =====
+    /* ===================== SHIPMENTS ===================== */
     match /shipments/{id} {
-      allow read: if isStaff() || (clientId() != null && clientId() in resource.data.clientIds) || (hasAuth() && request.auth.uid in resource.data.managerUids);
+      allow read: if isStaff();
       allow write: if isStaff();
     }
 
-    // ===== trackingAlerts =====
-    match /trackingAlerts/{id} {
-      allow read: if isStaff() || (hasAuth() && resource.data.uid == request.auth.uid) || (hasAuth() && resource.data.managerUid == request.auth.uid);
-      allow create: if (hasAuth() && request.resource.data.uid == request.auth.uid) || (isPartnerAdmin() && request.resource.data.managerUid == request.auth.uid);
-      allow update, delete: if isStaff();
+    /* ===================== ADMINS ===================== */
+    match /admins/{uid} {
+      allow read, write: if isSuperAdmin();
     }
 
-    // ===== counters/admins =====
+    /* ===================== COUNTERS ===================== */
     match /counters/{id} {
-      // cualquier usuario autenticado puede leer contadores
-      allow read: if hasAuth();
-      // cualquier usuario autenticado puede escribir contadores (incluido clients)
-      allow write: if hasAuth();
+      allow read, write: if hasAuth();
     }
-    match /admins/{uid}  { allow read, write: if isSuperAdmin(); }
   }
 }

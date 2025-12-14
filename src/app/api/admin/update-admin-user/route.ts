@@ -13,9 +13,12 @@ export async function POST(req: NextRequest) {
     const isSuper = me?.superadmin === true || me?.role === "superadmin";
     if (!isSuper) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-    const { uid, name, permissions } = await req.json();
+    const { uid, name, permissions, role } = await req.json();
     const safeName = typeof name === "string" ? name.trim() : "";
     if (!uid) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+    
+    // Canonicalizar role: si no viene, asumir "admin" (compatibilidad)
+    const canonicalRole = role === "partner_admin" ? "partner_admin" : "admin";
 
     let targetUid = String(uid);
     let targetEmail: string | undefined;
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
         await adminDb.collection("admins").doc(targetUid).set(
           {
             email: targetEmail,
-            role: "admin",
+            role: canonicalRole,
             ...(safeName ? { name: safeName } : {}),
             ...(permissions ? { permissions } : {}),
             updatedAt: FieldValue.serverTimestamp(),
@@ -60,15 +63,16 @@ export async function POST(req: NextRequest) {
     // Canonical auth role for route guards (do not store full permissions in claims)
     await adminAuth.setCustomUserClaims(targetUid, {
       ...(ur?.customClaims || {}),
-      role: "admin",
+      role: canonicalRole,
       superadmin: false,
     });
 
     // Ensure canonical user profile exists and not as client
+    // Siempre borrar clientId para evitar que sea tratado como cliente
     await adminDb.collection("users").doc(targetUid).set(
       {
         ...(safeName ? { displayName: safeName } : {}),
-        role: "admin",
+        role: canonicalRole,
         clientId: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       },
@@ -78,6 +82,7 @@ export async function POST(req: NextRequest) {
     // actualizar doc en Firestore (admins)
     await adminDb.collection("admins").doc(targetUid).set(
       {
+        role: canonicalRole,
         ...(safeName ? { name: safeName } : {}),
         ...(permissions ? { permissions } : {}),
         updatedAt: FieldValue.serverTimestamp(),
@@ -85,7 +90,7 @@ export async function POST(req: NextRequest) {
       { merge: true }
     );
 
-    return NextResponse.json({ ok: true, uid: targetUid });
+    return NextResponse.json({ ok: true, uid: targetUid, role: canonicalRole });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "unknown_error" }, { status: 500 });
   }
