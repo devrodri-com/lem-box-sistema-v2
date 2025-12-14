@@ -8,6 +8,7 @@ import type { Carrier, Client } from "@/types/lem";
 import { printBoxLabel as openPrintLabel } from "@/lib/printBoxLabel";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmtWeightPairFromLb, lbToKg } from "@/lib/weight";
+import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const btnPrimaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed";
@@ -616,132 +617,25 @@ async function handleExportCsv() {
           )}
         </div>
 
-        {boxDetailOpen && detailBox ? (
-          <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
-            <div className="bg-white w-[95vw] max-w-3xl rounded-2xl shadow-xl ring-1 ring-slate-200 p-6">
-              <div className="flex flex-col gap-3 mb-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold">
-                    CAJA: {detailBox.code}
-                  </h3>
-                  <button
-                    className={btnSecondaryCls}
-                    onClick={() => {
-                      setBoxDetailOpen(false);
-                      setDetailBox(null);
-                    }}
-                  >
-                    Cerrar
-                  </button>
-                </div>
-                <div className="mt-3 flex items-center gap-3">
-                  <label className="text-sm text-neutral-600">Tipo:</label>
-                  <div className="min-w-[180px]">
-                    <BrandSelect
-                      value={editType}
-                      onChange={(val) => setEditType(val as any)}
-                      options={[
-                        { value: "COMERCIAL", label: "Comercial" },
-                        { value: "FRANQUICIA", label: "Franquicia" },
-                      ]}
-                      placeholder="Seleccionar tipo"
-                    />
-                  </div>
-                  <button
-                    className={btnSecondaryCls}
-                    onClick={() => {
-                      void applyBoxTypeChange();
-                    }}
-                  >
-                    Aplicar
-                  </button>
-                </div>
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                  <label className="text-sm text-neutral-600 md:col-span-2">
-                    Referencia
-                    <input
-                      className={inputCls}
-                      value={labelRef}
-                      onChange={(e) => setLabelRef(e.target.value)}
-                      onBlur={() => {
-                        void saveLabelRef();
-                      }}
-                      placeholder="Campo editable"
-                    />
-                  </label>
-                  <div className="flex justify-end">
-                    <button className={btnSecondaryCls} onClick={handlePrintLabel}>
-                      Imprimir etiqueta
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {loadingDetail ? (
-                <div className="text-sm text-neutral-500">Cargando…</div>
-              ) : (
-                <div className="overflow-x-auto border rounded">
-                  <table className="w-full text-sm">
-                    <thead className="bg-neutral-50 text-neutral-700">
-                      <tr>
-                        <th className="text-left p-2">Tracking</th>
-                        <th className="text-left p-2">Peso</th>
-                        <th className="text-left p-2">Foto</th>
-                        <th className="text-left p-2">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detailItems.map((i) => (
-                        <tr
-                          key={i.id}
-                          className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50"
-                        >
-                          <td className="p-2 font-mono">{i.tracking}</td>
-                          <td className="p-2">
-                            {fmtWeightPairFromLb(Number(i.weightLb || 0))}
-                          </td>
-                          <td className="p-2">
-                            {i.photoUrl ? (
-                              <a
-                                href={i.photoUrl}
-                                target="_blank"
-                                aria-label="Ver foto"
-                              >
-                                📷
-                              </a>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                          <td className="p-2">
-                            <button
-                              className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-neutral-700 hover:text-red-600 hover:border-red-400"
-                              title="Eliminar de la caja"
-                              onClick={() => {
-                                void removeItemFromBox(i.id);
-                              }}
-                            >
-                              <IconTrash />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {!detailItems.length ? (
-                        <tr>
-                          <td className="p-3 text-white/40" colSpan={4}>
-                            Caja sin items.
-                          </td>
-                        </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              <div className="mt-4 text-sm font-medium">
-                Peso total: {fmtWeightPairFromLb(Number(detailBox.weightLb || 0))}
-              </div>
-            </div>
-          </div>
-        ) : null}
+        <BoxDetailModal
+          open={boxDetailOpen}
+          box={detailBox}
+          items={detailItems}
+          loading={loadingDetail}
+          editType={editType}
+          onChangeType={setEditType}
+          onApplyType={applyBoxTypeChange}
+          labelRef={labelRef}
+          onChangeLabelRef={setLabelRef}
+          onBlurSaveLabelRef={saveLabelRef}
+          onPrintLabel={handlePrintLabel}
+          onRemoveItem={removeItemFromBox}
+          weightText={fmtWeightPairFromLb(Number(detailBox?.weightLb || 0))}
+          onClose={() => {
+            setBoxDetailOpen(false);
+            setDetailBox(null);
+          }}
+        />
       </div>
     </main>
   );

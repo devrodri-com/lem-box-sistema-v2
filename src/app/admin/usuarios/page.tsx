@@ -64,7 +64,7 @@ export default function UsuariosPage() {
 
   // permissions helpers
   const PermRow = ({ label, k, state, setState }: { label: string; k: keyof AdminPermissions; state: AdminPermissions; setState: (s: AdminPermissions) => void }) => (
-    <label className="flex items-center gap-2 text-sm text-neutral-800">
+    <label className="flex items-center gap-2 text-sm text-white/90">
       <input type="checkbox" checked={!!state[k]} onChange={(e) => setState({ ...state, [k]: e.target.checked })} />
       <span>{label}</span>
     </label>
@@ -160,53 +160,56 @@ export default function UsuariosPage() {
   return (
     <RequireAuth requireAdmin>
       <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
-        <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-6">
+        <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6 space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">Usuarios</h1>
+            <h1 className="text-2xl font-semibold text-white">Usuarios</h1>
             {meIsSuper && (
-              <button className="px-3 py-2 rounded border" onClick={() => setOpenCreate(true)}>
-                Crear nuevo usuario
+              <button
+                className="h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
+                onClick={() => setOpenCreate(true)}
+              >
+                + Crear nuevo usuario
               </button>
             )}
           </div>
 
-          <div className="overflow-x-auto border rounded">
-            <table className="w-full text-sm">
-              <thead className="bg-neutral-50">
+          <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
+            <table className="w-full text-sm tabular-nums">
+              <thead className="sticky top-0 z-10 bg-[#0f2a22] shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]">
                 <tr>
-                  <th className="text-left p-2">Rol</th>
-                  <th className="text-left p-2">Nombre</th>
-                  <th className="text-left p-2">Email</th>
-                  <th className="text-left p-2">Permisos</th>
-                  <th className="text-left p-2">Acciones</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Rol</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Nombre</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Email</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Permisos</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td className="p-3" colSpan={5}>
+                    <td className="p-3 text-white/60" colSpan={5}>
                       Cargando…
                     </td>
                   </tr>
                 ) : null}
                 {!loading && !items.length ? (
                   <tr>
-                    <td className="p-3 text-neutral-500" colSpan={5}>
+                    <td className="p-3 text-white/60" colSpan={5}>
                       Sin usuarios aún.
                     </td>
                   </tr>
                 ) : null}
                 {items.map((u) => (
-                  <tr key={u.id} className="border-t">
-                    <td className="p-2">{u.role}</td>
-                    <td className="p-2">{u.name || "—"}</td>
-                    <td className="p-2">{u.email}</td>
+                  <tr key={u.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                    <td className="p-2 text-white">{u.role}</td>
+                    <td className="p-2 text-white">{u.name || " "}</td>
+                    <td className="p-2 text-white">{u.email}</td>
                     <td className="p-2">
                       <div className="flex flex-wrap gap-1 text-xs">
                         {Object.entries(u.permissions || {})
                           .filter(([, v]) => v)
                           .map(([k]) => (
-                            <span key={k} className="px-2 py-0.5 rounded border">
+                            <span key={k} className="px-2 py-0.5 rounded-md border border-white/10 bg-[#0f2a22] text-white/80">
                               {permLabel(k as keyof AdminPermissions)}
                             </span>
                           ))}
@@ -214,11 +217,14 @@ export default function UsuariosPage() {
                     </td>
                     <td className="p-2">
                       {meIsSuper ? (
-                        <button className="px-2 py-1 rounded border" onClick={() => openEdit(u)}>
+                        <button
+                          className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                          onClick={() => openEdit(u)}
+                        >
                           Ver/editar permisos
                         </button>
                       ) : (
-                        <span className="text-neutral-400">—</span>
+                        <span className="text-white/40"> </span>
                       )}
                     </td>
                   </tr>
@@ -231,28 +237,28 @@ export default function UsuariosPage() {
         {/* Create Modal */}
         {openCreate && (
           <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
-            <div className="bg-white w-[95vw] max-w-2xl rounded-lg shadow-xl p-4 md:p-6">
+            <div className="w-[95vw] max-w-2xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-xl p-4 md:p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Crear usuario administrador</h3>
-                <button className="px-3 py-2 rounded border" onClick={() => setOpenCreate(false)}>
+                <button className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]" onClick={() => setOpenCreate(false)}>
                   Cerrar
                 </button>
               </div>
 
               <div className="grid md:grid-cols-2 gap-3">
                 <label className="grid gap-1">
-                  <span className="text-xs text-neutral-500">Nombre</span>
-                  <input className="border rounded p-2" value={cName} onChange={(e) => setCName(e.target.value)} />
+                  <span className="text-xs text-white/60">Nombre</span>
+                  <input className="h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" value={cName} onChange={(e) => setCName(e.target.value)} />
                 </label>
                 <label className="grid gap-1">
-                  <span className="text-xs text-neutral-500">Email</span>
-                  <input className="border rounded p-2" value={cEmail} onChange={(e) => setCEmail(e.target.value)} />
+                  <span className="text-xs text-white/60">Email</span>
+                  <input className="h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" value={cEmail} onChange={(e) => setCEmail(e.target.value)} />
                 </label>
                 <label className="grid gap-1 md:col-span-2">
-                  <span className="text-xs text-neutral-500">Contraseña (min 8)</span>
+                  <span className="text-xs text-white/60">Contraseña (min 8)</span>
                   <input
                     type="password"
-                    className="border rounded p-2"
+                    className="h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                     value={cPassword}
                     onChange={(e) => setCPassword(e.target.value)}
                   />
@@ -283,13 +289,13 @@ export default function UsuariosPage() {
 
               <div className="mt-4 flex items-center gap-3">
                 <button
-                  className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+                  className="h-10 px-5 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
                   disabled={!canCreate || busy}
                   onClick={handleCreate}
                 >
                   {busy ? "Creando…" : "Crear"}
                 </button>
-                <span className="text-xs text-neutral-500">{msg}</span>
+                <span className="text-xs text-white/60">{msg}</span>
               </div>
             </div>
           </div>
@@ -298,17 +304,17 @@ export default function UsuariosPage() {
         {/* Edit Modal */}
         {editing && (
           <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
-            <div className="bg-white w-[95vw] max-w-2xl rounded-lg shadow-xl p-4 md:p-6">
+            <div className="w-[95vw] max-w-2xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-xl p-4 md:p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Editar permisos</h3>
-                <button className="px-3 py-2 rounded border" onClick={() => setEditing(null)}>
+                <button className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]" onClick={() => setEditing(null)}>
                   Cerrar
                 </button>
               </div>
               <div className="grid md:grid-cols-2 gap-3">
                 <label className="grid gap-1">
-                  <span className="text-xs text-neutral-500">Nombre</span>
-                  <input className="border rounded p-2" value={eName} onChange={(e) => setEName(e.target.value)} />
+                  <span className="text-xs text-white/60">Nombre</span>
+                  <input className="h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]" value={eName} onChange={(e) => setEName(e.target.value)} />
                 </label>
                 <div />
               </div>
@@ -332,13 +338,13 @@ export default function UsuariosPage() {
               </div>
               <div className="mt-4 flex items-center gap-3">
                 <button
-                  className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+                  className="h-10 px-5 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
                   disabled={!canSaveEdit || busy}
                   onClick={handleSaveEdit}
                 >
                   {busy ? "Guardando…" : "Guardar permisos"}
                 </button>
-                <span className="text-xs text-neutral-500">{msg}</span>
+                <span className="text-xs text-white/60">{msg}</span>
               </div>
             </div>
           </div>

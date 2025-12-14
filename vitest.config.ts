@@ -12,7 +12,7 @@ export default defineConfig({
       'node_modules/**',
       'dist/**',
       '.next/**',
-      'import-clients/node_modules/**', // <— excluye esos tests legacy
+      'import-clients/node_modules/**', // < excluye esos tests legacy
       ...(isRules ? [] : ['src/__tests__/rules/**']), // reglas solo cuando RUN_RULES=1
     ],
   },

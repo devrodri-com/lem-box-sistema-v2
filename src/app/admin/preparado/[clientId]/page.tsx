@@ -69,7 +69,7 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
     : placeholder;
 
   const baseClasses =
-    "mt-1 h-10 w-full rounded-md border border-slate-300 bg-white text-slate-900 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
+    "mt-1 h-10 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40] flex items-center justify-between" +
     (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
 
   return (
@@ -84,21 +84,21 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
       <button
         type="button"
         disabled={disabled}
-        className={baseClasses + (!value ? " text-slate-400" : "")}
+        className={baseClasses + (!value ? " text-white/50" : "")}
         onClick={() => {
           if (!disabled) setOpen((prev) => !prev);
         }}
       >
         <span className="truncate text-left">{showLabel}</span>
-        <span className="ml-2 text-slate-500">▾</span>
+        <span className="ml-2 text-white/50">▾</span>
       </button>
       {open && !disabled && options.length > 0 && (
-        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
           {options.map((opt) => (
             <li key={opt.value}>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                className="block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5"
                 onClick={() => {
                   onChange(opt.value);
                   setOpen(false);
@@ -404,32 +404,32 @@ function ClienteInner() {
 
   return (
     <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
-      <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-4">
+      <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6 space-y-4 text-white">
         {notice ? (
           <div
             role="status"
             className={
               `pointer-events-none fixed right-6 top-20 z-[999] rounded-md px-3 py-2 text-sm shadow ring-1 ring-inset ` +
               (notice.type === "success"
-                ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                ? "bg-emerald-500/15 text-emerald-200 ring-emerald-500/20"
                 : notice.type === "error"
-                ? "bg-rose-50 text-rose-800 ring-rose-200"
-                : "bg-slate-50 text-slate-800 ring-slate-200")
+                ? "bg-rose-500/15 text-rose-200 ring-rose-500/20"
+                : "bg-white/10 text-white/80 ring-white/15")
             }
           >
             {notice.msg}
           </div>
         ) : null}
         <div className="flex items-center gap-2">
-          <button className="px-3 py-2 rounded border" onClick={() => router.push("/admin/preparado")}>← Volver</button>
-          <h1 className="text-xl font-semibold">Consolidar — {client ? `${client.code} — ${client.name}` : "Cargando..."}</h1>
+          <button className="text-sm text-white/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm" onClick={() => router.push("/admin/preparado")}>← Volver</button>
+          <h1 className="text-xl font-semibold text-white">Consolidar   {client ? `${client.code} ${client.name}` : "Cargando..."}</h1>
         </div>
 
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             {boxId ? (
               <div className="space-y-2">
-                <div className="text-sm text-slate-700">
+                <div className="text-sm text-white/70">
                   {(() => {
                     const b = boxes.find(x => x.id === boxId);
                     if (!b) return null;
@@ -440,7 +440,7 @@ function ClienteInner() {
                           <span>{b.status === "closed" ? <StatusBadge scope="box" status="closed" /> : <StatusBadge scope="box" status="open" />}</span>
                         </div>
                         <div>
-                          <span className="font-medium">Peso verificado:</span> {typeof b.verifiedWeightLb === "number" ? `${b.verifiedWeightLb.toFixed(2)} lb` : "—"}
+                          <span className="font-medium">Peso verificado:</span> {typeof b.verifiedWeightLb === "number" ? `${b.verifiedWeightLb.toFixed(2)} lb` : " "}
                         </div>
                       </>
                     );
@@ -448,16 +448,16 @@ function ClienteInner() {
                 </div>
                 <div>
                   <button
-                    className="mt-1 inline-flex items-center gap-2 rounded bg-emerald-700 px-3 py-1.5 text-white disabled:opacity-50"
+                    className="mt-1 inline-flex items-center gap-2 h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50"
                     onClick={closeCurrentBox}
                     disabled={!boxId || boxes.find(b => b.id === boxId)?.status === "closed"}
                   >Cerrar caja</button>
                 </div>
-                <div className="rounded border p-3">
-                  <div className="text-sm font-medium mb-2">Verificar peso</div>
+                <div className="rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-5">
+                  <div className="text-sm font-medium mb-2 text-white">Verificar peso</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                     <div>
-                      <label className="block text-xs text-neutral-500 mb-1">Peso en libras (lb)</label>
+                      <label className="block text-xs text-white/60 mb-1">Peso en libras (lb)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -469,13 +469,13 @@ function ClienteInner() {
                           const n = Number(v);
                           setVerifyKg(Number.isFinite(n) ? lbToKg(n, 2).toFixed(2) : "");
                         }}
-                        className="w-full border rounded px-3 h-10"
+                        className="h-10 w-full rounded-md border border-[#1f3f36] !bg-[#0f2a22] px-3 !text-white caret-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                         placeholder="0.00"
                         inputMode="decimal"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-neutral-500 mb-1">Peso en kilogramos (kg)</label>
+                      <label className="block text-xs text-white/60 mb-1">Peso en kilogramos (kg)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -487,7 +487,7 @@ function ClienteInner() {
                           const n = Number(v);
                           setVerifyLb(Number.isFinite(n) ? kgToLb(n, 2).toFixed(2) : "");
                         }}
-                        className="w-full border rounded px-3 h-10"
+                        className="h-10 w-full rounded-md border border-[#1f3f36] !bg-[#0f2a22] px-3 !text-white caret-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                         placeholder="0.00"
                         inputMode="decimal"
                       />
@@ -495,7 +495,7 @@ function ClienteInner() {
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     <button
-                      className="inline-flex items-center gap-2 rounded bg-[#005f40] px-3 py-1.5 text-white disabled:opacity-50"
+                      className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50"
                       onClick={() => {
                         const n = Number(verifyLb);
                         if (Number.isFinite(n) && n > 0) {
@@ -509,14 +509,14 @@ function ClienteInner() {
                       Confirmar
                     </button>
                     <button
-                      className="inline-flex items-center gap-2 rounded border px-3 py-1.5"
+                      className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                       onClick={() => { setVerifyLb(""); setVerifyKg(""); }}
                       type="button"
                     >
                       Re-pesar
                     </button>
                     <button
-                      className="inline-flex items-center gap-2 rounded border px-3 py-1.5"
+                      className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                       type="button"
                       onClick={() => {/* noop */}}
                     >
@@ -526,7 +526,7 @@ function ClienteInner() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-slate-600">Creá o elegí una caja para registrar el peso de balanza.</p>
+              <p className="text-sm text-white/60">Creá o elegí una caja para registrar el peso de balanza.</p>
             )}
           </div>
         </div>
@@ -534,7 +534,7 @@ function ClienteInner() {
         <section className="space-y-3">
           <div className="grid grid-cols-1 gap-3">
             <div>
-              <label className="text-xs text-neutral-500">Tipo de envío</label>
+              <label className="text-xs text-white/60">Tipo de envío</label>
               <BrandSelect
                 value={boxType}
                 onChange={(val) => setBoxType(val as ShipmentType)}
@@ -548,8 +548,8 @@ function ClienteInner() {
           </div>
 
           {anySelected ? (
-            <div className="flex items-center gap-2 rounded border bg-neutral-50 p-2">
-              <span className="text-sm">Caja destino:</span>
+            <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-3">
+              <span className="text-sm text-white">Caja destino:</span>
               <BrandSelect
                 value={bulkBoxId}
                 onChange={(val) => {
@@ -580,26 +580,26 @@ function ClienteInner() {
               >
                 Agregar seleccionados
               </button>
-              <span className="ml-auto text-xs text-neutral-600">Total: {fmtWeightPairFromLb(totalLb, 2, 2)}</span>
+              <span className="ml-auto text-xs text-white/60">Total: {fmtWeightPairFromLb(totalLb, 2, 2)}</span>
             </div>
           ) : null}
 
-          <div className="overflow-x-auto border rounded">
-            <table className="w-full text-sm">
-              <thead className="bg-neutral-50">
+          <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
+            <table className="w-full text-sm tabular-nums">
+              <thead className="bg-[#0f2a22]">
                 <tr>
-                  <th className="p-2">Selec.</th>
-                  <th className="text-left p-2">Fecha</th>
-                  <th className="text-left p-2">Tracking</th>
-                  <th className="text-left p-2">Peso</th>
-                  <th className="text-left p-2">Caja</th>
-                  <th className="text-left p-2">Foto</th>
-                  <th className="text-left p-2">Estado</th>
+                  <th className="p-2 text-white/80 text-xs font-medium">Selec.</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Fecha</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Tracking</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Peso</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Caja</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Foto</th>
+                  <th className="text-left p-2 text-white/80 text-xs font-medium">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {visibleInbounds.map(r => (
-                  <tr key={r.id} className="border-t">
+                  <tr key={r.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
                     <td className="p-2">
                       <div className="flex items-center gap-2">
                         <input
@@ -631,14 +631,14 @@ function ClienteInner() {
                         ) : null}
                       </div>
                     </td>
-                    <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : "-"}</td>
-                    <td className="p-2 font-mono">{r.tracking}</td>
-                    <td className="p-2">{fmtWeightPairFromLb(Number(r.weightLb||0), 2, 2)}</td>
-                    <td className="p-2">{boxByInbound[r.id]?.code || "-"}</td>
+                    <td className="p-2 text-white">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : "-"}</td>
+                    <td className="p-2 font-mono text-white">{r.tracking}</td>
+                    <td className="p-2 text-white">{fmtWeightPairFromLb(Number(r.weightLb||0), 2, 2)}</td>
+                    <td className="p-2 text-white">{boxByInbound[r.id]?.code || "-"}</td>
                     <td className="p-2">
                       {r.photoUrl ? (
-                        <a href={r.photoUrl} target="_blank" rel="noreferrer" title="Ver foto" aria-label="Ver foto">📷</a>
-                      ) : ("—")}
+                        <a href={r.photoUrl} target="_blank" rel="noreferrer" title="Ver foto" aria-label="Ver foto" className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm">📷</a>
+                      ) : (" ")}
                     </td>
                     <td className="p-2">
                       {r.status === "void" ? (
@@ -651,7 +651,7 @@ function ClienteInner() {
                     </td>
                   </tr>
                 ))}
-                {!visibleInbounds.length ? (<tr><td className="p-3 text-neutral-500" colSpan={7}>Sin trackings.</td></tr>) : null}
+                {!visibleInbounds.length ? (<tr><td className="p-3 text-white/60" colSpan={7}>Sin trackings.</td></tr>) : null}
               </tbody>
             </table>
           </div>

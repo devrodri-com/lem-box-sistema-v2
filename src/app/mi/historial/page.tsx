@@ -118,7 +118,7 @@ export default function MiHistorialPage() {
           <tbody>
             {filteredRows.map((r) => (
               <tr key={r.id} className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50 h-11">
-                <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : "—"}</td>
+                <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : " "}</td>
                 <td className="p-2 font-mono">{r.tracking}</td>
                 <td className="p-2">{r.carrier}</td>
                 <td className="p-2 text-right tabular-nums">{fmtWeightPairFromLb(Number(r.weightLb || 0))}</td>
@@ -135,7 +135,7 @@ export default function MiHistorialPage() {
                       Ver
                     </a>
                   ) : (
-                    "—"
+                    " "
                   )}
                 </td>
               </tr>

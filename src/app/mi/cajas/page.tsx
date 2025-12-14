@@ -68,7 +68,7 @@ export default function MiCajasPage() {
                 <td className="p-2">{b.type}</td>
                 <td className="p-2 text-right tabular-nums">{b.itemIds?.length || 0}</td>
                 <td className="p-2 text-right tabular-nums">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
-                <td className="p-2">{b.status ? <StatusBadge scope="box" status={b.status} /> : "—"}</td>
+                <td className="p-2">{b.status ? <StatusBadge scope="box" status={b.status} /> : " "}</td>
                 <td className="p-2">
                   <button className={btnSecondary} onClick={() => openBoxDetail(b)}>
                     Ver detalle

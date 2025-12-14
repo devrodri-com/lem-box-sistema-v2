@@ -162,47 +162,47 @@ export default function EstadoEnviosPage() {
   return (
     <RequireAuth requireAdmin>
       <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
-        <div className="w-full max-w-6xl bg-white text-neutral-900 rounded-xl shadow-md ring-1 ring-slate-200 p-4 md:p-6 space-y-6">
-          <h1 className="text-2xl font-semibold">Estado de envíos</h1>
+        <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6 space-y-6">
+          <h1 className="text-2xl font-semibold text-white">Estado de envíos</h1>
           {loading ? (
-            <p>Cargando embarques...</p>
+            <p className="text-white/70">Cargando embarques...</p>
           ) : shipments.length === 0 ? (
-            <p>No hay embarques disponibles.</p>
+            <p className="text-white/70">No hay embarques disponibles.</p>
           ) : (
-            <div className="overflow-x-auto border rounded">
-              <table className="min-w-full text-sm">
+            <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
+              <table className="min-w-full text-sm tabular-nums">
                 {/* el contenido de la tabla queda exactamente igual */}
-                <thead className="bg-neutral-50">
+                <thead className="sticky top-0 z-10 bg-[#0f2a22] shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]">
                   <tr>
-                    <th className="px-3 py-2 text-left">Código</th>
-                    <th className="px-3 py-2 text-left">País</th>
-                    <th className="px-3 py-2 text-left">Tipo</th>
-                    <th className="px-3 py-2 text-left">Estado</th>
-                    <th className="px-3 py-2 text-left">Fecha</th>
-                    <th className="px-3 py-2 text-left">Acciones</th>
+                    <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Código</th>
+                    <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">País</th>
+                    <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Tipo</th>
+                    <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Estado</th>
+                    <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Fecha</th>
+                    <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {shipments.map((s) => (
                     <Fragment key={s.id}>
-                      <tr className="border-t">
+                      <tr className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
                         <td className="px-3 py-2">
-                          <button className="underline" onClick={() => toggleExpand(s)}>
+                          <button className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm" onClick={() => toggleExpand(s)}>
                             {s.code}
                           </button>
                         </td>
-                        <td className="px-3 py-2">{s.country}</td>
-                        <td className="px-3 py-2">{s.type}</td>
+                        <td className="px-3 py-2 text-white">{s.country}</td>
+                        <td className="px-3 py-2 text-white">{s.type}</td>
                         <td className="px-3 py-2">{renderShipmentStatus(s.status)}</td>
-                        <td className="px-3 py-2">{s.openedAt ? new Date(s.openedAt).toLocaleDateString() : "-"}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-white">{s.openedAt ? new Date(s.openedAt).toLocaleDateString() : "-"}</td>
+                        <td className="px-3 py-2 text-white">
                           {s.status === "open" && (
-                            <button className="px-2 py-1 rounded border" onClick={() => setStatus(s.id, "shipped")}>
+                            <button className="h-9 px-4 rounded-md bg-[#cf6934] text-white font-medium hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#cf6934]" onClick={() => setStatus(s.id, "shipped")}>
                               Marcar En Tránsito
                             </button>
                           )}
                           {s.status === "shipped" && (
-                            <button className="px-2 py-1 rounded border" onClick={() => setStatus(s.id, "arrived")}>
+                            <button className="h-9 px-4 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]" onClick={() => setStatus(s.id, "arrived")}>
                               Marcar En Destino
                             </button>
                           )}
@@ -210,35 +210,35 @@ export default function EstadoEnviosPage() {
                       </tr>
                       {expandedId === s.id && (
                         <tr key={`${s.id}-expanded`}>
-                          <td colSpan={6} className="bg-neutral-50 p-3">
+                          <td colSpan={6} className="bg-transparent p-3">
                             {loadingDetail === s.id ? (
-                              <div className="text-neutral-500">Cargando cajas…</div>
+                              <div className="text-white/60">Cargando cajas…</div>
                             ) : (
                               <div className="overflow-x-auto">
-                                <table className="w-full text-sm border">
+                                <table className="w-full text-sm tabular-nums border border-white/10 rounded-md overflow-hidden">
                                   <thead>
-                                    <tr className="bg-white">
-                                      <th className="px-2 py-1 text-left">Caja</th>
-                                      <th className="px-2 py-1 text-left">Cliente</th>
-                                      <th className="px-2 py-1 text-left">Items</th>
-                                      <th className="px-2 py-1 text-left">Peso</th>
-                                      <th className="px-2 py-1 text-left">Acciones</th>
+                                    <tr className="bg-[#0f2a22]">
+                                      <th className="px-2 py-1 text-left text-white/80 text-xs font-medium">Caja</th>
+                                      <th className="px-2 py-1 text-left text-white/80 text-xs font-medium">Cliente</th>
+                                      <th className="px-2 py-1 text-left text-white/80 text-xs font-medium">Items</th>
+                                      <th className="px-2 py-1 text-left text-white/80 text-xs font-medium">Peso</th>
+                                      <th className="px-2 py-1 text-left text-white/80 text-xs font-medium">Acciones</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {(boxesByShipment[s.id] || []).map((b) => (
-                                      <tr key={b.id} className="border-t">
-                                        <td className="px-2 py-1 font-mono">
-                                          <button className="underline" onClick={() => openBoxDetail(b)}>
+                                      <tr key={b.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                                        <td className="px-2 py-1 font-mono text-white">
+                                          <button className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm" onClick={() => openBoxDetail(b)}>
                                             {b.code}
                                           </button>
                                         </td>
-                                        <td className="px-2 py-1">{clientsById[b.clientId]?.name || b.clientId}</td>
-                                        <td className="px-2 py-1">{b.itemIds?.length || 0}</td>
-                                        <td className="px-2 py-1">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
-                                        <td className="px-2 py-1">
+                                        <td className="px-2 py-1 text-white">{clientsById[b.clientId]?.name || b.clientId}</td>
+                                        <td className="px-2 py-1 text-white">{b.itemIds?.length || 0}</td>
+                                        <td className="px-2 py-1 text-white">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
+                                        <td className="px-2 py-1 text-white">
                                           <button
-                                            className="px-2 py-1 rounded border"
+                                            className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                                             onClick={() => removeBoxFromShipment(b, s)}
                                           >
                                             Eliminar de embarque
@@ -248,7 +248,7 @@ export default function EstadoEnviosPage() {
                                     ))}
                                     {!boxesByShipment[s.id]?.length && (
                                       <tr>
-                                        <td colSpan={5} className="px-2 py-2 text-neutral-500">
+                                        <td colSpan={5} className="px-2 py-2 text-white/60">
                                           Este embarque no tiene cajas (o no se han cargado).
                                         </td>
                                       </tr>
@@ -274,11 +274,11 @@ export default function EstadoEnviosPage() {
 
         {boxDetailOpen && detailBox ? (
           <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
-            <div className="bg-white w-[95vw] max-w-3xl rounded-lg shadow-xl p-4 md:p-6">
+            <div className="w-[95vw] max-w-3xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-xl p-4 md:p-6 text-white">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Caja {detailBox.code}</h3>
                 <button
-                  className="px-3 py-2 rounded border"
+                  className="h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
                   onClick={() => {
                     setBoxDetailOpen(false);
                     setDetailBox(null);
@@ -288,36 +288,36 @@ export default function EstadoEnviosPage() {
                 </button>
               </div>
               {loadingBox ? (
-                <div className="text-sm text-neutral-500">Cargando…</div>
+                <div className="text-sm text-white/60">Cargando…</div>
               ) : (
-                <div className="overflow-x-auto border rounded">
+                <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
                   <table className="w-full text-sm">
-                    <thead className="bg-neutral-50">
+                    <thead className="bg-[#0f2a22]">
                       <tr>
-                        <th className="text-left p-2">Tracking</th>
-                        <th className="text-left p-2">Peso</th>
-                        <th className="text-left p-2">Foto</th>
+                        <th className="text-left p-2 text-white/80 text-xs font-medium">Tracking</th>
+                        <th className="text-left p-2 text-white/80 text-xs font-medium">Peso</th>
+                        <th className="text-left p-2 text-white/80 text-xs font-medium">Foto</th>
                       </tr>
                     </thead>
                     <tbody>
                       {detailItems.map((i) => (
-                        <tr key={i.id} className="border-t">
-                          <td className="p-2 font-mono">{i.tracking}</td>
-                          <td className="p-2">{fmtWeightPairFromLb(Number(i.weightLb || 0))}</td>
+                        <tr key={i.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                          <td className="p-2 font-mono text-white">{i.tracking}</td>
+                          <td className="p-2 text-white">{fmtWeightPairFromLb(Number(i.weightLb || 0))}</td>
                           <td className="p-2">
                             {i.photoUrl ? (
-                              <a href={i.photoUrl} target="_blank" aria-label="Ver foto">
+                              <a href={i.photoUrl} target="_blank" aria-label="Ver foto" className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm">
                                 📷
                               </a>
                             ) : (
-                              "—"
+                              " "
                             )}
                           </td>
                         </tr>
                       ))}
                       {!detailItems.length ? (
                         <tr>
-                          <td className="p-3 text-neutral-500" colSpan={3}>
+                          <td className="p-3 text-white/60" colSpan={3}>
                             Caja sin items.
                           </td>
                         </tr>
@@ -326,7 +326,7 @@ export default function EstadoEnviosPage() {
                   </table>
                 </div>
               )}
-              <div className="mt-3 text-sm">
+              <div className="mt-3 text-sm text-white/80">
                 Peso total: {fmtWeightPairFromLb(Number(detailBox.weightLb || 0))}
               </div>
             </div>
