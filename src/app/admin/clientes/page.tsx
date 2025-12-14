@@ -126,6 +126,9 @@ function PageInner() {
   // User role and partner admins
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [effectiveRole, setEffectiveRole] = useState<string | null>(null);
+  const [roleResolved, setRoleResolved] = useState<boolean>(false);
+  const [roleResolveError, setRoleResolveError] = useState<string | null>(null);
   const [isStaff, setIsStaff] = useState<boolean>(false);
   const [partnerAdmins, setPartnerAdmins] = useState<Array<{ uid: string; email: string; displayName?: string }>>([]);
 
@@ -147,6 +150,32 @@ function PageInner() {
     setManagerUid("");
   }
 
+  // Helper to normalize role from inputRole or legacy claims (back-compat)
+  function normalizeRole(inputRole: string | null, claims: Record<string, unknown>): string | null {
+    // Si inputRole es string válido, usarlo
+    if (typeof inputRole === "string" && inputRole.trim()) {
+      return inputRole;
+    }
+    // Back-compat: si claims.superadmin === true, devolver "superadmin"
+    if (claims.superadmin === true) {
+      return "superadmin";
+    }
+    // Opcional: si claims.admin === true, devolver "admin"
+    if (claims.admin === true) {
+      return "admin";
+    }
+    return null;
+  }
+
+  // Helper functions for role checking (based on effectiveRole)
+  function isStaffRole(role: string | null): boolean {
+    return role === "superadmin" || role === "admin" || role === "operador";
+  }
+
+  function isPartnerRole(role: string | null): boolean {
+    return role === "partner_admin";
+  }
+
   // Get user role and uid
   useEffect(() => {
     const u = auth.currentUser;
@@ -155,6 +184,7 @@ function PageInner() {
     getIdTokenResult(u)
       .then(async (r) => {
         const claims = r.claims as Record<string, unknown>;
+        // SOLO usar claims.role (no claims["admin"], claims["superadmin"], etc.)
         let role = (claims.role as string) || null;
 
         // Si no hay rol en los claims, intentar obtenerlo desde Firestore
@@ -170,9 +200,27 @@ function PageInner() {
           }
         }
 
+        // Logs temporales para verificación manual
+        console.log("[DEBUG clientes/page] role:", role, "userId:", u.uid, "claims:", claims);
+
         setUserRole(role);
-        const staff = role !== "partner_admin";
+        
+        // Normalizar role usando helper (back-compat con claims legacy)
+        const normalized = normalizeRole(role, claims);
+        setEffectiveRole(normalized);
+        setRoleResolved(true);
+        setRoleResolveError(null);
+        
+        // Whitelist explícita para staff (no usar negación de partner_admin)
+        const staff = isStaffRole(normalized);
         setIsStaff(staff);
+
+        // Si role es null/undefined o desconocido, no autorizado
+        if (!normalized || (!isStaffRole(normalized) && !isPartnerRole(normalized))) {
+          console.warn("[DEBUG clientes/page] Role desconocido o null:", normalized);
+          setIsStaff(false);
+          return;
+        }
 
         // Si es staff (admin/superadmin/operador), cargar lista de partner_admins
         if (staff) {
@@ -191,16 +239,36 @@ function PageInner() {
             .catch(() => setPartnerAdmins([]));
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        setRoleResolveError(err?.message || "Error al obtener permisos");
+        setRoleResolved(true);
         // Fallback duro: intentar solo Firestore
         getDoc(doc(db, "users", u.uid))
           .then((snap) => {
             if (snap.exists()) {
               const data = snap.data() as any;
               const role = (data.role as string) || null;
+              
+              console.log("[DEBUG clientes/page] Fallback - role:", role, "userId:", u.uid);
+              
               setUserRole(role);
-              const staff = role !== "partner_admin";
+              
+              // Normalizar role (sin claims en fallback, solo usar role de Firestore)
+              const normalized = normalizeRole(role, {});
+              setEffectiveRole(normalized);
+              setRoleResolved(true);
+              setRoleResolveError(null);
+              
+              // Whitelist explícita para staff
+              const staff = isStaffRole(normalized);
               setIsStaff(staff);
+
+              // Si role es null/undefined o desconocido, no autorizado
+              if (!normalized || (!isStaffRole(normalized) && !isPartnerRole(normalized))) {
+                console.warn("[DEBUG clientes/page] Fallback - Role desconocido o null:", normalized);
+                setIsStaff(false);
+                return;
+              }
 
               if (staff) {
                 getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
@@ -217,23 +285,83 @@ function PageInner() {
                   })
                   .catch(() => setPartnerAdmins([]));
               }
+            } else {
+              setRoleResolved(true);
+              setEffectiveRole(null);
             }
           })
-          .catch(() => {});
+          .catch((err) => {
+            setRoleResolveError(err?.message || "Error al obtener permisos");
+            setRoleResolved(true);
+          });
       });
   }, []);
 
+  // Si userRole es null pero hay userId, intentar resolver desde token claims
   useEffect(() => {
-    // Esperar a tener información de usuario antes de consultar
-    if (!isStaff && !userId) return;
+    if (!userId || userRole !== null || roleResolved) return;
+    
+    const u = auth.currentUser;
+    if (!u) return;
+    
+    getIdTokenResult(u)
+      .then((r) => {
+        const claims = r.claims as Record<string, unknown>;
+        const normalized = normalizeRole(null, claims);
+        console.log("[DEBUG clientes/page] Resolviendo role desde claims - normalized:", normalized, "claims:", claims);
+        setEffectiveRole(normalized);
+        setRoleResolved(true);
+        setRoleResolveError(null);
+        
+        const staff = isStaffRole(normalized);
+        setIsStaff(staff);
+        
+        if (staff && normalized) {
+          getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
+            .then((snap) => {
+              const admins = snap.docs.map((d) => {
+                const data = d.data() as any;
+                return {
+                  uid: d.id,
+                  email: (data.email as string) || "",
+                  displayName: (data.displayName as string) || "",
+                };
+              });
+              setPartnerAdmins(admins);
+            })
+            .catch(() => setPartnerAdmins([]));
+        }
+      })
+      .catch((err) => {
+        console.error("[DEBUG clientes/page] Error al resolver role desde claims:", err);
+        setRoleResolveError(err?.message || "Error al obtener permisos");
+        setRoleResolved(true);
+      });
+  }, [userId, userRole, roleResolved]);
+
+  useEffect(() => {
+    // BLOQUEAR carga hasta tener userId y role resueltos (usar roleResolved, no userRole === null)
+    if (!userId || !roleResolved) {
+      console.log("[DEBUG clientes/page] Bloqueando carga - userId:", userId, "roleResolved:", roleResolved);
+      return;
+    }
+
+    // Si role es desconocido, no autorizado - no ejecutar query
+    if (!effectiveRole || (!isStaffRole(effectiveRole) && !isPartnerRole(effectiveRole))) {
+      console.warn("[DEBUG clientes/page] Role desconocido, no ejecutando query:", effectiveRole);
+      setRows([]);
+      return;
+    }
 
     const run = async () => {
       const constraints: QueryConstraint[] = [orderBy("createdAt", "desc")];
 
-      // Si no es staff (partner), solo ver clientes con su managerUid
-      if (!isStaff && userId) {
+      // Si es partner_admin, SIEMPRE filtrar por managerUid (sin fallback a query global)
+      if (isPartnerRole(effectiveRole) && userId) {
         constraints.push(where("managerUid", "==", userId));
+        console.log("[DEBUG clientes/page] Query partner_admin con constraint managerUid:", userId);
       }
+      // Si es staff, no agregar filtro (ve todos los clientes)
 
       const qClients = query(collection(db, "clients"), ...constraints);
       const snap = await getDocs(qClients);
@@ -246,7 +374,7 @@ function PageInner() {
     };
 
     void run();
-  }, [isStaff, userId]);
+  }, [isStaff, userId, effectiveRole, roleResolved]);
 
   useEffect(() => {
     setPage(0);
@@ -295,7 +423,7 @@ function PageInner() {
     e.preventDefault();
     if (!name || !country || !email || !password) return;
 
-    console.log("[DEBUG createClient] userId:", userId, "userRole:", userRole);
+    console.log("[DEBUG createClient] userId:", userId, "effectiveRole:", effectiveRole);
 
     let code: string;
     // Staff: usa contador global (transacción)
@@ -323,7 +451,7 @@ function PageInner() {
 
     // Si es partner_admin, setear automáticamente managerUid
     let finalManagerUid: string | null = null;
-    if (userRole === "partner_admin" && userId) {
+    if (effectiveRole === "partner_admin" && userId) {
       finalManagerUid = userId;
     } else if (isStaff && managerUid) {
       finalManagerUid = managerUid || null;
@@ -385,6 +513,46 @@ function PageInner() {
     } finally {
       setBusyId("");
     }
+  }
+
+  // Mostrar "Sin permisos" si roleResolved pero no hay effectiveRole
+  if (roleResolved && !effectiveRole) {
+    return (
+      <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-md rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 space-y-4 text-center">
+          <h2 className="text-xl font-semibold text-white">Sin permisos</h2>
+          <p className="text-sm text-white/60">
+            No se pudieron obtener los permisos necesarios para acceder a esta página.
+          </p>
+          {roleResolveError && (
+            <p className="text-xs text-red-300 bg-red-900/30 border border-red-500/50 rounded p-2">
+              {roleResolveError}
+            </p>
+          )}
+          <button
+            onClick={async () => {
+              const u = auth.currentUser;
+              if (u) {
+                await u.getIdToken(true);
+                window.location.reload();
+              }
+            }}
+            className="w-full h-11 px-4 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
+          >
+            Refrescar sesión
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // Bloquear render hasta tener userId y role resueltos
+  if (!userId || !roleResolved) {
+    return (
+      <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center justify-center p-4 md:p-8">
+        <p className="text-sm text-white/60">Cargando permisos…</p>
+      </main>
+    );
   }
 
   return (
@@ -554,7 +722,7 @@ function PageInner() {
                   </div>
                 ) : null}
 
-                {userRole === "partner_admin" ? (
+                {effectiveRole === "partner_admin" ? (
                   <div className="md:col-span-4 text-xs text-white/60">
                     Este cliente será asociado automáticamente a tu cuenta.
                   </div>
