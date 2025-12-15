@@ -5,10 +5,10 @@ import { auth, db } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId, limit } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import type { Carrier, Client } from "@/types/lem";
-import { printBoxLabel as openPrintLabel } from "@/lib/printBoxLabel";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmtWeightPairFromLb, lbToKg } from "@/lib/weight";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
+import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const btnPrimaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed";
@@ -99,14 +99,6 @@ function PageInner() {
   const [isStaffState, setIsStaffState] = useState<boolean>(false);
   const [isPartnerState, setIsPartnerState] = useState<boolean>(false);
 
-  const [boxDetailOpen, setBoxDetailOpen] = useState(false);
-  const [detailBox, setDetailBox] = useState<Box | null>(null);
-  type DetailItem = { id: string; tracking: string; weightLb: number; photoUrl?: string };
-  const [detailItems, setDetailItems] = useState<DetailItem[]>([]);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [editType, setEditType] = useState<"COMERCIAL" | "FRANQUICIA">("COMERCIAL");
-  const [labelRef, setLabelRef] = useState<string>("");
-
   const [qClient, setQClient] = useState("");
   const [qTracking, setQTracking] = useState("");
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -118,6 +110,14 @@ function PageInner() {
     for (const c of clients) if (c.id) m[c.id] = c;
     return m;
   }, [clients]);
+
+  // Box detail modal hook
+  const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
+    boxes,
+    setBoxes,
+    setRows,
+    clientsById,
+  });
 
   const boxByInbound = useMemo(() => {
     const m: Record<string, Box> = {};
@@ -331,80 +331,7 @@ function PageInner() {
   async function openBoxDetailByInbound(inboundId: string) {
     const b = boxByInbound[inboundId];
     if (!b) return;
-    setDetailBox(b);
-    setEditType((b.type as any) || "COMERCIAL");
-    setLabelRef((b as any).labelRef || "");
-    setBoxDetailOpen(true);
-    setLoadingDetail(true);
-    try {
-      const items: DetailItem[] = [];
-      for (const id of b.itemIds || []) {
-        const snap = await getDoc(doc(db, "inboundPackages", id));
-        if (snap.exists()) {
-          const d = snap.data() as any;
-          items.push({ id: snap.id, tracking: d.tracking, weightLb: d.weightLb || 0, photoUrl: d.photoUrl });
-        }
-      }
-      setDetailItems(items);
-    } finally {
-      setLoadingDetail(false);
-    }
-  }
-
-  // Abrir modal de caja por id de caja
-  async function openBoxDetailByBoxId(boxId: string) {
-    const b = boxes.find(x => x.id === boxId);
-    if (!b) return;
-    setDetailBox(b);
-    setEditType((b.type as any) || "COMERCIAL");
-    setLabelRef((b as any).labelRef || "");
-    setBoxDetailOpen(true);
-    setLoadingDetail(true);
-    try {
-      const items: DetailItem[] = [];
-      for (const id of b.itemIds || []) {
-        const snap = await getDoc(doc(db, "inboundPackages", id));
-        if (snap.exists()) {
-          const d = snap.data() as any;
-          items.push({ id: snap.id, tracking: d.tracking, weightLb: d.weightLb || 0, photoUrl: d.photoUrl });
-        }
-      }
-      setDetailItems(items);
-    } finally {
-      setLoadingDetail(false);
-    }
-  }
-
-  async function removeItemFromBox(itemId: string) {
-    if (!detailBox) return;
-    const remainingIds = (detailBox.itemIds || []).filter(id => id !== itemId);
-    const remainingItems = detailItems.filter(i => remainingIds.includes(i.id));
-    const newWeight = remainingItems.reduce((acc, i) => acc + (Number(i.weightLb) || 0), 0);
-    await updateDoc(doc(db, "boxes", detailBox.id), { itemIds: remainingIds, weightLb: newWeight });
-    await updateDoc(doc(db, "inboundPackages", itemId), { status: "received" });
-    setDetailItems(remainingItems);
-    setDetailBox({ ...detailBox, itemIds: remainingIds, weightLb: newWeight });
-    setBoxes(prev => prev.map(b => b.id === detailBox.id ? { ...b, itemIds: remainingIds, weightLb: newWeight } : b));
-    setRows(prev => prev.map(r => r.id === itemId ? { ...r, status: "received" } : r));
-  }
-
-  async function applyBoxTypeChange() {
-    if (!detailBox) return;
-    await updateDoc(doc(db, "boxes", detailBox.id), { type: editType });
-    setDetailBox({ ...detailBox, type: editType });
-    setBoxes(prev => prev.map(b => b.id === detailBox.id ? { ...b, type: editType } : b));
-  }
-
-  function handlePrintLabel() {
-    if (!detailBox) return;
-    const clientCode = clientsById[detailBox.clientId]?.code || detailBox.clientId;
-    openPrintLabel({ reference: labelRef, clientCode: String(clientCode), boxCode: String(detailBox.code) });
-  }
-
-  async function saveLabelRef() {
-    if (!detailBox) return;
-    await updateDoc(doc(db, "boxes", detailBox.id), { labelRef });
-    setDetailBox({ ...detailBox, labelRef });
+    await openBoxDetailByBoxId(b.id);
   }
 
   async function deleteTracking(row: Inbound) {
@@ -819,25 +746,7 @@ function PageInner() {
           )}
         </div>
 
-        <BoxDetailModal
-          open={boxDetailOpen}
-          box={detailBox}
-          items={detailItems}
-          loading={loadingDetail}
-          editType={editType}
-          onChangeType={setEditType}
-          onApplyType={applyBoxTypeChange}
-          labelRef={labelRef}
-          onChangeLabelRef={setLabelRef}
-          onBlurSaveLabelRef={saveLabelRef}
-          onPrintLabel={handlePrintLabel}
-          onRemoveItem={removeItemFromBox}
-          weightText={fmtWeightPairFromLb(Number(detailBox?.weightLb || 0))}
-          onClose={() => {
-            setBoxDetailOpen(false);
-            setDetailBox(null);
-          }}
-        />
+        <BoxDetailModal {...modalProps} />
       </div>
     </main>
   );

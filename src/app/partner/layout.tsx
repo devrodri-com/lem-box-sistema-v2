@@ -17,18 +17,18 @@ function PartnerNav() {
   const isActive = (path: string) => pathname === path || pathname?.startsWith(path + "/");
 
   return (
-    <nav className="inline-flex items-center gap-1 rounded-full bg-[#0f2a22] p-1 ring-1 ring-[#1f3f36]">
-      <Link href="/partner/clientes" className={tabBtn(isActive("/partner/clientes"))}>
-        Clientes
-      </Link>
+    <nav className="inline-flex items-center gap-1 rounded-full bg-white/5 backdrop-blur-sm p-1 ring-1 ring-white/10">
       <Link href="/partner/historial" className={tabBtn(isActive("/partner/historial"))}>
-        Historial
+        Historial de Trackings
       </Link>
       <Link href="/partner/cajas" className={tabBtn(isActive("/partner/cajas"))}>
         Cajas
       </Link>
       <Link href="/partner/envios" className={tabBtn(isActive("/partner/envios"))}>
         Envíos
+      </Link>
+      <Link href="/partner/clientes" className={tabBtn(isActive("/partner/clientes"))}>
+        Clientes
       </Link>
     </nav>
   );
