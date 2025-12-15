@@ -150,16 +150,24 @@ function PageInner() {
     setManagerUid("");
   }
 
-  // Helper to normalize role from inputRole or legacy claims (back-compat)
-  function normalizeRole(inputRole: string | null, claims: Record<string, unknown>): string | null {
-    // Si inputRole es string válido, usarlo
-    if (typeof inputRole === "string" && inputRole.trim()) {
-      return inputRole;
-    }
-    // Back-compat: si claims.superadmin === true, devolver "superadmin"
-    if (claims.superadmin === true) {
-      return "superadmin";
-    }
+  // Helper to normalize role, enforcing least-privilege: Firestore partner_admin wins over stale claims
+  function normalizeRole(
+    claimRole: string | null,
+    claims: Record<string, unknown>,
+    firestoreRole: string | null
+  ): string | null {
+    // Back-compat: superadmin legacy claim wins
+    if (claims.superadmin === true) return "superadmin";
+
+    // Least privilege: if Firestore says partner_admin, treat as partner regardless of stale claims
+    if (firestoreRole === "partner_admin") return "partner_admin";
+
+    // Otherwise prefer claimRole if valid
+    if (typeof claimRole === "string" && claimRole.trim()) return claimRole;
+
+    // Fallback to Firestore role
+    if (typeof firestoreRole === "string" && firestoreRole.trim()) return firestoreRole;
+
     return null;
   }
 
@@ -180,29 +188,38 @@ function PageInner() {
     getIdTokenResult(u)
       .then(async (r) => {
         const claims = r.claims as Record<string, unknown>;
-        // SOLO usar claims.role (no claims["admin"], claims["superadmin"], etc.)
-        let role = (claims.role as string) || null;
+        const claimRole = (claims.role as string) || null;
 
-        // Si no hay rol en los claims, intentar obtenerlo desde Firestore
-        if (!role) {
-          try {
-            const snap = await getDoc(doc(db, "users", u.uid));
-            if (snap.exists()) {
-              const data = snap.data() as any;
-              role = (data.role as string) || null;
-            }
-          } catch {
-            // ignorar errores aquí, role se queda como está (null)
+        // Always fetch Firestore role as a second source of truth (can correct stale claims)
+        let firestoreRole: string | null = null;
+        try {
+          const snap = await getDoc(doc(db, "users", u.uid));
+          if (snap.exists()) {
+            const data = snap.data() as any;
+            firestoreRole = (data.role as string) || null;
           }
+        } catch {
+          firestoreRole = null;
         }
 
-        // Logs temporales para verificación manual
-        console.log("[DEBUG clientes/page] role:", role, "userId:", u.uid, "claims:", claims);
+        // Normalize role using least-privilege reconciliation
+        const normalized = normalizeRole(claimRole, claims, firestoreRole);
 
-        setUserRole(role);
-        
-        // Normalizar role usando helper (back-compat con claims legacy)
-        const normalized = normalizeRole(role, claims);
+        // Logs temporales para verificación manual
+        console.log(
+          "[DEBUG clientes/page] claimRole:",
+          claimRole,
+          "firestoreRole:",
+          firestoreRole,
+          "effectiveRole:",
+          normalized,
+          "userId:",
+          u.uid,
+          "claims:",
+          claims
+        );
+
+        setUserRole(normalized);
         setEffectiveRole(normalized);
         setRoleResolved(true);
         setRoleResolveError(null);
@@ -250,7 +267,7 @@ function PageInner() {
               setUserRole(role);
               
               // Normalizar role (sin claims en fallback, solo usar role de Firestore)
-              const normalized = normalizeRole(role, {});
+              const normalized = normalizeRole(role, {}, role);
               setEffectiveRole(normalized);
               setRoleResolved(true);
               setRoleResolveError(null);
@@ -303,7 +320,7 @@ function PageInner() {
     getIdTokenResult(u)
       .then((r) => {
         const claims = r.claims as Record<string, unknown>;
-        const normalized = normalizeRole(null, claims);
+        const normalized = normalizeRole(null, claims, null);
         console.log("[DEBUG clientes/page] Resolviendo role desde claims - normalized:", normalized, "claims:", claims);
         setEffectiveRole(normalized);
         setRoleResolved(true);
