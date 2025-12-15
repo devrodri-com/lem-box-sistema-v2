@@ -11,6 +11,7 @@ import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 import { chunk } from "@/lib/utils";
 import { IconPhoto, IconTrash } from "@/components/ui/icons";
+import { BrandSelect, type BrandOption } from "@/components/ui/BrandSelect";
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const btnPrimaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed";
@@ -415,74 +416,6 @@ function PageInner() {
         return true;
       });
   }, [boxes, statusFilter, clientsById, qClient]);
-
-  // --- BrandSelect helper types and component ---
-  interface BrandOption {
-    value: string;
-    label: string;
-  }
-
-  interface BrandSelectProps {
-    value: string;
-    onChange: (value: string) => void;
-    options: BrandOption[];
-    placeholder: string;
-    disabled?: boolean;
-  }
-
-  function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
-    const [open, setOpen] = useState(false);
-
-    const showLabel = value
-      ? options.find((o) => o.value === value)?.label ?? value
-      : placeholder;
-
-    const baseClasses =
-      inputCls +
-      " flex items-center justify-between pr-8" +
-      (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
-
-    return (
-      <div
-        className="relative"
-        onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-            setOpen(false);
-          }
-        }}
-      >
-        <button
-          type="button"
-          disabled={disabled}
-          className={baseClasses + (!value ? " text-white/50" : "")}
-          onClick={() => {
-            if (!disabled) setOpen((prev) => !prev);
-          }}
-        >
-          <span className="truncate text-left">{showLabel}</span>
-          <span className="ml-2 text-[#005f40]">▾</span>
-        </button>
-        {open && !disabled && options.length > 0 && (
-          <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
-            {options.map((opt) => (
-              <li key={opt.value}>
-                <button
-                  type="button"
-                  className="block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5"
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                  }}
-                >
-                  {opt.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    );
-  }
 
   return (
     <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
