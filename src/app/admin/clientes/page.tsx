@@ -452,6 +452,11 @@ function PageInner() {
   }
 
   async function removeClient(id: string, code: string) {
+    // Guard: solo staff puede eliminar
+    if (!isStaff) {
+      alert("No tenés permisos para eliminar clientes.");
+      return;
+    }
     const ok = confirm(`Seguro que quiere eliminar al cliente ${code}?`);
     if (!ok) return;
     try {
@@ -704,15 +709,17 @@ function PageInner() {
               >
                 {c.activo !== false ? "Desactivar" : "Activar"}
               </button>
-              <button
-                onClick={() => removeClient(c.id!, c.code)}
-                disabled={busyId === c.id}
-                className="h-9 px-3 text-xs rounded-md border border-red-500/70 bg-[#0f2a22] text-red-300 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-red-500"
-                aria-label="Eliminar"
-                title="Eliminar definitivamente"
-              >
-                Eliminar
-              </button>
+              {isStaff ? (
+                <button
+                  onClick={() => removeClient(c.id!, c.code)}
+                  disabled={busyId === c.id}
+                  className="h-9 px-3 text-xs rounded-md border border-red-500/70 bg-[#0f2a22] text-red-300 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  aria-label="Eliminar"
+                  title="Eliminar definitivamente"
+                >
+                  Eliminar
+                </button>
+              ) : null}
             </div>
           </div>
         ))}
