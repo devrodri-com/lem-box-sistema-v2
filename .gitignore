@@ -47,3 +47,4 @@ firestore-debug.log
 *.key.json
 *.cred.json
 .firebase/
+AUDITORIA_CODIGO_BASURA.md
