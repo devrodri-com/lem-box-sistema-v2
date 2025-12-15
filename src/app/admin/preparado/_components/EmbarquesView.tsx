@@ -6,11 +6,9 @@ import {
   collection,
   doc,
   getDocs,
-  getDoc,
   orderBy,
   query,
   where,
-  updateDoc,
   deleteDoc,
   runTransaction,
 } from "firebase/firestore";
@@ -27,7 +25,7 @@ import {
   IconDownload,
 } from "./shared";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
-import { printBoxLabel } from "@/lib/printBoxLabel";
+import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 
 async function nextShipmentCode(): Promise<string> {
   const n = Math.floor(Date.now() / 1000) % 100000;
@@ -82,13 +80,15 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [picked, setPicked] = useState<Record<string, boolean>>({});
 
-  const [boxDetailOpen, setBoxDetailOpen] = useState(false);
-  const [detailBox, setDetailBox] = useState<Box | null>(null);
-  type DetailItem = { id: string; tracking: string; weightLb: number; photoUrl?: string };
-  const [detailItems, setDetailItems] = useState<DetailItem[]>([]);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [editType, setEditType] = useState<"COMERCIAL" | "FRANQUICIA">("COMERCIAL");
-  const [labelRef, setLabelRef] = useState<string>("");
+  // Box detail modal hook
+  // Note: setRows is a dummy setter since we don't have an inbounds state here
+  // The hook uses it to update inbound status when removing items, but we don't display inbounds
+  const { openBoxDetailByBoxId, modalProps, closeModal } = useBoxDetailModal({
+    boxes,
+    setBoxes,
+    setRows: () => {}, // Dummy setter - we don't track inbounds in this view
+    clientsById,
+  });
 
   const [confirmDelete, setConfirmDelete] = useState<null | { id: string; code: string; clientLabel: string }>(null);
   const [deletingBoxId, setDeletingBoxId] = useState<string>("");
@@ -119,10 +119,8 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
         delete next[confirmDelete.id];
         return next;
       });
-      if (detailBox?.id === confirmDelete.id) {
-        setBoxDetailOpen(false);
-        setDetailBox(null);
-        setDetailItems([]);
+      if (modalProps.box?.id === confirmDelete.id) {
+        closeModal();
       }
       setConfirmDelete(null);
     } catch (e: any) {
@@ -330,88 +328,6 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
     }
   }
 
-  async function openBoxDetail(box: Box) {
-    setDetailBox(box);
-    setEditType((box.type as any) || "COMERCIAL");
-    setLabelRef((box as any).labelRef || "");
-    setBoxDetailOpen(true);
-    setLoadingDetail(true);
-    try {
-      const items: DetailItem[] = [];
-      for (const id of box.itemIds || []) {
-        const snap = await getDoc(doc(db, "inboundPackages", id));
-        if (snap.exists()) {
-          const d = snap.data() as any;
-          items.push({ id: snap.id, tracking: d.tracking, weightLb: d.weightLb || 0, photoUrl: d.photoUrl });
-        }
-      }
-      setDetailItems(items);
-    } finally {
-      setLoadingDetail(false);
-    }
-  }
-
-  async function applyBoxTypeChange() {
-    if (!detailBox) return;
-    await updateDoc(doc(db, "boxes", detailBox.id), { type: editType });
-    setDetailBox({ ...detailBox, type: editType });
-    setBoxes(prev => prev.map(b => b.id === detailBox.id ? { ...b, type: editType } : b));
-  }
-
-  async function saveLabelRef() {
-    if (!detailBox) return;
-    await updateDoc(doc(db, "boxes", detailBox.id), { labelRef });
-    setDetailBox({ ...detailBox, labelRef: labelRef } as Box);
-  }
-
-
-  async function removeItemFromBox(itemId: string) {
-    if (!detailBox) return;
-    const items = (detailBox.itemIds || []).filter((x) => x !== itemId);
-    await updateDoc(doc(db, "boxes", detailBox.id), { itemIds: items });
-    await updateDoc(doc(db, "inboundPackages", itemId), { status: "received" });
-    await recalcBoxWeight(detailBox.id);
-
-    // Refrescar estado local
-    setDetailBox({ ...detailBox, itemIds: items });
-    setDetailItems((prev) => prev.filter((i) => i.id !== itemId));
-    setBoxes((prev) => prev.map((b) => (b.id === detailBox.id ? { ...b, itemIds: items } : b)));
-  }
-
-  // Helper para recalcular el peso de la caja usando transacción
-  async function recalcBoxWeight(boxId: string) {
-    function round2(n: number) { return Math.round(n * 100) / 100; }
-    await runTransaction(db, async (tx) => {
-      const boxRef = doc(db, "boxes", boxId);
-      const boxSnap = await tx.get(boxRef);
-      if (!boxSnap.exists()) throw new Error("Caja no encontrada");
-      const boxData = boxSnap.data() as any;
-      const itemIds: string[] = Array.isArray(boxData.itemIds) ? boxData.itemIds : [];
-      let total = 0;
-      for (const itemId of itemIds) {
-        const itemRef = doc(db, "inboundPackages", itemId);
-        const itemSnap = await tx.get(itemRef);
-        if (itemSnap.exists()) {
-          const d = itemSnap.data() as any;
-          total += Number(d.weightLb || 0);
-        }
-      }
-      tx.update(boxRef, { weightLb: round2(total) });
-    });
-  }
-
-  // Print label helper (using canonical implementation)
-  function handlePrintLabel(box: Box, reference: string) {
-    const client = clientsById[box.clientId];
-    const clientCode = client?.code ? String(client.code) : String(box.clientId);
-    const boxCode = String(box.code || "-");
-    
-    // Use reference if provided, otherwise fallback to clientCode
-    const ref = String(reference || "").trim() || clientCode;
-    
-    void printBoxLabel({ reference: ref, clientCode, boxCode });
-  }
-
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">Cargas (crear embarques con múltiples cajas)</h2>
@@ -510,7 +426,7 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
             {filteredBoxes.map(b => (
               <tr key={b.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10 h-11">
                 <td className="p-2"><input type="checkbox" checked={!!picked[b.id]} onChange={(e)=> setPicked(s=> ({...s, [b.id]: e.target.checked}))} /></td>
-                <td className="p-2 font-mono"><button className={linkCls} onClick={() => openBoxDetail(b)}>{b.code}</button></td>
+                <td className="p-2 font-mono"><button className={linkCls} onClick={() => openBoxDetailByBoxId(b.id)}>{b.code}</button></td>
                 <td className="p-2">{fmtDate(b.createdAt)}</td>
                 <td className="p-2">{clientsById[b.clientId] ? `${clientsById[b.clientId].code} ${clientsById[b.clientId].name}` : b.clientId}</td>
                 <td className="p-2">{countryLabel(b.country)}</td>
@@ -572,28 +488,7 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
         </div>
       ) : null}
 
-      <BoxDetailModal
-        open={boxDetailOpen}
-        box={detailBox}
-        items={detailItems}
-        loading={loadingDetail}
-        editType={editType}
-        onChangeType={setEditType}
-        onApplyType={applyBoxTypeChange}
-        labelRef={labelRef}
-        onChangeLabelRef={setLabelRef}
-        onBlurSaveLabelRef={saveLabelRef}
-        onPrintLabel={() => {
-          if (!detailBox) return;
-          handlePrintLabel(detailBox, labelRef);
-        }}
-        onRemoveItem={removeItemFromBox}
-        weightText={fmtWeightPairFromLb(Number(detailBox?.weightLb || 0))}
-        onClose={() => {
-          setBoxDetailOpen(false);
-          setDetailBox(null);
-        }}
-      />
+      <BoxDetailModal {...modalProps} />
 
     </section>
   );

@@ -125,6 +125,3 @@ export async function printBoxLabel({ reference, clientCode, boxCode }: PrintBox
     doc.output('dataurlnewwindow');
   }
 }
-
-// Alias por compatibilidad
-export { printBoxLabel as openPrintLabel };

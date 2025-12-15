@@ -12,8 +12,6 @@ import { printBoxLabel } from "@/lib/printBoxLabel";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 
-const LB_TO_KG = 0.45359237;
-
 type ShipmentType = "COMERCIAL" | "FRANQUICIA";
 
 type Inbound = {
