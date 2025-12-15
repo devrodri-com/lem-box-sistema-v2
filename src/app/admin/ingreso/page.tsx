@@ -2,6 +2,7 @@
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { db, storage } from "@/lib/firebase";
+import { getAuth } from "firebase/auth";
 import {
   addDoc,
   collection,
@@ -146,6 +147,60 @@ function PageInner() {
     return m;
   }, [clients]);
 
+  const [roleResolved, setRoleResolved] = useState(false);
+  const [effectiveRole, setEffectiveRole] = useState<string | null>(null);
+  const [isStaff, setIsStaff] = useState(false);
+
+  function isStaffRole(role: string | null) {
+    return role === "superadmin" || role === "admin" || role === "operador";
+  }
+
+  async function resolveRole(): Promise<boolean> {
+    const auth = getAuth();
+    const u = auth.currentUser;
+    if (!u) {
+      setEffectiveRole(null);
+      setIsStaff(false);
+      setRoleResolved(true);
+      return false;
+    }
+
+    // Token claims (may be stale)
+    const tok = await u.getIdTokenResult(true);
+    const claims = (tok?.claims ?? {}) as Record<string, unknown>;
+    const claimRole = typeof claims.role === "string" ? (claims.role as string) : null;
+
+    // Back-compat legacy superadmin
+    if (claims.superadmin === true) {
+      setEffectiveRole("superadmin");
+      setIsStaff(true);
+      setRoleResolved(true);
+      return true;
+    }
+
+    // Firestore role as second source of truth
+    let firestoreRole: string | null = null;
+    try {
+      const snap = await getDoc(doc(db, "users", u.uid));
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        firestoreRole = typeof data?.role === "string" ? data.role : null;
+      }
+    } catch {
+      firestoreRole = null;
+    }
+
+    // Least-privilege: if Firestore says partner_admin, treat as partner even if claims are stale
+    const normalized = firestoreRole === "partner_admin" ? "partner_admin" : (claimRole ?? firestoreRole);
+    const staff = isStaffRole(normalized);
+    setEffectiveRole(normalized);
+    setIsStaff(staff);
+    setRoleResolved(true);
+
+    console.log("[Ingreso] claimRole:", claimRole, "firestoreRole:", firestoreRole, "effectiveRole:", normalized);
+    return staff;
+  }
+
   const [clientQuery, setClientQuery] = useState("");
   const [clientPickerOpen, setClientPickerOpen] = useState(false);
   const filteredClients = useMemo(() => {
@@ -196,19 +251,33 @@ function PageInner() {
   }, []);
 
   useEffect(() => {
-    // cargar clientes
-    getDocs(collection(db, "clients")).then((s) =>
-      setClients(
-        s.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, "id">) }))
-      )
-    );
-    // listar de hoy
-    const q = query(
-      collection(db, "inboundPackages"),
-      where("receivedAt", ">=", midnight),
-      orderBy("receivedAt", "desc")
-    );
-    getDocs(q).then((s) =>
+    let alive = true;
+
+    async function load() {
+      const staffNow = await resolveRole();
+      if (!alive) return;
+
+      // Block non-staff (including partner_admin) from reading global data.
+      if (!staffNow) {
+        setClients([]);
+        setRows([]);
+        setErrMsg("Sin permisos para acceder a Ingreso de paquetes.");
+        return;
+      }
+
+      // cargar clientes (staff only)
+      const cs = await getDocs(collection(db, "clients"));
+      if (!alive) return;
+      setClients(cs.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, "id">) })));
+
+      // listar de hoy (staff only)
+      const q = query(
+        collection(db, "inboundPackages"),
+        where("receivedAt", ">=", midnight),
+        orderBy("receivedAt", "desc")
+      );
+      const s = await getDocs(q);
+      if (!alive) return;
       setRows(
         s.docs.map((d) => {
           const data = d.data() as {
@@ -222,8 +291,13 @@ function PageInner() {
           };
           return { id: d.id, ...data };
         })
-      )
-    );
+      );
+    }
+
+    void load();
+    return () => {
+      alive = false;
+    };
   }, [midnight]);
 
   function hasWeight() {
@@ -360,10 +434,18 @@ function PageInner() {
     <main className="min-h-screen bg-[#02120f] text-white p-4 md:p-8">
       <div className="mx-auto w-full max-w-3xl space-y-6">
         <h1 className="text-2xl font-semibold">Ingreso de paquetes</h1>
-        {errMsg ? (
+        {!roleResolved ? (
+          <div className="p-3 rounded border border-white/10 bg-white/5 text-sm text-white/70">Cargando permisos…</div>
+        ) : null}
+        {roleResolved && !isStaff ? (
+          <div className="p-3 rounded border border-red-400/40 bg-red-900/20 text-sm text-red-200">Sin permisos para acceder a Ingreso de paquetes.</div>
+        ) : null}
+        {errMsg && roleResolved && isStaff ? (
           <div className="p-3 rounded border border-red-400 bg-red-900/30 text-sm text-red-300">{errMsg}</div>
         ) : null}
 
+        {roleResolved && isStaff ? (
+          <>
         <section className="flex flex-col gap-4 rounded-xl bg-white/5 border border-[#1f3f36] backdrop-blur-sm p-5">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* BUSCAR CLIENTE + SELECT */}
@@ -604,6 +686,8 @@ function PageInner() {
           ))}
         </div>
       </section>
+          </>
+        ) : null}
       </div>
     </main>
   );
