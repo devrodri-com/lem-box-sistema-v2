@@ -172,7 +172,7 @@ export default function PartnerHistorialPage() {
         });
 
         setInbounds(loadedInbounds.slice(0, LIMIT_INITIAL));
-        setHasMore(loadedInbounds.length >= LIMIT_INITIAL);
+        setHasMore(loadedInbounds.length > LIMIT_INITIAL);
       } catch (err) {
         console.error("[PartnerHistorial] Error loading inbounds:", err);
         setInbounds([]);
