@@ -8,18 +8,10 @@ import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { usePartnerContext } from "@/components/PartnerContext";
 import type { Client, Box } from "@/types/lem";
+import { chunk } from "@/lib/utils";
 
 const btnSecondary =
   "inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
-
-// Helper para hacer chunks de arrays
-function chunk<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
-}
 
 export default function PartnerCajasPage() {
   const { scopedClientIds, effectiveRole, uid } = usePartnerContext();
