@@ -27,6 +27,7 @@ import {
   IconDownload,
 } from "./shared";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
+import { printBoxLabel } from "@/lib/printBoxLabel";
 
 async function nextShipmentCode(): Promise<string> {
   const n = Math.floor(Date.now() / 1000) % 100000;
@@ -399,73 +400,16 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
     });
   }
 
-  function printBoxLabel(box: Box, reference: string) {
-    const JSPDF = (typeof window !== "undefined" && (window as any).jspdf?.jsPDF) || null;
-    if (!JSPDF) {
-      alert("jsPDF no está cargado aún. Espera un momento e inténtalo de nuevo.");
-      return;
-    }
-
+  // Print label helper (using canonical implementation)
+  function handlePrintLabel(box: Box, reference: string) {
     const client = clientsById[box.clientId];
-    const clientCode = client?.code ? String(client.code) : "-";
+    const clientCode = client?.code ? String(client.code) : String(box.clientId);
     const boxCode = String(box.code || "-");
-    const ref = String(reference || "").trim();
-
-    // 4x6 label, landscape (6" wide x 4" high)
-    const docPdf = new JSPDF({ unit: "in", format: [6, 4], orientation: "landscape" });
-
-    const m = 0.25;
-    const W = 6 - m * 2;
-    const H = 4 - m * 2;
-
-    // Outer border
-    docPdf.setLineWidth(0.02);
-    docPdf.rect(m, m, W, H);
-
-    // Layout: top block for reference, bottom split for client/caja
-    const topH = 2.0;
-    const bottomH = H - topH;
-
-    // Divider lines
-    docPdf.rect(m, m, W, topH);
-    docPdf.rect(m, m + topH, W, bottomH);
-    docPdf.setLineWidth(0.02);
-    docPdf.line(m + W / 2, m + topH, m + W / 2, m + H);
-
-    // Text styles (font size is in POINTS)
-    docPdf.setFont("helvetica", "bold");
-
-    // Top label
-    docPdf.setFontSize(16);
-    docPdf.text("#REFERENCIA", m + W / 2, m + 0.45, { align: "center" });
-
-    // Reference big (auto-fit to width)
-    const refText = ref || "-";
-    const maxRefW = W - 0.2; // a little inner padding
-    const MAX_REF_FS = 64;
-    const MIN_REF_FS = 24;
-
-    docPdf.setFontSize(MAX_REF_FS);
-    const refW = docPdf.getTextWidth(refText);
-    if (refW > maxRefW) {
-      const scaled = Math.floor(MAX_REF_FS * (maxRefW / refW));
-      docPdf.setFontSize(Math.max(MIN_REF_FS, scaled));
-    }
-    docPdf.text(refText, m + W / 2, m + 1.35, { align: "center" });
-
-    // Bottom left: client
-    docPdf.setFontSize(16);
-    docPdf.text("#CLIENTE", m + W * 0.25, m + topH + 0.55, { align: "center" });
-    docPdf.setFontSize(64);
-    docPdf.text(clientCode, m + W * 0.25, m + topH + 1.45, { align: "center" });
-
-    // Bottom right: caja
-    docPdf.setFontSize(16);
-    docPdf.text("#CAJA", m + W * 0.75, m + topH + 0.55, { align: "center" });
-    docPdf.setFontSize(64);
-    docPdf.text(boxCode, m + W * 0.75, m + topH + 1.45, { align: "center" });
-
-    window.open(docPdf.output("bloburl"), "_blank");
+    
+    // Use reference if provided, otherwise fallback to clientCode
+    const ref = String(reference || "").trim() || clientCode;
+    
+    void printBoxLabel({ reference: ref, clientCode, boxCode });
   }
 
   return (
@@ -641,7 +585,7 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
         onBlurSaveLabelRef={saveLabelRef}
         onPrintLabel={() => {
           if (!detailBox) return;
-          printBoxLabel(detailBox, labelRef);
+          handlePrintLabel(detailBox, labelRef);
         }}
         onRemoveItem={removeItemFromBox}
         weightText={fmtWeightPairFromLb(Number(detailBox?.weightLb || 0))}

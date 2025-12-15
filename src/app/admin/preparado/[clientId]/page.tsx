@@ -1,4 +1,4 @@
-// src/app/admin/preparado/[clientId]/page.tsx 
+// src/app/admin/preparado/[clientId]/page.tsx
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { db } from "@/lib/firebase";
@@ -8,6 +8,9 @@ import { useParams, useRouter } from "next/navigation";
 import type { Client } from "@/types/lem";
 import { fmtWeightPairFromLb, lbToKg, kgToLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { printBoxLabel } from "@/lib/printBoxLabel";
+import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
+import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 
 const LB_TO_KG = 0.45359237;
 
@@ -130,6 +133,13 @@ function ClienteInner() {
   const [verifyLb, setVerifyLb] = useState<string>("");
   const [verifyKg, setVerifyKg] = useState<string>("");
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  // Print prompt state
+  const [printPromptBoxId, setPrintPromptBoxId] = useState<string | null>(null);
+
   const [notice, setNotice] = useState<{ type: "success" | "error" | "info"; msg: string } | null>(null);
   function notify(msg: string, type: "success" | "error" | "info" = "info") {
     setNotice({ type, msg });
@@ -163,6 +173,21 @@ function ClienteInner() {
     return m;
   }, [boxes]);
 
+  // clientsById para el hook
+  const clientsById = useMemo(() => {
+    const m: Record<string, Client> = {};
+    if (client?.id) m[client.id] = client;
+    return m;
+  }, [client]);
+
+  // Box detail modal hook
+  const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
+    boxes,
+    setBoxes,
+    setRows: setInbounds,
+    clientsById,
+  });
+
   const visibleInbounds = useMemo(() => {
     return inbounds.filter((r) => {
       if (r.status !== "boxed") return true; // received/void visibles
@@ -171,6 +196,19 @@ function ClienteInner() {
       return !b || !b.shipmentId;
     });
   }, [inbounds, boxByInbound]);
+
+  // Pagination derived values
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(visibleInbounds.length / pageSize)), [visibleInbounds.length]);
+
+  useEffect(() => {
+    // keep page in range when filters/data change
+    setPage((p) => Math.min(Math.max(1, p), totalPages));
+  }, [totalPages]);
+
+  const pagedInbounds = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return visibleInbounds.slice(start, start + pageSize);
+  }, [visibleInbounds, page]);
 
   const totalLb = useMemo(() => Object.keys(selected).filter(id => selected[id]).reduce((acc, id) => {
     const r = visibleInbounds.find(x => x.id === id);
@@ -397,9 +435,24 @@ function ClienteInner() {
       await recalcBoxWeight(boxId);
       setBoxes(bs => bs.map(b => b.id === boxId ? { ...b, status: "closed" } : b));
       notify("Caja cerrada", "success");
+      setPrintPromptBoxId(boxId);
     } catch (e: any) {
       notify(e?.message || "No se pudo cerrar la caja", "error");
     }
+  }
+
+  // Print label helper (using canonical implementation)
+  function handlePrintLabel(id: string) {
+    const b = boxes.find((x) => x.id === id);
+    if (!b || !client) return;
+    
+    // Get labelRef from box if exists, otherwise fallback to client.code
+    const labelRef = (b as any).labelRef || "";
+    const reference = labelRef.trim() || client.code;
+    const clientCode = client.code;
+    const boxCode = b.code;
+    
+    void printBoxLabel({ reference, clientCode, boxCode });
   }
 
   return (
@@ -420,6 +473,35 @@ function ClienteInner() {
             {notice.msg}
           </div>
         ) : null}
+        {/* Print label modal */}
+        {printPromptBoxId ? (
+          <div className="fixed inset-0 z-[998] flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-md rounded-xl bg-[#071f19] border border-white/10 p-5">
+              <div className="text-lg font-semibold text-white">Caja cerrada</div>
+              <div className="mt-2 text-sm text-white/70">¿Querés imprimir la etiqueta ahora?</div>
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  className="h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5"
+                  onClick={() => setPrintPromptBoxId(null)}
+                >
+                  Ahora no
+                </button>
+                <button
+                  type="button"
+                  className="h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110"
+                  onClick={() => {
+                    const id = printPromptBoxId;
+                    setPrintPromptBoxId(null);
+                    handlePrintLabel(id);
+                  }}
+                >
+                  Imprimir etiqueta
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className="flex items-center gap-2">
           <button className="text-sm text-white/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm" onClick={() => router.push("/admin/preparado")}>← Volver</button>
           <h1 className="text-xl font-semibold text-white">Consolidar   {client ? `${client.code} ${client.name}` : "Cargando..."}</h1>
@@ -429,18 +511,22 @@ function ClienteInner() {
           <div className="grid gap-4 md:grid-cols-2">
             {boxId ? (
               <div className="space-y-2">
-                <div className="text-sm text-white/70">
+                <div className="rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-5">
                   {(() => {
                     const b = boxes.find(x => x.id === boxId);
                     if (!b) return null;
                     return (
                       <>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">Caja actual:</span> {b.code}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm text-white/70">Caja actual:</span>
+                          <span className="ml-2 text-lg font-semibold text-white">{b.code}</span>
                           <span>{b.status === "closed" ? <StatusBadge scope="box" status="closed" /> : <StatusBadge scope="box" status="open" />}</span>
                         </div>
                         <div>
-                          <span className="font-medium">Peso verificado:</span> {typeof b.verifiedWeightLb === "number" ? `${b.verifiedWeightLb.toFixed(2)} lb` : " "}
+                          <span className="text-sm text-white/70">Peso verificado:</span>
+                          {typeof b.verifiedWeightLb === "number"
+                            ? `${b.verifiedWeightLb.toFixed(2)} lb / ${lbToKg(b.verifiedWeightLb, 2).toFixed(2)} kg`
+                            : " "}
                         </div>
                       </>
                     );
@@ -515,13 +601,6 @@ function ClienteInner() {
                     >
                       Re-pesar
                     </button>
-                    <button
-                      className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
-                      type="button"
-                      onClick={() => {/* noop */}}
-                    >
-                      Adjuntar foto
-                    </button>
                   </div>
                 </div>
               </div>
@@ -531,7 +610,7 @@ function ClienteInner() {
           </div>
         </div>
 
-        <section className="space-y-3">
+        <section className="space-y-3 pb-6">
           <div className="grid grid-cols-1 gap-3">
             <div>
               <label className="text-xs text-white/60">Tipo de envío</label>
@@ -566,12 +645,12 @@ function ClienteInner() {
                   { value: "", label: "Elegí caja…" },
                   ...eligibleBoxes.map((b) => ({
                     value: b.id,
-                    label: `${b.code} · ${fmtWeightPairFromLb(Number(b.weightLb || 0), 2, 2)} · ${b.itemIds?.length || 0} items`,
+                    label: `${b.code}`,
                   })),
                   { value: "__new__", label: "+ Agregar caja" },
                 ]}
                 placeholder="Elegí caja…"
-                disabled={!eligibleBoxes.length}
+                disabled={false}
               />
               <button
                 className="ml-1 px-3 py-1.5 rounded bg-[#eb6619] text-white text-sm font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50"
@@ -584,7 +663,31 @@ function ClienteInner() {
             </div>
           ) : null}
 
-          <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
+          <div className="flex items-center justify-between text-xs text-white/70">
+            <span>
+              Mostrando {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, visibleInbounds.length)} de {visibleInbounds.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="h-8 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/80 hover:bg-white/5 disabled:opacity-50"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Anterior
+              </button>
+              <span className="text-white/60">Página {page} / {totalPages}</span>
+              <button
+                type="button"
+                className="h-8 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/80 hover:bg-white/5 disabled:opacity-50"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+          <div className="mt-2 w-full rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
             <table className="w-full text-sm tabular-nums">
               <thead className="bg-[#0f2a22]">
                 <tr>
@@ -598,7 +701,7 @@ function ClienteInner() {
                 </tr>
               </thead>
               <tbody>
-                {visibleInbounds.map(r => (
+                {pagedInbounds.map(r => (
                   <tr key={r.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
                     <td className="p-2">
                       <div className="flex items-center gap-2">
@@ -621,12 +724,12 @@ function ClienteInner() {
                               { value: "", label: "Elegí caja…" },
                               ...eligibleBoxes.map((b) => ({
                                 value: b.id,
-                                label: `${b.code} · ${fmtWeightPairFromLb(Number(b.weightLb || 0), 2, 2)} · ${b.itemIds?.length || 0} items`,
+                                label: `${b.code}`,
                               })),
                               { value: "__new__", label: "+ Agregar caja" },
                             ]}
                             placeholder="Elegí caja…"
-                            disabled={!eligibleBoxes.length}
+                            disabled={false}
                           />
                         ) : null}
                       </div>
@@ -634,7 +737,18 @@ function ClienteInner() {
                     <td className="p-2 text-white">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : "-"}</td>
                     <td className="p-2 font-mono text-white">{r.tracking}</td>
                     <td className="p-2 text-white">{fmtWeightPairFromLb(Number(r.weightLb||0), 2, 2)}</td>
-                    <td className="p-2 text-white">{boxByInbound[r.id]?.code || "-"}</td>
+                    <td className="p-2 text-white">
+                      {boxByInbound[r.id] ? (
+                        <button
+                          className="underline text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
+                          onClick={() => openBoxDetailByBoxId(boxByInbound[r.id].id)}
+                        >
+                          {boxByInbound[r.id].code}
+                        </button>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
                     <td className="p-2">
                       {r.photoUrl ? (
                         <a href={r.photoUrl} target="_blank" rel="noreferrer" title="Ver foto" aria-label="Ver foto" className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm">📷</a>
@@ -651,12 +765,14 @@ function ClienteInner() {
                     </td>
                   </tr>
                 ))}
-                {!visibleInbounds.length ? (<tr><td className="p-3 text-white/60" colSpan={7}>Sin trackings.</td></tr>) : null}
+                {!pagedInbounds.length ? (<tr><td className="p-3 text-white/60" colSpan={7}>Sin trackings.</td></tr>) : null}
               </tbody>
             </table>
           </div>
         </section>
       </div>
+
+      <BoxDetailModal {...modalProps} />
     </main>
   );
 }
