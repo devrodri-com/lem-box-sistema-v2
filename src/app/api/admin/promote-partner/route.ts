@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
     // Obtener usuario por email
     const user = await adminAuth.getUserByEmail(email);
 
-    // Setear custom claims
+    // Setear custom claims (reemplazo completo para evitar claims legacy)
+    // Nota: setCustomUserClaims reemplaza TODO el objeto de claims.
     await adminAuth.setCustomUserClaims(user.uid, {
-      ...(user.customClaims || {}),
       role: "partner_admin",
       superadmin: false,
     });
@@ -64,4 +64,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e?.message || "unknown_error" }, { status: 500 });
   }
 }
-

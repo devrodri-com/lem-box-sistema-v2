@@ -2,7 +2,7 @@
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId, limit } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import type { Carrier, Client } from "@/types/lem";
 import { printBoxLabel as openPrintLabel } from "@/lib/printBoxLabel";
@@ -93,6 +93,12 @@ function PageInner() {
   const [rows, setRows] = useState<Inbound[]>([]);
   const [boxes, setBoxes] = useState<Box[]>([]);
 
+  // --- Auth state for clearer behavior ---
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [roleState, setRoleState] = useState<string | undefined>(undefined);
+  const [isStaffState, setIsStaffState] = useState<boolean>(false);
+  const [isPartnerState, setIsPartnerState] = useState<boolean>(false);
+
   const [boxDetailOpen, setBoxDetailOpen] = useState(false);
   const [detailBox, setDetailBox] = useState<Box | null>(null);
   type DetailItem = { id: string; tracking: string; weightLb: number; photoUrl?: string };
@@ -131,21 +137,61 @@ function PageInner() {
   async function getMyRole(): Promise<string | undefined> {
     const u = auth.currentUser;
     if (!u) return undefined;
+
+    // Read token claims (may be stale)
     const tok = await u.getIdTokenResult(true);
     const claims = (tok?.claims ?? {}) as Record<string, unknown>;
-    const role = typeof claims["role"] === "string" ? (claims["role"] as string) : undefined;
+    const claimRole = typeof claims["role"] === "string" ? (claims["role"] as string) : undefined;
+
+    // Back-compat: legacy superadmin claim
     if (claims["superadmin"] === true) return "superadmin";
-    return role;
+
+    // Read Firestore role as second source of truth
+    let firestoreRole: string | undefined = undefined;
+    try {
+      const snap = await getDoc(doc(db, "users", u.uid));
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        if (typeof data?.role === "string") firestoreRole = data.role;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Least privilege: if Firestore says partner_admin, treat as partner even if claims are stale
+    if (firestoreRole === "partner_admin") return "partner_admin";
+
+    // Otherwise prefer claimRole, then Firestore
+    return claimRole ?? firestoreRole;
   }
 
   async function getManagedClientIds(): Promise<string[]> {
     const u = auth.currentUser;
     if (!u) return [];
-    const snap = await getDoc(doc(db, "users", u.uid));
-    if (!snap.exists()) return [];
-    const data = snap.data() as any;
-    const ids = Array.isArray(data?.managedClientIds) ? data.managedClientIds.filter((x: any) => typeof x === "string") : [];
-    return ids;
+
+    // 1) Preferred: users/{uid}.managedClientIds
+    try {
+      const snap = await getDoc(doc(db, "users", u.uid));
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        const ids = Array.isArray(data?.managedClientIds)
+          ? data.managedClientIds.filter((x: any) => typeof x === "string" && x.length > 0)
+          : [];
+        if (ids.length) return ids;
+      }
+    } catch {
+      // ignore and fallback
+    }
+
+    // 2) Fallback: derive allowed clients from clients.managerUid
+    try {
+      const qs = await getDocs(
+        query(collection(db, "clients"), where("managerUid", "==", u.uid), limit(200))
+      );
+      return qs.docs.map((d) => d.id);
+    } catch {
+      return [];
+    }
   }
 
   useEffect(() => {
@@ -153,10 +199,25 @@ function PageInner() {
 
     async function load() {
       const role = await getMyRole();
-      const isStaff = role === "admin" || role === "superadmin";
+      setRoleState(role);
+      const isStaff = role === "admin" || role === "superadmin" || role === "operador";
+      const isPartner = role === "partner_admin";
+      setIsStaffState(isStaff);
+      setIsPartnerState(isPartner);
+      setAuthError(null);
+
+      // If role is missing/unknown, do not load any data.
+      if (!role) {
+        if (!alive) return;
+        setClients([]);
+        setRows([]);
+        setBoxes([]);
+        setAuthError("Sin permisos para acceder a esta página");
+        return;
+      }
 
       let managedIds: string[] = [];
-      if (role === "partner_admin" || !isStaff) {
+      if (isPartner) {
         try {
           managedIds = await getManagedClientIds();
         } catch (e) {
@@ -164,9 +225,9 @@ function PageInner() {
         }
       }
 
-      const isPartner = role === "partner_admin" || (!isStaff && managedIds.length > 0);
       console.log("[HistorialTracking] role:", role, "isStaff:", isStaff, "isPartner:", isPartner);
-      if (managedIds.length) console.log("[HistorialTracking] managedClientIds:", managedIds);
+      console.log("[HistorialTracking] resolved role:", role);
+      console.log("[HistorialTracking] scopedClientIds:", managedIds);
 
       // Partner: scope everything to managedClientIds to avoid permission errors.
       if (isPartner) {
@@ -176,6 +237,9 @@ function PageInner() {
           setClients([]);
           setRows([]);
           setBoxes([]);
+          setAuthError(
+            "No se encontraron clientes asociados para filtrar trackings. Si recién creaste clientes, verificá que estén vinculados a tu usuario (managerUid) o que tu perfil tenga managedClientIds."
+          );
           return;
         }
 
@@ -186,8 +250,22 @@ function PageInner() {
         const clientDocs = clientSnaps.flatMap((s) => s.docs);
         const nextClients = clientDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, "id">) }));
 
+        // Some collections store clientId as the client doc id, others as client.code.
+        // Build a combined key list to support both.
+        const clientKeys = Array.from(
+          new Set(
+            [
+              ...managedIds,
+              ...nextClients
+                .map((c: any) => (typeof c?.code === "string" ? c.code : null))
+                .filter((x: any) => typeof x === "string" && x.length > 0),
+            ].filter((x: any) => typeof x === "string" && x.length > 0)
+          )
+        );
+        console.log("[HistorialTracking] clientKeys(for queries):", clientKeys);
+
         // Inbounds (by clientId)
-        const inboundQueries = chunk(managedIds, 10).map((ids) => {
+        const inboundQueries = chunk(clientKeys, 10).map((ids) => {
           let qBase: any = query(collection(db, "inboundPackages"), where("clientId", "in", ids), orderBy("receivedAt", "desc"));
           if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
           if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
@@ -195,12 +273,18 @@ function PageInner() {
         });
         const inboundSnaps = await Promise.all(inboundQueries);
         const inboundDocs = inboundSnaps.flatMap((s) => s.docs);
-        const nextRows = inboundDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) }));
+        const nextRowsRaw = inboundDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) }));
+        const seen = new Set<string>();
+        const nextRows = nextRowsRaw.filter((r) => {
+          if (seen.has(r.id)) return false;
+          seen.add(r.id);
+          return true;
+        });
         nextRows.sort((a, b) => Number(b.receivedAt || 0) - Number(a.receivedAt || 0));
 
         // Boxes (by clientId)
         const boxSnaps = await Promise.all(
-          chunk(managedIds, 10).map((ids) => getDocs(query(collection(db, "boxes"), where("clientId", "in", ids))))
+          chunk(clientKeys, 10).map((ids) => getDocs(query(collection(db, "boxes"), where("clientId", "in", ids))))
         );
         const boxDocs = boxSnaps.flatMap((s) => s.docs);
         const nextBoxes = boxDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
@@ -214,7 +298,12 @@ function PageInner() {
 
       // Antes de correr queries globales, verificar que es staff/admin
       if (!isStaff) {
-        throw new Error("No autorizado para ver historial global");
+        if (!alive) return;
+        setClients([]);
+        setRows([]);
+        setBoxes([]);
+        setAuthError("Sin permisos para acceder a esta página");
+        return;
       }
       // Staff/admin: existing global behavior
       let inboundQ: any = query(collection(db, "inboundPackages"), orderBy("receivedAt", "desc"));
@@ -319,6 +408,10 @@ function PageInner() {
   }
 
   async function deleteTracking(row: Inbound) {
+    if (!isStaffState) {
+      alert("Sin permisos para eliminar trackings.");
+      return;
+    }
     // Solo si está recibido y no pertenece a ninguna caja
     if (row.status !== 'received' || boxByInbound[row.id]) {
       alert('Solo se pueden eliminar trackings recibidos y que no estén dentro de una caja.');
@@ -351,43 +444,48 @@ function PageInner() {
   }
 
   // Export CSV handler for boxes
-// Reemplaza toda la función
-async function handleExportCsv() {
-  // Mapear id → nombre de cliente
-  const cs = await getDocs(collection(db, "clients"));
-  const clientsById: Record<string, { name?: string; code?: string }> = {};
-  cs.docs.forEach(d => {
-    const data = d.data() as any;
-    clientsById[d.id] = { name: data?.name, code: data?.code };
-  });
+  // Export CSV handler for boxes
+  async function handleExportCsv() {
+    // Staff only. Partners must not export global data.
+    if (!isStaffState) {
+      alert("Sin permisos para exportar.");
+      return;
+    }
 
-  const rows = boxes.map(b => ({
-    code: b.code,
-    client: clientsById[b.clientId]?.name || b.clientId, // nombre visible
-    country: b.country,
-    type: b.type,
-    items: (b.itemIds?.length || 0),
-    weightLb: (Number(b.weightLb || 0)).toFixed(2),
-    weightKg: lbToKg(Number(b.weightLb || 0), 2).toFixed(2),
-  }));
+    // Use already-loaded clients in state (avoids global read surprises).
+    const clientsById: Record<string, { name?: string; code?: string }> = {};
+    clients.forEach((c: any) => {
+      if (!c?.id) return;
+      clientsById[c.id] = { name: c?.name, code: c?.code };
+    });
 
-  const headers = [
-    { key: "code", label: "Caja" },
-    { key: "client", label: "Cliente" },
-    { key: "country", label: "País" },
-    { key: "type", label: "Tipo" },
-    { key: "items", label: "Items" },
-    { key: "weightLb", label: "Peso (lb)" },
-    { key: "weightKg", label: "Peso (kg)" },
-  ];
+    const rows = boxes.map(b => ({
+      code: b.code,
+      client: clientsById[b.clientId]?.name || b.clientId, // nombre visible
+      country: b.country,
+      type: b.type,
+      items: (b.itemIds?.length || 0),
+      weightLb: (Number(b.weightLb || 0)).toFixed(2),
+      weightKg: lbToKg(Number(b.weightLb || 0), 2).toFixed(2),
+    }));
 
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+    const headers = [
+      { key: "code", label: "Caja" },
+      { key: "client", label: "Cliente" },
+      { key: "country", label: "País" },
+      { key: "type", label: "Tipo" },
+      { key: "items", label: "Items" },
+      { key: "weightLb", label: "Peso (lb)" },
+      { key: "weightKg", label: "Peso (kg)" },
+    ];
 
-  downloadCsvWithBom(rows, headers, `preparado-${yyyy}${mm}${dd}.csv`);
-}
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+
+    downloadCsvWithBom(rows, headers, `preparado-${yyyy}${mm}${dd}.csv`);
+  }
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       const client = clientsById[r.clientId];
@@ -492,6 +590,11 @@ async function handleExportCsv() {
           opacity: 0.95;
         }
       `}</style>
+      {authError ? (
+        <div className="w-full max-w-6xl mb-4 rounded-lg border border-white/10 bg-white/5 p-4 text-white/80">
+          {authError}
+        </div>
+      ) : null}
       <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6 space-y-6">
         <h1 className="text-2xl font-semibold">Historial de tracking</h1>
         <p className="text-sm text-white/60">
@@ -544,13 +647,15 @@ async function handleExportCsv() {
         </div>
 
         <div className="flex flex-row gap-2 mb-2">
-          <button
-            type="button"
-            className={btnSecondaryCls}
-            onClick={handleExportCsv}
-          >
-            Exportar CSV
-          </button>
+          {isStaffState ? (
+            <button
+              type="button"
+              className={btnSecondaryCls}
+              onClick={handleExportCsv}
+            >
+              Exportar CSV
+            </button>
+          ) : null}
         </div>
 
         <div className="overflow-x-auto border rounded">
@@ -687,7 +792,7 @@ async function handleExportCsv() {
                         )}
                       </td>
                       <td className="p-2">
-                        {!boxByInbound[r.id] && r.status === "received" ? (
+                        {isStaffState && !boxByInbound[r.id] && r.status === "received" ? (
                           <button
                             className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-white/80 hover:text-red-400 hover:border-red-400"
                             title="Eliminar"
