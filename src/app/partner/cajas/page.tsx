@@ -6,6 +6,9 @@ import { collection, query, where, getDocs, doc, getDoc, orderBy } from "firebas
 import { db } from "@/lib/firebase";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { BrandSelect } from "@/components/ui/BrandSelect";
+import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
+import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 import { usePartnerContext } from "@/components/PartnerContext";
 import type { Client, Box } from "@/types/lem";
 import { chunk } from "@/lib/utils";
@@ -30,8 +33,42 @@ export default function PartnerCajasPage() {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [loading, setLoading] = useState(true);
   const [clientMap, setClientMap] = useState<Record<string, { code: string; name: string }>>({});
-  const [detailBox, setDetailBox] = useState<Box | null>(null);
-  const [detailItems, setDetailItems] = useState<Array<{ id: string; tracking: string; weightLb: number; photoUrl?: string; carrier?: string }>>([]);
+
+  const clientOptions = useMemo(() => {
+    const opts: Array<{ value: string; label: string }> = [
+      { value: "", label: "Todas mis cuentas" },
+    ];
+    for (const cid of scopedClientIds) {
+      const c = clientMap[cid];
+      if (!c) continue;
+      const label = `${c.code || cid} ${c.name || ""}`.trim();
+      opts.push({ value: cid, label });
+    }
+    return opts;
+  }, [scopedClientIds, clientMap]);
+
+  const clientsById = useMemo(() => {
+    const m: Record<string, Client> = {};
+    for (const cid of scopedClientIds) {
+      const c = clientMap[cid];
+      if (!c) continue;
+      m[cid] = {
+        id: cid,
+        code: c.code || "",
+        name: c.name || "",
+        country: "",
+      } as Client;
+    }
+    return m;
+  }, [scopedClientIds, clientMap]);
+
+  const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
+    // This page is read-only; we do not manage inbound rows here.
+    setRows: (() => {}) as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
+    clientsById,
+  });
 
   // Cargar clientes para el dropdown
   useEffect(() => {
@@ -143,35 +180,6 @@ export default function PartnerCajasPage() {
     void loadBoxes();
   }, [scopedClientIds, selectedClientId]);
 
-  async function openBoxDetail(b: Box) {
-    setDetailBox(b);
-    const items: Array<{ id: string; tracking: string; weightLb: number; photoUrl?: string; carrier?: string }> = [];
-    // cargar items por id (itemIds) si existen
-    if (Array.isArray(b.itemIds) && b.itemIds.length) {
-          const it = await Promise.all(
-        b.itemIds.map(async (iid: string) => {
-          const snap = await getDoc(doc(db, "inboundPackages", iid));
-          if (!snap.exists()) return null;
-          const rec = asRecord(snap.data());
-          if (!rec) return null;
-          const tracking = asString(rec.tracking) ?? "";
-          const weightLb = asNumber(rec.weightLb) ?? 0;
-          const photoUrl = asString(rec.photoUrl);
-          const carrier = asString(rec.carrier);
-          return {
-            id: iid,
-            tracking,
-            weightLb,
-            photoUrl,
-            carrier,
-          };
-        })
-      );
-      for (const i of it) if (i) items.push(i);
-    }
-    setDetailItems(items);
-  }
-
   if (scopedClientIds.length === 0) {
     return (
       <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 space-y-4">
@@ -189,22 +197,14 @@ export default function PartnerCajasPage() {
         <h2 className="text-xl font-semibold text-white">Cajas</h2>
         <div className="flex items-center gap-2">
           <label className="text-sm text-white/60">Filtrar por cliente:</label>
-          <select
-            value={selectedClientId}
-            onChange={(e) => setSelectedClientId(e.target.value)}
-            className="h-10 rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]"
-          >
-            <option value="">Todas mis cuentas</option>
-            {scopedClientIds.map((cid) => {
-              const client = clientMap[cid];
-              if (!client) return null;
-              return (
-                <option key={cid} value={cid}>
-                  {client.code} {client.name}
-                </option>
-              );
-            })}
-          </select>
+          <div className="min-w-[260px]">
+            <BrandSelect
+              value={selectedClientId}
+              onChange={(val) => setSelectedClientId(String(val))}
+              options={clientOptions}
+              placeholder="Todas mis cuentas"
+            />
+          </div>
         </div>
       </div>
 
@@ -216,6 +216,7 @@ export default function PartnerCajasPage() {
             <thead className="sticky top-0 z-10 bg-[#0f2a22] shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]">
               <tr>
                 <th className="text-left p-2 text-white/80 text-xs font-medium">Caja</th>
+                <th className="text-left p-2 text-white/80 text-xs font-medium">Cliente</th>
                 <th className="text-left p-2 text-white/80 text-xs font-medium">País</th>
                 <th className="text-left p-2 text-white/80 text-xs font-medium">Tipo</th>
                 <th className="text-right p-2 text-white/80 text-xs font-medium">Items</th>
@@ -231,6 +232,13 @@ export default function PartnerCajasPage() {
                   className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10 h-11"
                 >
                   <td className="p-2 font-mono text-white">{b.code}</td>
+                  <td className="p-2 text-white">
+                    {(() => {
+                      const c = clientMap[b.clientId];
+                      if (c) return `${c.code || b.clientId} ${c.name || ""}`.trim();
+                      return b.clientId;
+                    })()}
+                  </td>
                   <td className="p-2 text-white">{(() => {
                     const rec = asRecord(b);
                     const country = rec ? asString(rec.country) : undefined;
@@ -254,8 +262,12 @@ export default function PartnerCajasPage() {
                   </td>
                   <td className="p-2">
                     <button
-                      className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
-                      onClick={() => openBoxDetail(b)}
+                      className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => {
+                        if (!b.id) return;
+                        openBoxDetailByBoxId(b.id);
+                      }}
+                      disabled={!b.id}
                     >
                       Ver detalle
                     </button>
@@ -264,7 +276,7 @@ export default function PartnerCajasPage() {
               ))}
               {!boxes.length ? (
                 <tr>
-                  <td colSpan={7} className="p-3 text-white/60">
+                  <td colSpan={8} className="p-3 text-white/60">
                     Sin cajas.
                   </td>
                 </tr>
@@ -274,52 +286,7 @@ export default function PartnerCajasPage() {
         </div>
       )}
 
-      {detailBox ? (
-        <div className="fixed inset-0 z-40 bg-black/40 grid place-items-center p-4">
-          <div className="bg-[#02120f] w-full max-w-xl rounded-xl shadow-xl border border-white/10 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-white">Caja {detailBox.code}</h3>
-              <button
-                className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
-                onClick={() => setDetailBox(null)}
-              >
-                Cerrar
-              </button>
-            </div>
-            <div className="overflow-x-auto border rounded border-white/10">
-              <table className="w-full text-sm">
-                <thead className="bg-[#0f2a22]">
-                  <tr>
-                    <th className="text-left p-2 text-white/80 text-xs font-medium">Tracking</th>
-                    <th className="text-left p-2 text-white/80 text-xs font-medium">Carrier</th>
-                    <th className="text-right p-2 text-white/80 text-xs font-medium">Peso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detailItems.map((i) => {
-                    return (
-                      <tr key={i.id} className="border-t border-white/10">
-                        <td className="p-2 font-mono text-white">{i.tracking}</td>
-                        <td className="p-2 text-white">{i.carrier || "-"}</td>
-                        <td className="p-2 text-right tabular-nums text-white">
-                          {fmtWeightPairFromLb(Number(i.weightLb || 0))}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {!detailItems.length ? (
-                    <tr>
-                      <td colSpan={3} className="p-3 text-white/60">
-                        Caja sin items.
-                      </td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <BoxDetailModal {...modalProps} />
     </div>
   );
 }

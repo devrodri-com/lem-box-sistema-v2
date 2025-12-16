@@ -6,6 +6,8 @@ import { collection, query, where, getDocs, doc, getDoc, orderBy, limit } from "
 import { db } from "@/lib/firebase";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { BrandSelect } from "@/components/ui/BrandSelect";
+import { IconPhoto } from "@/components/ui/icons";
 import { usePartnerContext } from "@/components/PartnerContext";
 import type { Client, Inbound, Box } from "@/types/lem";
 import { chunk } from "@/lib/utils";
@@ -28,6 +30,32 @@ function asStringArray(v: unknown): string[] {
 
 const LIMIT_INITIAL = 100;
 
+const CONTROL_BORDER = "border-[#1f3f36]";
+const inputCls = `h-10 w-full rounded-md border ${CONTROL_BORDER} bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]`;
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
+
+const TZ = "America/New_York";
+function tzOffsetMs(date: Date, timeZone: string): number {
+  const inTz = new Date(date.toLocaleString("en-US", { timeZone }));
+  return inTz.getTime() - date.getTime();
+}
+function zonedStartOfDayUtcMs(yyyyMmDd: string, timeZone = TZ): number {
+  const [y, m, d] = yyyyMmDd.split("-").map(Number);
+  const utc = new Date(Date.UTC(y, (m || 1) - 1, d || 1, 0, 0, 0));
+  const off = tzOffsetMs(utc, timeZone);
+  return utc.getTime() - off;
+}
+function zonedEndOfDayUtcMs(yyyyMmDd: string, timeZone = TZ): number {
+  const [y, m, d] = yyyyMmDd.split("-").map(Number);
+  const utc = new Date(Date.UTC(y, (m || 1) - 1, d || 1, 23, 59, 59, 999));
+  const off = tzOffsetMs(utc, timeZone);
+  return utc.getTime() - off;
+}
+
 export default function PartnerHistorialPage() {
   const { scopedClientIds, effectiveRole, uid, roleResolved } = usePartnerContext();
   const [inbounds, setInbounds] = useState<Inbound[]>([]);
@@ -42,6 +70,12 @@ export default function PartnerHistorialPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
+
+  const [qClient, setQClient] = useState("");
+  const [qTracking, setQTracking] = useState("");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "received" | "boxed">("all");
 
   const clientsById = useMemo(() => {
     const m: Record<string, Client> = {};
@@ -202,16 +236,17 @@ export default function PartnerHistorialPage() {
     async function loadInbounds() {
       setLoading(true);
       const chunks = chunk(scopedClientIds, 10);
-      const inboundPromises = chunks.map((chunkIds) =>
-        getDocs(
-          query(
-            collection(db, "inboundPackages"),
-            where("clientId", "in", chunkIds),
-            orderBy("receivedAt", "desc"),
-            limit(LIMIT_INITIAL)
-          )
-        )
-      );
+      const inboundPromises = chunks.map((chunkIds) => {
+        let qBase = query(
+          collection(db, "inboundPackages"),
+          where("clientId", "in", chunkIds),
+          orderBy("receivedAt", "desc"),
+          limit(LIMIT_INITIAL)
+        );
+        if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+        if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        return getDocs(qBase);
+      });
 
       try {
         const inboundSnaps = await Promise.all(inboundPromises);
@@ -269,7 +304,7 @@ export default function PartnerHistorialPage() {
       }
     }
     void loadInbounds();
-  }, [scopedClientIds, uid, roleResolved]);
+  }, [scopedClientIds, uid, roleResolved, dateFrom, dateTo]);
 
   if (!roleResolved) {
     return (
@@ -290,9 +325,79 @@ export default function PartnerHistorialPage() {
     );
   }
 
+  const filteredInbounds = useMemo(() => {
+    return inbounds.filter((r) => {
+      const c = clientsById[r.clientId];
+      const clientText = c ? `${c.code} ${c.name}`.toLowerCase() : r.clientId.toLowerCase();
+      if (qClient && !clientText.includes(qClient.toLowerCase())) return false;
+      if (qTracking && !r.tracking.toLowerCase().includes(qTracking.toLowerCase())) return false;
+
+      const box = r.id ? boxByInbound[r.id] : undefined;
+      if (statusFilter === "received") {
+        if (r.status === "void") return false;
+        if (box) return false;
+      }
+      if (statusFilter === "boxed") {
+        if (!box) return false;
+      }
+      return true;
+    });
+  }, [inbounds, clientsById, qClient, qTracking, statusFilter, boxByInbound]);
+
   return (
     <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 space-y-4">
       <h2 className="text-xl font-semibold text-white">Historial de Trackings</h2>
+
+      <style jsx global>{`
+        .lem-date { color-scheme: dark; }
+        .lem-date::-webkit-calendar-picker-indicator {
+          filter: invert(1) brightness(1.8) !important;
+          opacity: 0.95;
+        }
+      `}</style>
+
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+        <input
+          className={inputCls}
+          style={INPUT_BG_STYLE}
+          placeholder="Buscar por cliente"
+          value={qClient}
+          onChange={(e) => setQClient(e.target.value)}
+        />
+        <input
+          className={inputCls}
+          style={INPUT_BG_STYLE}
+          placeholder="Buscar por tracking"
+          value={qTracking}
+          onChange={(e) => setQTracking(e.target.value)}
+        />
+        <input
+          type="date"
+          className={inputCls + " lem-date"}
+          style={INPUT_BG_STYLE}
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          title="Desde"
+        />
+        <input
+          type="date"
+          className={inputCls + " lem-date"}
+          style={INPUT_BG_STYLE}
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          title="Hasta"
+        />
+        <BrandSelect
+          value={statusFilter}
+          onChange={(val) => setStatusFilter(val as "all" | "received" | "boxed")}
+          options={[
+            { value: "all", label: "Todos" },
+            { value: "received", label: "Recibido" },
+            { value: "boxed", label: "Consolidado" },
+          ]}
+          placeholder="Filtrar estado"
+        />
+      </div>
 
       {loading ? (
         <div className="text-sm text-white/60">Cargando trackings…</div>
@@ -313,11 +418,13 @@ export default function PartnerHistorialPage() {
                 </tr>
               </thead>
               <tbody>
-                {inbounds
+                {filteredInbounds
                   .filter((r) => r.id) // Solo inbounds con id
                   .map((r) => {
                     const c = clientsById[r.clientId];
-                    const cliente = c?.code ? c.code : r.clientId;
+                    const cliente = c
+                      ? `${c.code || r.clientId}${c.name ? ` ${c.name}` : ""}`
+                      : r.clientId;
                     const box = r.id ? boxByInbound[r.id] : undefined;
                   return (
                     <tr
@@ -364,18 +471,18 @@ export default function PartnerHistorialPage() {
                             rel="noreferrer"
                             title="Ver foto"
                             aria-label="Ver foto"
-                            className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
+                            className="inline-flex items-center justify-center text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
                           >
-                            📷
+                            <IconPhoto />
                           </a>
                         ) : (
-                          "-"
+                          <span className="text-white/40">-</span>
                         )}
                       </td>
                     </tr>
                   );
                 })}
-                {!inbounds.length ? (
+                {!filteredInbounds.length ? (
                   <tr>
                     <td colSpan={8} className="p-3 text-white/60">
                       Sin trackings.
