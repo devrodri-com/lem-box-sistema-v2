@@ -99,6 +99,23 @@ const STATES_BY_COUNTRY: Record<string, string[]> = {
 
 const DOC_TYPES: string[] = ["Cédula", "DNI", "Pasaporte", "RUT", "Otro"];
 
+// Helpers para parse seguro de datos de Firestore
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+function asString(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+function asNumber(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+function asBoolean(v: unknown): boolean | undefined {
+  return typeof v === "boolean" ? v : undefined;
+}
+function asStringArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
+}
+
 export interface ClientProfilePermissions {
   canDelete: boolean;
   canResetPassword: boolean;
@@ -162,9 +179,27 @@ export function ClientProfile({
     if (!clientId) return;
     (async () => {
       const snap = await getDoc(doc(db, "clients", clientId));
-      const data = snap.data() as Omit<Client, "id"> | undefined;
-      if (data) {
-        const c: Client = { id: snap.id, ...data };
+      const rec = asRecord(snap.data());
+      if (rec) {
+        const c: Client = {
+          id: snap.id,
+          code: asString(rec.code) ?? "",
+          name: asString(rec.name) ?? "",
+          country: asString(rec.country) ?? "",
+          email: asString(rec.email),
+          phone: asString(rec.phone),
+          address: asString(rec.address),
+          state: asString(rec.state),
+          city: asString(rec.city),
+          contact: asString(rec.contact),
+          docType: asString(rec.docType),
+          docNumber: asString(rec.docNumber),
+          postalCode: asString(rec.postalCode),
+          emailAlt: asString(rec.emailAlt),
+          activo: asBoolean(rec.activo) ?? true,
+          createdAt: asNumber(rec.createdAt),
+          managerUid: asString(rec.managerUid) || null,
+        };
         setClient(c);
         setForm(c);
       }
@@ -178,14 +213,67 @@ export function ClientProfile({
         const inSn = await getDocs(qIn);
         setInbounds(
           inSn.docs.map((docSnap) => {
-            const d = docSnap.data() as Omit<Inbound, "id">;
-            return { id: docSnap.id, ...d } as Inbound;
-          })
+            const rec = asRecord(docSnap.data());
+            if (!rec) {
+              return null;
+            }
+            const tracking = asString(rec.tracking) ?? "";
+            const carrier = asString(rec.carrier) as Inbound["carrier"] | undefined;
+            const weightLb = asNumber(rec.weightLb) ?? 0;
+            const weightKg = asNumber(rec.weightKg);
+            const photoUrl = asString(rec.photoUrl);
+            const invoiceUrl = asString(rec.invoiceUrl);
+            const status = asString(rec.status) as Inbound["status"] | undefined;
+            const receivedAt = asNumber(rec.receivedAt);
+            const managerUid = asString(rec.managerUid) || null;
+            return {
+              id: docSnap.id,
+              tracking,
+              carrier: carrier || "Other",
+              clientId,
+              weightLb,
+              weightKg,
+              photoUrl,
+              invoiceUrl,
+              status,
+              receivedAt,
+              managerUid,
+            } as Inbound;
+          }).filter((i): i is Inbound => i !== null)
         );
       } catch {
         const qIn2 = query(collection(db, "inboundPackages"), where("clientId", "==", clientId));
         const inSn2 = await getDocs(qIn2);
-        const list = inSn2.docs.map((s) => ({ id: s.id, ...(s.data() as Omit<Inbound, "id">) })) as Inbound[];
+        const list = inSn2.docs
+          .map((s) => {
+            const rec = asRecord(s.data());
+            if (!rec) {
+              return null;
+            }
+            const tracking = asString(rec.tracking) ?? "";
+            const carrier = asString(rec.carrier) as Inbound["carrier"] | undefined;
+            const weightLb = asNumber(rec.weightLb) ?? 0;
+            const weightKg = asNumber(rec.weightKg);
+            const photoUrl = asString(rec.photoUrl);
+            const invoiceUrl = asString(rec.invoiceUrl);
+            const status = asString(rec.status) as Inbound["status"] | undefined;
+            const receivedAt = asNumber(rec.receivedAt);
+            const managerUid = asString(rec.managerUid) || null;
+            return {
+              id: s.id,
+              tracking,
+              carrier: carrier || "Other",
+              clientId,
+              weightLb,
+              weightKg,
+              photoUrl,
+              invoiceUrl,
+              status,
+              receivedAt,
+              managerUid,
+            } as Inbound;
+          })
+          .filter((i): i is Inbound => i !== null);
         list.sort((a, b) => Number(b.receivedAt || 0) - Number(a.receivedAt || 0));
         setInbounds(list);
       }
@@ -199,15 +287,86 @@ export function ClientProfile({
         );
         const bxSn = await getDocs(qBox);
         setBoxes(
-          bxSn.docs.map((docSnap) => {
-            const d = docSnap.data() as Omit<Box, "id">;
-            return { id: docSnap.id, ...d } as Box;
-          })
+          bxSn.docs
+            .map((docSnap) => {
+              const rec = asRecord(docSnap.data());
+              if (!rec) {
+                return null;
+              }
+              const code = asString(rec.code) ?? "";
+              const clientId = asString(rec.clientId) ?? "";
+              const status = asString(rec.status) as Box["status"] | undefined;
+              const itemIds = asStringArray(rec.itemIds);
+              const createdAt = asNumber(rec.createdAt);
+              const weightLb = asNumber(rec.weightLb);
+              const managerUid = asString(rec.managerUid) || null;
+              const closedAt = asNumber(rec.closedAt);
+              const shippedAt = asNumber(rec.shippedAt);
+              const deliveredAt = asNumber(rec.deliveredAt);
+              // Campos adicionales que pueden existir en Firestore pero no en el tipo Box base
+              const type = asString(rec.type) as "COMERCIAL" | "FRANQUICIA" | undefined;
+              const country = asString(rec.country);
+              const shipmentId = asString(rec.shipmentId);
+              return {
+                id: docSnap.id,
+                code,
+                clientId,
+                status: status || "open",
+                itemIds,
+                createdAt,
+                weightLb,
+                managerUid,
+                closedAt,
+                shippedAt,
+                deliveredAt,
+                ...(type ? { type } : {}),
+                ...(country ? { country } : {}),
+                ...(shipmentId ? { shipmentId } : {}),
+              } as Box;
+            })
+            .filter((b): b is Box => b !== null)
         );
       } catch {
         const qBox2 = query(collection(db, "boxes"), where("clientId", "==", clientId));
         const bxSn2 = await getDocs(qBox2);
-        const listB = bxSn2.docs.map((s) => ({ id: s.id, ...(s.data() as Omit<Box, "id">) })) as Box[];
+        const listB = bxSn2.docs
+          .map((s) => {
+            const rec = asRecord(s.data());
+            if (!rec) {
+              return null;
+            }
+            const code = asString(rec.code) ?? "";
+            const clientId = asString(rec.clientId) ?? "";
+            const status = asString(rec.status) as Box["status"] | undefined;
+            const itemIds = asStringArray(rec.itemIds);
+            const createdAt = asNumber(rec.createdAt);
+            const weightLb = asNumber(rec.weightLb);
+            const managerUid = asString(rec.managerUid) || null;
+            const closedAt = asNumber(rec.closedAt);
+            const shippedAt = asNumber(rec.shippedAt);
+            const deliveredAt = asNumber(rec.deliveredAt);
+            // Campos adicionales que pueden existir en Firestore pero no en el tipo Box base
+            const type = asString(rec.type) as "COMERCIAL" | "FRANQUICIA" | undefined;
+            const country = asString(rec.country);
+            const shipmentId = asString(rec.shipmentId);
+            return {
+              id: s.id,
+              code,
+              clientId,
+              status: status || "open",
+              itemIds,
+              createdAt,
+              weightLb,
+              managerUid,
+              closedAt,
+              shippedAt,
+              deliveredAt,
+              ...(type ? { type } : {}),
+              ...(country ? { country } : {}),
+              ...(shipmentId ? { shipmentId } : {}),
+            } as Box;
+          })
+          .filter((b): b is Box => b !== null);
         listB.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
         setBoxes(listB);
       }
