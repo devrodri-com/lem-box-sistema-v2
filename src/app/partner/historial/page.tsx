@@ -12,17 +12,34 @@ import { chunk } from "@/lib/utils";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 
+// Helpers para parse seguro de datos de Firestore
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+function asString(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+function asNumber(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+function asBoolean(v: unknown): boolean | undefined {
+  return typeof v === "boolean" ? v : undefined;
+}
+function asStringArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
+}
+
 const LIMIT_INITIAL = 100;
 
 export default function PartnerHistorialPage() {
   const { scopedClientIds, effectiveRole, uid, roleResolved } = usePartnerContext();
   const [inbounds, setInbounds] = useState<Inbound[]>([]);
   const [boxes, setBoxes] = useState<Box[]>([]);
-  const setBoxesWrapper = (updater: React.SetStateAction<any[]>) => {
+  const setBoxesWrapper = (updater: React.SetStateAction<Box[]>) => {
     if (typeof updater === "function") {
-      setBoxes((prev) => updater(prev.filter((b) => b.id) as any[]) as Box[]);
+      setBoxes((prev) => updater(prev.filter((b) => b.id && typeof b.id === "string")));
     } else {
-      setBoxes(updater as Box[]);
+      setBoxes(updater);
     }
   };
   const [clients, setClients] = useState<Client[]>([]);
@@ -38,8 +55,30 @@ export default function PartnerHistorialPage() {
   }, [clients]);
 
   // Box detail modal hook
+  const boxesForModal = useMemo(() => {
+    return boxes
+      .filter((b): b is Box & { id: string } => typeof b.id === "string" && b.id.length > 0)
+      .map((b) => {
+        const rec = asRecord(b as unknown);
+        const labelRef = asString(rec?.labelRef);
+        const typeRaw = asString(rec?.type);
+        const type: "COMERCIAL" | "FRANQUICIA" | undefined =
+          typeRaw === "COMERCIAL" || typeRaw === "FRANQUICIA" ? typeRaw : undefined;
+        return {
+          id: b.id,
+          code: b.code,
+          clientId: b.clientId,
+          itemIds: b.itemIds,
+          weightLb: b.weightLb,
+          status: b.status,
+          ...(labelRef ? { labelRef } : {}),
+          ...(type ? { type } : {}),
+        };
+      });
+  }, [boxes]);
+
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
-    boxes: boxes.filter((b) => b.id) as any[], // Filter boxes with id and cast to expected type
+    boxes: boxesForModal,
     setBoxes: setBoxesWrapper,
     setRows: () => {}, // Read-only, no actualizamos inbounds
     clientsById,
@@ -78,7 +117,20 @@ export default function PartnerHistorialPage() {
             if (snap.exists()) {
               const chunkIds = chunks[chunkIdx];
               const cid = chunkIds[idx];
-              loadedClients.push({ id: cid, ...(snap.data() as Omit<Client, "id">) });
+              const rec = asRecord(snap.data());
+              if (rec) {
+                const code = asString(rec.code) ?? "";
+                const name = asString(rec.name) ?? "";
+                const country = asString(rec.country) ?? "";
+                const email = asString(rec.email);
+                loadedClients.push({
+                  id: cid,
+                  code,
+                  name,
+                  country,
+                  email,
+                });
+              }
             }
           });
         });
@@ -112,9 +164,24 @@ export default function PartnerHistorialPage() {
         boxSnaps.forEach((snap) => {
           snap.docs.forEach((d) => {
             const boxId = d.id;
-            if (!seenIds.has(boxId)) {
+            if (!seenIds.has(boxId) && boxId) {
               seenIds.add(boxId);
-              loadedBoxes.push({ id: boxId, ...(d.data() as Omit<Box, "id">) });
+              const rec = asRecord(d.data());
+              if (rec) {
+                const code = asString(rec.code) ?? "";
+                const clientId = asString(rec.clientId) ?? "";
+                const status = asString(rec.status) as Box["status"] | undefined;
+                const itemIds = asStringArray(rec.itemIds);
+                const weightLb = asNumber(rec.weightLb);
+                loadedBoxes.push({
+                  id: boxId,
+                  code,
+                  clientId,
+                  status: status || "open",
+                  itemIds,
+                  weightLb,
+                });
+              }
             }
           });
         });
@@ -157,9 +224,33 @@ export default function PartnerHistorialPage() {
         inboundSnaps.forEach((snap) => {
           snap.docs.forEach((d) => {
             const inboundId = d.id;
-            if (!seenIds.has(inboundId)) {
+            if (!seenIds.has(inboundId) && inboundId) {
               seenIds.add(inboundId);
-              loadedInbounds.push({ id: inboundId, ...(d.data() as Omit<Inbound, "id">) });
+              const rec = asRecord(d.data());
+              if (rec) {
+                const tracking = asString(rec.tracking) ?? "";
+                const carrierRaw = asString(rec.carrier);
+                const carrier = carrierRaw as Inbound["carrier"] | undefined;
+                const clientId = asString(rec.clientId) ?? "";
+                // Filtrar docs sin clientId válido
+                if (!clientId) {
+                  return;
+                }
+                const weightLb = asNumber(rec.weightLb) ?? 0;
+                const photoUrl = asString(rec.photoUrl);
+                const status = asString(rec.status);
+                const receivedAt = asNumber(rec.receivedAt);
+                loadedInbounds.push({
+                  id: inboundId,
+                  tracking,
+                  carrier: carrier || "Other",
+                  clientId,
+                  weightLb,
+                  photoUrl,
+                  status: status as Inbound["status"] | undefined,
+                  receivedAt,
+                });
+              }
             }
           });
         });
