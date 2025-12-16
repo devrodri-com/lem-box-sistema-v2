@@ -20,6 +20,30 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  // Reglas estrictas para componentes y áreas críticas (error para no-explicit-any)
+  {
+    files: [
+      "src/components/**/*.{ts,tsx}",
+      "src/app/partner/**/*.{ts,tsx}",
+      "src/app/acceder/page.tsx",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "error",
+    },
+  },
+  // Reglas más permisivas para admin, mi, api, tests y lib (warn para no-explicit-any)
+  {
+    files: [
+      "src/app/admin/**/*.{ts,tsx}",
+      "src/app/mi/**/*.{ts,tsx}",
+      "src/app/api/**/*.{ts,tsx}",
+      "src/__tests__/**/*.{ts,tsx}",
+      "src/lib/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
 ];
 
 export default eslintConfig;
