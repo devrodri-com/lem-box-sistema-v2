@@ -1,20 +1,11 @@
 // src/app/partner/clientes/page.tsx
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { ClientsManager } from "@/components/clients/ClientsManager";
 import { usePartnerContext } from "@/components/PartnerContext";
 
 export default function PartnerClientesPage() {
-  const router = useRouter();
   const { roleResolved, effectiveRole } = usePartnerContext();
-
-  useEffect(() => {
-    if (!roleResolved) return;
-    if (effectiveRole === "partner_admin") {
-      router.replace("/admin/clientes");
-    }
-  }, [roleResolved, effectiveRole, router]);
 
   if (!roleResolved) {
     return (
@@ -33,5 +24,5 @@ export default function PartnerClientesPage() {
     );
   }
 
-  return null;
+  return <ClientsManager detailHref={(id) => `/partner/clientes/${id}`} />;
 }
