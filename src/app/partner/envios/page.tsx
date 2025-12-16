@@ -24,6 +24,12 @@ function asStringArray(v: unknown): string[] {
 function asBoxStatus(v: unknown): Box["status"] | undefined {
   return v === "open" || v === "shipped" || v === "closed" || v === "delivered" ? v : undefined;
 }
+function asShipmentType(v: unknown): Shipment["type"] | undefined {
+  return v === "COMERCIAL" || v === "FRANQUICIA" ? v : undefined;
+}
+function asShipmentStatus(v: unknown): Shipment["status"] | undefined {
+  return v === "open" || v === "shipped" || v === "arrived" || v === "closed" ? v : undefined;
+}
 
 type PartnerBox = Box & { shipmentId?: string };
 
@@ -33,6 +39,7 @@ export default function PartnerEnviosPage() {
   const [boxes, setBoxes] = useState<PartnerBox[]>([]);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shipmentsLoading, setShipmentsLoading] = useState(false);
 
   const clientsById = useMemo(() => {
     const m: Record<string, Client> = {};
@@ -99,6 +106,8 @@ export default function PartnerEnviosPage() {
   useEffect(() => {
     if (!roleResolved || !uid || scopedClientIds.length === 0) {
       setBoxes([]);
+      setShipments([]);
+      setShipmentsLoading(false);
       setLoading(false);
       return;
     }
@@ -156,11 +165,13 @@ export default function PartnerEnviosPage() {
     }
 
     async function loadShipments() {
+      setShipmentsLoading(true);
       // Recolectar shipmentIds únicos de las cajas
       const shipmentIds = Array.from(new Set(boxes.map((b) => b.shipmentId).filter((x): x is string => !!x)));
 
       if (shipmentIds.length === 0) {
         setShipments([]);
+        setShipmentsLoading(false);
         return;
       }
 
@@ -173,9 +184,26 @@ export default function PartnerEnviosPage() {
         const shipmentSnaps = await Promise.all(shipmentPromises);
         const loadedShipments: Shipment[] = [];
         shipmentSnaps.forEach((snap, idx) => {
-          if (snap?.exists()) {
-            loadedShipments.push({ id: shipmentIds[idx], ...(snap.data() as Omit<Shipment, "id">) });
-          }
+          if (!snap?.exists()) return;
+
+          const rec = asRecord(snap.data());
+          const id = shipmentIds[idx];
+
+          const s: Shipment = {
+            id,
+            code: asString(rec?.code) ?? "",
+            country: asString(rec?.country) ?? "",
+            type: asShipmentType(rec?.type) ?? "COMERCIAL",
+            status: asShipmentStatus(rec?.status) ?? "open",
+            boxIds: asStringArray(rec?.boxIds),
+            clientIds: asStringArray(rec?.clientIds),
+            managerUids: asStringArray(rec?.managerUids),
+            openedAt: asNumber(rec?.openedAt),
+            closedAt: asNumber(rec?.closedAt),
+            arrivedAt: asNumber(rec?.arrivedAt),
+          };
+
+          loadedShipments.push(s);
         });
         setShipments(loadedShipments);
 
@@ -187,6 +215,8 @@ export default function PartnerEnviosPage() {
       } catch (err) {
         console.error("[PartnerEnvios] Error loading shipments:", err);
         setShipments([]);
+      } finally {
+        setShipmentsLoading(false);
       }
     }
     void loadShipments();
@@ -223,7 +253,7 @@ export default function PartnerEnviosPage() {
     <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 space-y-4">
       <h2 className="text-xl font-semibold text-white">Envíos</h2>
 
-      {loading ? (
+      {loading || shipmentsLoading ? (
         <div className="text-sm text-white/60">Cargando envíos…</div>
       ) : (
         <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
@@ -246,7 +276,7 @@ export default function PartnerEnviosPage() {
                   >
                     <td className="p-2 font-mono text-white">{s.code || s.id}</td>
                     <td className="p-2 text-white">
-                      {s.country} / {s.type}
+                      {(s.country || "—")} / {(s.type || "—")}
                     </td>
                     <td className="p-2">
                       {s.status ? (
