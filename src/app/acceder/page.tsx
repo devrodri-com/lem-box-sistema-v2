@@ -3,8 +3,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import AuthHero from "@/components/auth/AuthHero";
 import LoginCard from "@/components/auth/LoginCard";
 import AccessNavbarDesktop from "@/components/auth/AccessNavbarDesktop";
@@ -41,11 +42,36 @@ export default function AccederPage() {
         const tok = await cred.user.getIdTokenResult(true);
         const claims = (tok?.claims ?? {}) as Record<string, unknown>;
         const claimRole = typeof claims["role"] === "string" ? (claims["role"] as string) : undefined;
+
+        // Firestore role (source of truth for partner in this app)
+        let firestoreRole: string | undefined;
+        try {
+          const snap = await getDoc(doc(db, "users", cred.user.uid));
+          if (snap.exists()) {
+            const data = snap.data() as any;
+            if (typeof data?.role === "string") firestoreRole = data.role;
+          }
+        } catch {
+          firestoreRole = undefined;
+        }
+
+        // Least-privilege reconciliation: if Firestore says partner_admin, go to partner even if claims are stale.
+        const effectiveRole = firestoreRole === "partner_admin" ? "partner_admin" : (claimRole ?? firestoreRole);
+
+        if (effectiveRole === "partner_admin") {
+          router.replace("/partner");
+          return;
+        }
+        if (effectiveRole === "client") {
+          router.replace("/mi");
+          return;
+        }
+
         const isAdmin = Boolean(
           claims["superadmin"] === true ||
-          claimRole === "admin" ||
-          claimRole === "superadmin" ||
-          claimRole === "partner_admin"
+          effectiveRole === "admin" ||
+          effectiveRole === "superadmin" ||
+          effectiveRole === "operador"
         );
         router.replace(isAdmin ? "/admin/ingreso" : "/mi");
       } catch {
