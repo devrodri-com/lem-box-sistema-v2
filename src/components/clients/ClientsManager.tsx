@@ -24,6 +24,20 @@ import { getIdTokenResult } from "firebase/auth";
 import { BrandSelect } from "@/components/ui/BrandSelect";
 import Link from "next/link";
 
+// Helpers para parse seguro de datos de Firestore
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+function asString(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+function asNumber(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+function asBoolean(v: unknown): boolean | undefined {
+  return typeof v === "boolean" ? v : undefined;
+}
+
 const COUNTRIES: string[] = ["Uruguay", "Argentina", "United States"];
 
 const STATES_BY_COUNTRY: Record<string, string[]> = {
@@ -393,10 +407,31 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
       const qClients = query(collection(db, "clients"), ...constraints);
       const snap = await getDocs(qClients);
       setRows(
-        snap.docs.map((d) => {
-          const data = d.data() as Omit<Client, "id">;
-          return { id: d.id, ...data } as Client;
-        })
+        snap.docs
+          .map((d) => {
+            const rec = asRecord(d.data());
+            if (!rec) {
+              return null;
+            }
+            const code = asString(rec.code) ?? "";
+            const name = asString(rec.name) ?? "";
+            const country = asString(rec.country) ?? "";
+            const activo = asBoolean(rec.activo) ?? true;
+            const managerUid = asString(rec.managerUid) || null;
+            const createdAt = asNumber(rec.createdAt);
+            const email = asString(rec.email);
+            return {
+              id: d.id,
+              code,
+              name,
+              country,
+              activo,
+              managerUid,
+              createdAt,
+              email,
+            } as Client;
+          })
+          .filter((c): c is Client => c !== null)
       );
     };
 
@@ -501,13 +536,13 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
       ...(finalManagerUid ? { managerUid: finalManagerUid } : {}),
     };
 
-    const sanitized = Object.fromEntries(
+    const sanitized: Record<string, unknown> = Object.fromEntries(
       Object.entries(payload).filter(([, v]) => v != null)
     );
 
     try {
-      const ref = await addDoc(collection(db, "clients"), sanitized as any);
-      setRows([{ id: ref.id, ...(sanitized as any) }, ...rows]);
+      const ref = await addDoc(collection(db, "clients"), sanitized);
+      setRows([{ id: ref.id, ...sanitized } as Client, ...rows]);
       resetForm();
       setOpenCreate(false);
     } catch (err) {
