@@ -1,6 +1,6 @@
 # 📦 LEM-BOX System V2  
-_Logistics & shipping management system built with Next.js 15 + Firebase_
-Enables end‑to‑end management of packages and boxes in the Miami warehouse, with access for administrators, operators, and clients.
+_Logistics & shipping management system built with Next.js 15 + Firebase_  
+Enables end‑to‑end management of packages, boxes, and shipments in the Miami warehouse, with access for **Admin/Staff**, **Clients**, and **Partners** (multi‑client view).
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/softbmllc/lem-box-sistema-v2/tests.yml?label=Tests&logo=vitest&logoColor=white)]()
 [![Firebase](https://img.shields.io/badge/Firebase-secured-orange?logo=firebase)]()
@@ -8,7 +8,8 @@ Enables end‑to‑end management of packages and boxes in the Miami warehouse, 
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
 ## ✨ Highlights
-- Full **admin + client** portal (Next.js App Router)
+- Full **admin + client** portal (Next.js App Router)  
+- New **Partner area** (`/partner/*`) with **multi-client** visibility (trackings/boxes/shipments/clients) scoped to assigned clients.
 - **Role-based security** (Firestore Rules tested with Emulator)
 - **Vitest** suite with integration, unit & rule tests
 - **6×4 label generation** (jsPDF) + **dual weight** handling (lb/kg)
@@ -27,7 +28,7 @@ Enables end‑to‑end management of packages and boxes in the Miami warehouse, 
 - **ZXing** for scanning tracking barcodes  
 
 ## 🧭 Architecture (high level)
-- **Next.js (App Router)** as frontend + server (routes `/admin/*` and client portal under `/mi/*`).
+- **Next.js (App Router)** as frontend + server (routes `/admin/*`, client portal under `/mi/*`, and partner area under `/partner/*`).
 - **Firebase Auth** manages the session (email/password).
 - **Firestore** stores entities (`users`, `clients`, `inboundPackages`, `boxes`, `shipments`, `trackingAlerts`).
 - **Storage** stores photos (packages/documents), accessed via URL.
@@ -35,9 +36,10 @@ Enables end‑to‑end management of packages and boxes in the Miami warehouse, 
 - **Tailwind** defines color tokens and utility components.
 
 ### Flow (summary)
-Received → Consolidated (box) → Shipped → In transit → At destination.
-- **Admin**: enters packages, builds boxes, creates shipments, and changes statuses.
-- **Client**: sees their trackings/boxes/shipments and edits their data.
+Received → Consolidated (box) → Shipped → In transit → At destination.  
+- **Admin/Staff**: enters packages, builds boxes, creates shipments, and changes statuses.  
+- **Partner**: manages **their assigned clients** (create/edit/activate/deactivate) and sees **trackings/boxes/shipments** for all assigned clients.  
+- **Client**: sees their own trackings/boxes/shipments and edits their data.
 
 ---
 
@@ -73,17 +75,40 @@ src/
         page.tsx
       cuenta/
         page.tsx
+    partner/
+      layout.tsx
+      page.tsx
+      historial/
+        page.tsx
+      cajas/
+        page.tsx
+      envios/
+        page.tsx
+      clientes/
+        page.tsx
+        [id]/
+          page.tsx
     acceder/
     registro/
   components/
     RequireAuth.tsx
     AdminNav.tsx
+    PartnerContext.tsx
+    clients/
+      ClientsManager.tsx
+      ClientProfile.tsx
+    boxes/
+      BoxDetailModal.tsx
+      useBoxDetailModal.ts
     ui/
       StatusBadge.tsx
+      BrandSelect.tsx
+      icons.tsx
   lib/
     firebase.ts
     printBoxLabel.ts
     weight.ts
+    utils.ts   (chunk helper)
 ```
 
 ---
@@ -96,6 +121,16 @@ src/
 - **Shipments**: create shipment (saves **`clientIds`**), change status (**Open → In transit → At destination → Closed**), expand boxes, print **6×4 label**.
 - **Tracking history**: filters; **BOX: #** modal with **Type + Apply**, **Reference + Print label**; items with **dual weight** and **total weight**.
 - **Clients**: CRUD with 20‑column layout: **Code** (read‑only), **Name**, **DocType/DocNumber**, **Country/State/City**, **Address/Postal code**, **Phone/Email/Extra email**.
+
+### **Partner** area (`/partner`)
+- **Historial (multi-client)**: received trackings for all assigned clients (read-only).
+- **Cajas (multi-client)**: boxes for all assigned clients + detail modal.
+- **Envíos (multi-client)**: shipments derived from assigned clients’ boxes.
+- **Clientes**: uses the same management UI as admin but **scoped** and with restricted actions.
+  - Can **create/edit/activate/deactivate** clients.
+  - Cannot **delete** clients.
+  - Cannot **reset password** or change **managerUid**.
+- Navigation keeps Partner navbar across sections.
 
 ### **Client** portal (`/mi`)
 - **History**: their **trackings** (date, tracking, carrier, **weight `lb/kg`**, status, photo).
@@ -120,6 +155,8 @@ Internally, the client portal is split into nested routes: `/mi/historial`, `/mi
   - `inboundPackages`/`boxes`: client only those with their `clientId`.
   - `shipments`: readable if `clientId` ∈ `shipment.clientIds`.
   - `trackingAlerts`: client **create**, staff read/manage.
+- Post-login routing is role-based: **partner_admin → /partner**, **client → /mi**, **staff → /admin/ingreso** (with Firestore role reconciliation to handle stale claims).
+- Partner scoping: data is filtered to the partner’s assigned clients using `users/{uid}.managedClientIds` and/or `clients.managerUid == uid` (fallback where needed).
 
 <details>
 <summary><strong>Firestore rules (suggested)</strong></summary>
@@ -211,8 +248,8 @@ pnpm e2e          # Playwright E2E
 - (Optional) `shipments`: by `status`/`country`/`type` per admin listing needs.
 
 ## 🗃️ Collections (summary)
-- **users/{uid}**: `uid`, `email`, `displayName`, `clientId`, `managedClientIds:string[]`, `termsAcceptedAt`, `lang:"es"`, `role:"client"|"admin"|"superadmin"`.
-- **clients/{id}**: `code`, `name`, `email`, `phone`, `country`, `state`, `city`, `address`, `emailAlt?`, `postalCode?`, `docType?`, `docNumber?`, `activo`, `createdAt`.
+- **users/{uid}**: `uid`, `email`, `displayName`, `clientId`, `managedClientIds:string[]`, `termsAcceptedAt`, `lang:"es"`, `role:"client"|"admin"|"superadmin"|"partner_admin"`.
+- **clients/{id}**: `code`, `name`, `email`, `phone`, `country`, `state`, `city`, `address`, `emailAlt?`, `postalCode?`, `docType?`, `docNumber?`, `activo`, `createdAt`, `managerUid?`.
 - **inboundPackages/{id}**: `tracking`, `carrier('UPS'|'FedEx'|'USPS'|'DHL'|'Amazon'|'Other')`, `clientId`, `weightLb:number`, `photoUrl?`, `status('received'|'boxed'|'void')`, `receivedAt`.
 - **boxes/{id}**: `code`, `clientId`, `type('COMERCIAL'|'FRANQUICIA')`, `country`, `itemIds:string[]`, `weightLb:number`, `status('open'|'closed')`, `shipmentId?:string|null`, `createdAt?`.
 - **shipments/{id}**: `code`, `country`, `type('COMERCIAL'|'FRANQUICIA')`, `status('open'|'shipped'|'arrived'|'closed')`, `boxIds:string[]`, **`clientIds:string[]`**, `openedAt?`, `arrivedAt?`, `closedAt?`.
@@ -220,9 +257,11 @@ pnpm e2e          # Playwright E2E
 
 ## 🔑 Roles
 
-- **Admin**: Full access, user management, boxes, rates.
-- **Operator**: Package intake, box building.
-- **Client**: Read their own packages and boxes.
+- **SuperAdmin**: full access, user/partner management, can delete.
+- **Admin**: full operational access.
+- **Operador**: intake + box building (staff).
+- **Partner (partner_admin)**: multi-client view + client management for assigned clients; restricted from staff-only modules.
+- **Client**: single-client portal under /mi.
 
 ---
 
@@ -312,9 +351,13 @@ Backend services managed with Firebase (Firestore, Auth, Storage).
 - Touch targets ≥ 44px on buttons and interactive cells.
 
 ## 🧰 Code conventions
-- TypeScript **without `any`**; typed utilities (e.g., `weight.ts`).
+- TypeScript with a **core-strict** lint policy: `no-explicit-any` is **error** in `src/components/**` and `src/app/partner/**`, and **warn** in legacy areas (`admin/mi/api/tests/lib`).
 - Pure components, no side‑effects on render.
 - Commit style: **Conventional Commits** (`feat:`, `fix:`, `chore:`…).
+
+## 🧯 Operational notes
+- If Next.js build/dev shows missing `.next` artifacts, clear cache: `rm -rf .next node_modules/.cache`.
+- Partner does not require label printing; label printing is for staff workflows.
 
 ## 🚀 Release checklist
 - Firestore rules published.

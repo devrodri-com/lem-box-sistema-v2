@@ -6,6 +6,19 @@ import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 
+type Role = "superadmin" | "admin" | "operador" | "partner_admin" | "client";
+const ROLE_SET: ReadonlySet<string> = new Set(["superadmin", "admin", "operador", "partner_admin", "client"]);
+function isRole(v: unknown): v is Role {
+  return typeof v === "string" && ROLE_SET.has(v);
+}
+function getStringClaim(claims: Record<string, unknown>, key: string): string | undefined {
+  const v = claims[key];
+  return typeof v === "string" ? v : undefined;
+}
+function getBooleanClaim(claims: Record<string, unknown>, key: string): boolean {
+  return claims[key] === true;
+}
+
 export default function RequireAuth({ children, requireAdmin = false }: { children: ReactNode; requireAdmin?: boolean }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -21,12 +34,15 @@ export default function RequireAuth({ children, requireAdmin = false }: { childr
       try {
         // 1) Intentar con custom claims
         const tok = await u.getIdTokenResult(true);
-        const c = tok.claims as any;
+        const claims = tok.claims as Record<string, unknown>;
+        const claimRoleRaw = getStringClaim(claims, "role");
+        const claimRole = isRole(claimRoleRaw) ? claimRoleRaw : undefined;
+        const isSuperAdminClaim = getBooleanClaim(claims, "superadmin");
         isAdmin = Boolean(
-          c?.superadmin ||
-            c?.role === "admin" ||
-            c?.role === "superadmin" ||
-            c?.role === "partner_admin"
+          isSuperAdminClaim ||
+            claimRole === "admin" ||
+            claimRole === "superadmin" ||
+            claimRole === "partner_admin"
         );
 
         // 2) Si no hay rol en claims, mirar en Firestore users
@@ -35,12 +51,18 @@ export default function RequireAuth({ children, requireAdmin = false }: { childr
           const snap = await getDoc(doc(db, "users", u.uid));
           let role: string | null = null;
           if (snap.exists()) {
-            role = (snap.data() as any)?.role || null;
+            const data = snap.data() as Record<string, unknown>;
+            const r = data["role"];
+            role = isRole(r) ? r : null;
           } else {
             // fallback por si la app guardó con addDoc
             const q = query(collection(db, "users"), where("uid", "==", u.uid), limit(1));
             const s = await getDocs(q);
-            if (!s.empty) role = (s.docs[0].data() as any)?.role || null;
+            if (!s.empty) {
+              const data = s.docs[0].data() as Record<string, unknown>;
+              const r = data["role"];
+              role = isRole(r) ? r : null;
+            }
           }
           isAdmin = role === "admin" || role === "superadmin" || role === "partner_admin";
         }

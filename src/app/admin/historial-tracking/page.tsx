@@ -9,6 +9,9 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { fmtWeightPairFromLb, lbToKg } from "@/lib/weight";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
+import { chunk } from "@/lib/utils";
+import { IconPhoto, IconTrash } from "@/components/ui/icons";
+import { BrandSelect, type BrandOption } from "@/components/ui/BrandSelect";
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const btnPrimaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed";
@@ -36,25 +39,6 @@ function zonedEndOfDayUtcMs(yyyyMmDd: string, timeZone = TZ): number {
   const utc = new Date(Date.UTC(y, (m || 1) - 1, d || 1, 23, 59, 59, 999));
   const off = tzOffsetMs(utc, timeZone);
   return utc.getTime() - off;
-}
-
-function IconPhoto({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
-      <path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
-      <circle cx="12" cy="13" r="3"/>
-    </svg>
-  );
-}
-function IconTrash({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
-      <path d="M3 6h18"/>
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-      <path d="M10 11v6M14 11v6"/>
-    </svg>
-  );
 }
 
 
@@ -113,9 +97,9 @@ function PageInner() {
 
   // Box detail modal hook
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
-    boxes,
-    setBoxes,
-    setRows,
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
+    setRows: setRows as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     clientsById,
   });
 
@@ -126,13 +110,6 @@ function PageInner() {
     }
     return m;
   }, [boxes]);
-
-  // --- Partner-safe data loading ---
-  function chunk<T>(arr: T[], size: number) {
-    const out: T[][] = [];
-    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-    return out;
-  }
 
   async function getMyRole(): Promise<string | undefined> {
     const u = auth.currentUser;
@@ -439,74 +416,6 @@ function PageInner() {
         return true;
       });
   }, [boxes, statusFilter, clientsById, qClient]);
-
-  // --- BrandSelect helper types and component ---
-  interface BrandOption {
-    value: string;
-    label: string;
-  }
-
-  interface BrandSelectProps {
-    value: string;
-    onChange: (value: string) => void;
-    options: BrandOption[];
-    placeholder: string;
-    disabled?: boolean;
-  }
-
-  function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
-    const [open, setOpen] = useState(false);
-
-    const showLabel = value
-      ? options.find((o) => o.value === value)?.label ?? value
-      : placeholder;
-
-    const baseClasses =
-      inputCls +
-      " flex items-center justify-between pr-8" +
-      (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
-
-    return (
-      <div
-        className="relative"
-        onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-            setOpen(false);
-          }
-        }}
-      >
-        <button
-          type="button"
-          disabled={disabled}
-          className={baseClasses + (!value ? " text-white/50" : "")}
-          onClick={() => {
-            if (!disabled) setOpen((prev) => !prev);
-          }}
-        >
-          <span className="truncate text-left">{showLabel}</span>
-          <span className="ml-2 text-[#005f40]">▾</span>
-        </button>
-        {open && !disabled && options.length > 0 && (
-          <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#071f19] py-1 text-sm shadow-lg ring-1 ring-white/10">
-            {options.map((opt) => (
-              <li key={opt.value}>
-                <button
-                  type="button"
-                  className="block w-full px-3 py-2 text-left text-white/90 hover:bg-white/5"
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                  }}
-                >
-                  {opt.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    );
-  }
 
   return (
     <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">

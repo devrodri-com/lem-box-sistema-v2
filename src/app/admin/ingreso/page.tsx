@@ -18,6 +18,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { Client, Carrier } from "@/types/lem";
+import { type BrandOption } from "@/components/ui/BrandSelect";
 
 const LB_TO_KG = 0.45359237;
 const KG_TO_LB = 1 / LB_TO_KG;
@@ -65,22 +66,9 @@ type Row = {
 
 const carriers: Carrier[] = ["UPS", "FedEx", "USPS", "DHL", "Amazon", "Other"];
 
-// --- BrandSelect helper types and component ---
-
-interface BrandOption {
-  value: string;
-  label: string;
-}
-
-interface BrandSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: BrandOption[];
-  placeholder: string;
-  disabled?: boolean;
-}
-
-function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandSelectProps) {
+// --- BrandSelect wrapper para mantener look específico de ingreso ---
+// Usa el componente canónico pero con clases personalizadas (h-11, !bg, flecha verde, z-30, max-h-72)
+function BrandSelect({ value, onChange, options, placeholder, disabled }: { value: string; onChange: (value: string) => void; options: BrandOption[]; placeholder: string; disabled?: boolean }) {
   const [open, setOpen] = useState(false);
 
   const showLabel = value ? options.find((o) => o.value === value)?.label ?? value : placeholder;

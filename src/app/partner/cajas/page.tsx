@@ -8,18 +8,21 @@ import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { usePartnerContext } from "@/components/PartnerContext";
 import type { Client, Box } from "@/types/lem";
+import { chunk } from "@/lib/utils";
+
+// Helpers para parse seguro de datos de Firestore
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+function asString(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+function asNumber(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
 
 const btnSecondary =
   "inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
-
-// Helper para hacer chunks de arrays
-function chunk<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
-}
 
 export default function PartnerCajasPage() {
   const { scopedClientIds, effectiveRole, uid } = usePartnerContext();
@@ -28,7 +31,7 @@ export default function PartnerCajasPage() {
   const [loading, setLoading] = useState(true);
   const [clientMap, setClientMap] = useState<Record<string, { code: string; name: string }>>({});
   const [detailBox, setDetailBox] = useState<Box | null>(null);
-  const [detailItems, setDetailItems] = useState<Array<{ id: string; tracking: string; weightLb: number; photoUrl?: string }>>([]);
+  const [detailItems, setDetailItems] = useState<Array<{ id: string; tracking: string; weightLb: number; photoUrl?: string; carrier?: string }>>([]);
 
   // Cargar clientes para el dropdown
   useEffect(() => {
@@ -142,20 +145,26 @@ export default function PartnerCajasPage() {
 
   async function openBoxDetail(b: Box) {
     setDetailBox(b);
-    const items: Array<{ id: string; tracking: string; weightLb: number; photoUrl?: string }> = [];
+    const items: Array<{ id: string; tracking: string; weightLb: number; photoUrl?: string; carrier?: string }> = [];
     // cargar items por id (itemIds) si existen
     if (Array.isArray(b.itemIds) && b.itemIds.length) {
-      const it = await Promise.all(
+          const it = await Promise.all(
         b.itemIds.map(async (iid: string) => {
           const snap = await getDoc(doc(db, "inboundPackages", iid));
-          return snap.exists()
-            ? {
-                id: iid,
-                tracking: (snap.data() as any).tracking || "",
-                weightLb: (snap.data() as any).weightLb || 0,
-                photoUrl: (snap.data() as any).photoUrl,
-              }
-            : null;
+          if (!snap.exists()) return null;
+          const rec = asRecord(snap.data());
+          if (!rec) return null;
+          const tracking = asString(rec.tracking) ?? "";
+          const weightLb = asNumber(rec.weightLb) ?? 0;
+          const photoUrl = asString(rec.photoUrl);
+          const carrier = asString(rec.carrier);
+          return {
+            id: iid,
+            tracking,
+            weightLb,
+            photoUrl,
+            carrier,
+          };
         })
       );
       for (const i of it) if (i) items.push(i);
@@ -222,8 +231,16 @@ export default function PartnerCajasPage() {
                   className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10 h-11"
                 >
                   <td className="p-2 font-mono text-white">{b.code}</td>
-                  <td className="p-2 text-white">{(b as any).country || "-"}</td>
-                  <td className="p-2 text-white">{(b as any).type || "-"}</td>
+                  <td className="p-2 text-white">{(() => {
+                    const rec = asRecord(b);
+                    const country = rec ? asString(rec.country) : undefined;
+                    return country || "-";
+                  })()}</td>
+                  <td className="p-2 text-white">{(() => {
+                    const rec = asRecord(b);
+                    const type = rec ? asString(rec.type) : undefined;
+                    return type || "-";
+                  })()}</td>
                   <td className="p-2 text-right tabular-nums text-white">{b.itemIds?.length || 0}</td>
                   <td className="p-2 text-right tabular-nums text-white">
                     {fmtWeightPairFromLb(Number(b.weightLb || 0))}
@@ -280,11 +297,10 @@ export default function PartnerCajasPage() {
                 </thead>
                 <tbody>
                   {detailItems.map((i) => {
-                    const inboundData = i as any;
                     return (
                       <tr key={i.id} className="border-t border-white/10">
                         <td className="p-2 font-mono text-white">{i.tracking}</td>
-                        <td className="p-2 text-white">{inboundData.carrier || "-"}</td>
+                        <td className="p-2 text-white">{i.carrier || "-"}</td>
                         <td className="p-2 text-right tabular-nums text-white">
                           {fmtWeightPairFromLb(Number(i.weightLb || 0))}
                         </td>

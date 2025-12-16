@@ -5,6 +5,19 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 
+type Role = "superadmin" | "admin" | "operador" | "partner_admin" | "client";
+const ROLE_SET: ReadonlySet<string> = new Set(["superadmin", "admin", "operador", "partner_admin", "client"]);
+function isRole(v: unknown): v is Role {
+  return typeof v === "string" && ROLE_SET.has(v);
+}
+function getStringClaim(claims: Record<string, unknown>, key: string): string | undefined {
+  const v = claims[key];
+  return typeof v === "string" ? v : undefined;
+}
+function getBooleanClaim(claims: Record<string, unknown>, key: string): boolean {
+  return claims[key] === true;
+}
+
 interface PartnerContextValue {
   uid: string;
   effectiveRole: string | null;
@@ -25,21 +38,21 @@ export function usePartnerContext() {
 
 // Helper to normalize role, enforcing least-privilege: Firestore partner_admin wins over stale claims
 function normalizeRole(
-  claimRole: string | null,
+  claimRole: string | null | undefined,
   claims: Record<string, unknown>,
-  firestoreRole: string | null
+  firestoreRole: string | null | undefined
 ): string | null {
   // Back-compat: superadmin legacy claim wins
-  if (claims.superadmin === true) return "superadmin";
+  if (getBooleanClaim(claims, "superadmin")) return "superadmin";
 
   // Least privilege: if Firestore says partner_admin, treat as partner regardless of stale claims
   if (firestoreRole === "partner_admin") return "partner_admin";
 
   // Otherwise prefer claimRole if valid
-  if (typeof claimRole === "string" && claimRole.trim()) return claimRole;
+  if (claimRole && isRole(claimRole)) return claimRole;
 
   // Fallback to Firestore role
-  if (typeof firestoreRole === "string" && firestoreRole.trim()) return firestoreRole;
+  if (firestoreRole && isRole(firestoreRole)) return firestoreRole;
 
   return null;
 }
@@ -69,15 +82,17 @@ export function PartnerContextProvider({ children }: { children: ReactNode }) {
         // 1) Get token claims
         const tok = await u.getIdTokenResult(true);
         const claims = tok.claims as Record<string, unknown>;
-        const claimRole = (claims.role as string) || null;
+        const claimRoleRaw = getStringClaim(claims, "role");
+        const claimRole = isRole(claimRoleRaw) ? claimRoleRaw : undefined;
 
         // 2) Get Firestore role
-        let firestoreRole: string | null = null;
+        let firestoreRole: string | null | undefined = undefined;
         try {
           const snap = await getDoc(doc(db, "users", u.uid));
           if (snap.exists()) {
-            const data = snap.data() as any;
-            firestoreRole = typeof data?.role === "string" ? data.role : null;
+            const data = snap.data() as Record<string, unknown>;
+            const r = data["role"];
+            firestoreRole = isRole(r) ? r : null;
           }
         } catch (err) {
           console.error("[PartnerContext] Error reading users/{uid}:", err);
@@ -94,10 +109,10 @@ export function PartnerContextProvider({ children }: { children: ReactNode }) {
         try {
           const userSnap = await getDoc(doc(db, "users", u.uid));
           if (userSnap.exists()) {
-            const userData = userSnap.data() as any;
-            const managedIds = userData?.managedClientIds;
+            const userData = userSnap.data() as Record<string, unknown>;
+            const managedIds = userData["managedClientIds"];
             if (Array.isArray(managedIds) && managedIds.length > 0) {
-              clientIds = managedIds.filter((id: any) => typeof id === "string" && id.trim());
+              clientIds = managedIds.filter((id: unknown) => typeof id === "string" && id.trim());
             }
           }
         } catch (err) {
@@ -129,9 +144,10 @@ export function PartnerContextProvider({ children }: { children: ReactNode }) {
         }
 
         setRoleResolved(true);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
         console.error("[PartnerContext] Error resolving context:", err);
-        setError(err?.message || "Error al obtener permisos");
+        setError(msg || "Error al obtener permisos");
         setRoleResolved(true);
       }
     });

@@ -1,26 +1,28 @@
 // src/app/partner/clientes/page.tsx
 "use client";
 
+import { ClientsManager } from "@/components/clients/ClientsManager";
 import { usePartnerContext } from "@/components/PartnerContext";
 
 export default function PartnerClientesPage() {
-  const { scopedClientIds, effectiveRole, uid } = usePartnerContext();
+  const { roleResolved, effectiveRole } = usePartnerContext();
 
-  return (
-    <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 space-y-4">
-      <h2 className="text-xl font-semibold text-white">Clientes</h2>
-      <p className="text-sm text-white/60">
-        Esta sección está en construcción. Aquí podrás gestionar tus clientes asignados.
-      </p>
-      {process.env.NODE_ENV === "development" && (
-        <div className="mt-4 p-3 rounded-md bg-[#0f2a22] border border-[#1f3f36] text-xs font-mono text-white/70 space-y-1">
-          <div>uid: {uid}</div>
-          <div>effectiveRole: {effectiveRole}</div>
-          <div>scopedClientIds.length: {scopedClientIds.length}</div>
-          <div>scopedClientIds: {JSON.stringify(scopedClientIds)}</div>
-        </div>
-      )}
-    </div>
-  );
+  if (!roleResolved) {
+    return (
+      <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 space-y-4">
+        <p className="text-sm text-white/60">Cargando permisos…</p>
+      </div>
+    );
+  }
+
+  if (roleResolved && effectiveRole !== "partner_admin") {
+    return (
+      <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-red-400/30 backdrop-blur-sm p-6 space-y-2">
+        <h2 className="text-lg font-semibold text-white">Sin permisos</h2>
+        <p className="text-sm text-white/70">No tenés permisos para acceder a esta sección.</p>
+      </div>
+    );
+  }
+
+  return <ClientsManager detailHref={(id) => `/partner/clientes/${id}`} />;
 }
-

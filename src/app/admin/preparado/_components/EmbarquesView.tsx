@@ -26,21 +26,11 @@ import {
 } from "./shared";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
+import { IconTrash } from "@/components/ui/icons";
 
 async function nextShipmentCode(): Promise<string> {
   const n = Math.floor(Date.now() / 1000) % 100000;
   return `E${String(n).padStart(4, "0")}`;
-}
-
-function IconTrash({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
-      <path d="M3 6h18"/>
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-      <path d="M10 11v6M14 11v6"/>
-    </svg>
-  );
 }
 
 export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimaryCls?: string, btnSecondaryCls?: string, linkCls?: string }) {
@@ -84,8 +74,8 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
   // Note: setRows is a dummy setter since we don't have an inbounds state here
   // The hook uses it to update inbound status when removing items, but we don't display inbounds
   const { openBoxDetailByBoxId, modalProps, closeModal } = useBoxDetailModal({
-    boxes,
-    setBoxes,
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     setRows: () => {}, // Dummy setter - we don't track inbounds in this view
     clientsById,
   });

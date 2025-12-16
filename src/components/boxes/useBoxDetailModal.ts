@@ -16,6 +16,7 @@ type BoxRow = {
   type?: "COMERCIAL" | "FRANQUICIA";
   weightLb?: number;
   labelRef?: string;
+  status?: "open" | "closed" | "shipped" | "delivered";
 };
 
 type DetailItem = { id: string; tracking: string; weightLb: number; photoUrl?: string };
@@ -25,10 +26,24 @@ type Client = {
   code: string;
 };
 
+// Helpers para parse seguro de datos de Firestore
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+function asString(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+function asNumber(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+function asStringArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
+}
+
 interface UseBoxDetailModalOptions {
   boxes: BoxRow[];
-  setBoxes: React.Dispatch<React.SetStateAction<any[]>>;
-  setRows: React.Dispatch<React.SetStateAction<any[]>>;
+  setBoxes: React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>;
+  setRows: React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>;
   clientsById: Record<string, Client>;
 }
 
@@ -49,10 +64,20 @@ export function useBoxDetailModal({
     async (boxId: string) => {
       const b = boxes.find((x) => x.id === boxId);
       if (!b) return;
-      const normalizedBox = { ...(b as any), itemIds: Array.isArray((b as any).itemIds) ? (b as any).itemIds : [] } as ModalBox;
+      const bRecord = asRecord(b);
+      const itemIds = bRecord ? asStringArray(bRecord["itemIds"]) : [];
+      const normalizedBox = { ...b, itemIds } as ModalBox;
       setDetailBox(normalizedBox);
-      setEditType((normalizedBox.type as any) || "COMERCIAL");
-      setLabelRef((normalizedBox as any).labelRef || "");
+      
+      // Parse type: solo "COMERCIAL" o "FRANQUICIA"; fallback "COMERCIAL"
+      const typeRaw = bRecord ? asString(bRecord["type"]) : undefined;
+      const type = typeRaw === "FRANQUICIA" ? "FRANQUICIA" : "COMERCIAL";
+      setEditType(type);
+      
+      // Parse labelRef: solo si es string
+      const labelRefRaw = bRecord ? asString(bRecord["labelRef"]) : undefined;
+      setLabelRef(labelRefRaw || "");
+      
       setBoxDetailOpen(true);
       setLoadingDetail(true);
       try {
@@ -60,12 +85,15 @@ export function useBoxDetailModal({
         for (const id of (normalizedBox.itemIds || [])) {
           const snap = await getDoc(doc(db, "inboundPackages", id));
           if (snap.exists()) {
-            const d = snap.data() as any;
+            const rec = asRecord(snap.data());
+            const tracking = asString(rec?.tracking) ?? "";
+            const weightLb = asNumber(rec?.weightLb) ?? 0;
+            const photoUrl = asString(rec?.photoUrl);
             items.push({
               id: snap.id,
-              tracking: d.tracking,
-              weightLb: d.weightLb || 0,
-              photoUrl: d.photoUrl,
+              tracking,
+              weightLb,
+              photoUrl,
             });
           }
         }
@@ -92,7 +120,7 @@ export function useBoxDetailModal({
       setDetailBox({ ...detailBox, itemIds: remainingIds, weightLb: newWeight });
       setBoxes((prev) =>
         prev.map((b) =>
-          b.id === detailBox.id ? { ...b, itemIds: remainingIds, weightLb: newWeight } : b
+          (b as BoxRow).id === detailBox.id ? { ...(b as BoxRow), itemIds: remainingIds, weightLb: newWeight } : b
         )
       );
       setRows((prev) => prev.map((r) => (r.id === itemId ? { ...r, status: "received" } : r)));
@@ -104,7 +132,7 @@ export function useBoxDetailModal({
     if (!detailBox) return;
     await updateDoc(doc(db, "boxes", detailBox.id), { type: editType });
     setDetailBox({ ...detailBox, type: editType });
-    setBoxes((prev) => prev.map((b) => (b.id === detailBox.id ? { ...b, type: editType } : b)));
+    setBoxes((prev) => prev.map((b) => ((b as BoxRow).id === detailBox.id ? { ...(b as BoxRow), type: editType } : b)));
   }, [detailBox, editType, setBoxes]);
 
   const handlePrintLabel = useCallback(() => {
