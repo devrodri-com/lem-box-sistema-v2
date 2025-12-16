@@ -9,10 +9,28 @@ import { usePartnerContext } from "@/components/PartnerContext";
 import type { Client, Box, Shipment } from "@/types/lem";
 import { chunk } from "@/lib/utils";
 
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+function asString(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+function asNumber(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+function asStringArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
+}
+function asBoxStatus(v: unknown): Box["status"] | undefined {
+  return v === "open" || v === "shipped" || v === "closed" || v === "delivered" ? v : undefined;
+}
+
+type PartnerBox = Box & { shipmentId?: string };
+
 export default function PartnerEnviosPage() {
   const { scopedClientIds, effectiveRole, uid, roleResolved } = usePartnerContext();
   const [clients, setClients] = useState<Client[]>([]);
-  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [boxes, setBoxes] = useState<PartnerBox[]>([]);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +94,7 @@ export default function PartnerEnviosPage() {
 
       try {
         const boxSnaps = await Promise.all(boxPromises);
-        const loadedBoxes: Box[] = [];
+        const loadedBoxes: PartnerBox[] = [];
         const seenIds = new Set<string>();
 
         boxSnaps.forEach((snap) => {
@@ -84,7 +102,20 @@ export default function PartnerEnviosPage() {
             const boxId = d.id;
             if (!seenIds.has(boxId)) {
               seenIds.add(boxId);
-              loadedBoxes.push({ id: boxId, ...(d.data() as Omit<Box, "id">) });
+              const rec = asRecord(d.data());
+              const shipmentId = asString(rec?.shipmentId);
+              const b: PartnerBox = {
+                id: boxId,
+                code: asString(rec?.code) ?? "",
+                clientId: asString(rec?.clientId) ?? "",
+                status: asBoxStatus(rec?.status) ?? "open",
+                itemIds: asStringArray(rec?.itemIds),
+                weightLb: asNumber(rec?.weightLb) ?? 0,
+                ...(asString(rec?.country) ? { country: asString(rec?.country) } : {}),
+                ...(asString(rec?.type) ? { type: asString(rec?.type) } : {}),
+                ...(shipmentId ? { shipmentId } : {}),
+              };
+              loadedBoxes.push(b);
             }
           });
         });
@@ -108,9 +139,7 @@ export default function PartnerEnviosPage() {
 
     async function loadShipments() {
       // Recolectar shipmentIds únicos de las cajas
-      const shipmentIds = Array.from(
-        new Set(boxes.map((b) => (b as any).shipmentId).filter((x): x is string => !!x))
-      );
+      const shipmentIds = Array.from(new Set(boxes.map((b) => b.shipmentId).filter((x): x is string => !!x)));
 
       if (shipmentIds.length === 0) {
         setShipments([]);
@@ -177,7 +206,7 @@ export default function PartnerEnviosPage() {
     const summary: Record<string, { boxCount: number; clientCodes: string[] }> = {};
     shipments.forEach((s) => {
       if (!s.id) return;
-      const partnerBoxes = boxes.filter((b) => (b as any).shipmentId === s.id);
+      const partnerBoxes = boxes.filter((b) => b.shipmentId === s.id);
       const clientIdsInShipment = Array.from(new Set(partnerBoxes.map((b) => b.clientId)));
       const clientCodes = clientIdsInShipment
         .map((cid) => clientsById[cid]?.code)

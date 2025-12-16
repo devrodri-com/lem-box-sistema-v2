@@ -122,6 +122,18 @@ export interface ClientProfilePermissions {
   canEditManagerUid: boolean;
 }
 
+// Tipo para el formulario de cliente (incluye campos adicionales del form)
+type ClientForm = Partial<Client> & {
+  state?: string;
+  city?: string;
+  contact?: string;
+  docType?: string;
+  docNumber?: string;
+  postalCode?: string;
+  emailAlt?: string;
+  managerUid?: string | null;
+};
+
 export interface ClientProfileProps {
   clientId: string;
   mode: "admin" | "partner";
@@ -140,7 +152,7 @@ export function ClientProfile({
   partnerAdmins = [],
 }: ClientProfileProps) {
   const [client, setClient] = useState<Client | null>(null);
-  const [form, setForm] = useState<Partial<Client> & { state?: string; city?: string }>({});
+  const [form, setForm] = useState<Partial<ClientForm>>({});
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"datos" | "trackings" | "cajas">("datos");
   const [inbounds, setInbounds] = useState<Inbound[]>([]);
@@ -167,8 +179,29 @@ export function ClientProfile({
   }, [client]);
 
   // Box detail modal hook
+  const boxesForModal = useMemo(() => {
+    return boxes
+      .filter((b): b is Box & { id: string } => typeof b.id === "string" && b.id.length > 0)
+      .map((b) => {
+        const rec = asRecord(b as unknown);
+        const labelRef = asString(rec?.labelRef);
+        const typeRaw = asString(rec?.type);
+        const type: "COMERCIAL" | "FRANQUICIA" | undefined =
+          typeRaw === "COMERCIAL" || typeRaw === "FRANQUICIA" ? typeRaw : undefined;
+        return {
+          id: b.id,
+          code: b.code,
+          clientId: b.clientId,
+          itemIds: b.itemIds,
+          weightLb: b.weightLb,
+          ...(labelRef ? { labelRef } : {}),
+          ...(type ? { type } : {}),
+        };
+      });
+  }, [boxes]);
+
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
-    boxes: boxes.filter((b) => b.id) as any[],
+    boxes: boxesForModal,
     setBoxes,
     setRows: () => {}, // Read-only for inbounds
     clientsById,
@@ -384,7 +417,7 @@ export function ClientProfile({
     if (!client || !canSave) return;
     setSaving(true);
     try {
-      const payload: Partial<Client> & { state?: string; city?: string } = {
+      const patch: Partial<ClientForm> = {
         code: form.code!,
         name: form.name!,
         email: form.email || undefined,
@@ -393,24 +426,23 @@ export function ClientProfile({
         country: form.country!,
         state: form.state || undefined,
         city: form.city || undefined,
-        contact: (form as any).contact || undefined,
-        docType: (form as any).docType || undefined,
-        docNumber: (form as any).docNumber || undefined,
-        postalCode: (form as any).postalCode || undefined,
-        emailAlt: (form as any).emailAlt || undefined,
+        contact: form.contact || undefined,
+        docType: form.docType || undefined,
+        docNumber: form.docNumber || undefined,
+        postalCode: form.postalCode || undefined,
+        emailAlt: form.emailAlt || undefined,
         activo: form.activo !== false,
+        ...(permissions.canEditManagerUid && form.managerUid !== undefined ? { managerUid: form.managerUid || null } : {}),
       };
 
-      // Solo si tiene permiso, modificar managerUid
-      if (permissions.canEditManagerUid && (form as any).managerUid !== undefined) {
-        (payload as any).managerUid = (form as any).managerUid || null;
-      }
-
       const sanitized = Object.fromEntries(
-        Object.entries(payload).filter(([, v]) => v !== undefined)
-      ) as Partial<Client>;
-      await updateDoc(doc(db, "clients", String(client.id)), sanitized as any);
-      setClient({ ...(client as Client), ...(payload as Partial<Client>) });
+        Object.entries(patch).filter(([, v]) => v !== undefined)
+      ) as Record<string, unknown>;
+
+      await updateDoc(doc(db, "clients", String(client.id)), sanitized);
+
+      setClient({ ...client, ...patch });
+      setForm((f) => ({ ...f, ...patch }));
     } finally {
       setSaving(false);
     }
@@ -437,8 +469,9 @@ export function ClientProfile({
       setPwMsg("Contraseña actualizada");
       setPw1("");
       setPw2("");
-    } catch (e: any) {
-      setPwMsg(`Error: ${e?.message || e}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setPwMsg(`Error: ${msg}`);
     } finally {
       setPwSaving(false);
     }
@@ -525,7 +558,7 @@ export function ClientProfile({
               <span className={labelCls}>Contacto / Referente</span>
               <input
                 className={inputCls}
-                value={(form as any).contact || ""}
+                value={form.contact || ""}
                 onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
               />
             </label>
@@ -535,7 +568,7 @@ export function ClientProfile({
               <span className={labelCls}>Tipo de documento</span>
               <div className="[&>div>button]:h-11 [&>div>button]:mt-0">
                 <BrandSelect
-                  value={(form as any).docType || ""}
+                  value={form.docType || ""}
                   onChange={(val) => setForm((f) => ({ ...f, docType: val }))}
                   options={[
                     { value: "", label: "Seleccionar…" },
@@ -549,7 +582,7 @@ export function ClientProfile({
               <span className={labelCls}>Número de documento</span>
               <input
                 className={inputCls}
-                value={(form as any).docNumber || ""}
+                value={form.docNumber || ""}
                 onChange={(e) => setForm((f) => ({ ...f, docNumber: e.target.value }))}
               />
             </label>
@@ -604,7 +637,7 @@ export function ClientProfile({
               <span className={labelCls}>Código postal</span>
               <input
                 className={inputCls}
-                value={(form as any).postalCode || ""}
+                value={form.postalCode || ""}
                 onChange={(e) => setForm((f) => ({ ...f, postalCode: e.target.value }))}
               />
             </label>
@@ -630,7 +663,7 @@ export function ClientProfile({
               <span className={labelCls}>Email adicional</span>
               <input
                 className={inputCls}
-                value={(form as any).emailAlt || ""}
+                value={form.emailAlt || ""}
                 onChange={(e) => setForm((f) => ({ ...f, emailAlt: e.target.value }))}
               />
             </label>
@@ -640,7 +673,7 @@ export function ClientProfile({
                 <span className={labelCls}>Admin asociado</span>
                 <div className="[&>div>button]:h-11 [&>div>button]:mt-0">
                   <BrandSelect
-                    value={(form as any).managerUid || ""}
+                    value={form.managerUid || ""}
                     onChange={(val) => setForm((f) => ({ ...f, managerUid: val || null }))}
                     options={[
                       { value: "", label: "Ninguno" },
