@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail, getIdTokenResult } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import AuthHero from "@/components/auth/AuthHero";
 import LoginCard from "@/components/auth/LoginCard";
@@ -28,6 +28,22 @@ export default function AccederPage() {
     return err?.message ?? "Error al acceder. Probá de nuevo.";
   }
 
+  type Role = "superadmin" | "admin" | "operador" | "partner_admin" | "client";
+  const ROLE_SET: ReadonlySet<string> = new Set(["superadmin", "admin", "operador", "partner_admin", "client"]);
+
+  function isRole(v: unknown): v is Role {
+    return typeof v === "string" && ROLE_SET.has(v);
+  }
+
+  function getStringClaim(claims: Record<string, unknown>, key: string): string | undefined {
+    const v = claims[key];
+    return typeof v === "string" ? v : undefined;
+  }
+
+  function getBooleanClaim(claims: Record<string, unknown>, key: string): boolean {
+    return claims[key] === true;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
@@ -41,15 +57,17 @@ export default function AccederPage() {
         // (Firestore fallbacks are intentionally avoided for security/consistency)
         const tok = await cred.user.getIdTokenResult(true);
         const claims = (tok?.claims ?? {}) as Record<string, unknown>;
-        const claimRole = typeof claims["role"] === "string" ? (claims["role"] as string) : undefined;
+        const claimRoleRaw = getStringClaim(claims, "role");
+        const claimRole = isRole(claimRoleRaw) ? claimRoleRaw : undefined;
 
         // Firestore role (source of truth for partner in this app)
         let firestoreRole: string | undefined;
         try {
           const snap = await getDoc(doc(db, "users", cred.user.uid));
           if (snap.exists()) {
-            const data = snap.data() as any;
-            if (typeof data?.role === "string") firestoreRole = data.role;
+            const data = snap.data() as Record<string, unknown>;
+            const r = data["role"];
+            if (typeof r === "string") firestoreRole = r;
           }
         } catch {
           firestoreRole = undefined;
@@ -68,7 +86,7 @@ export default function AccederPage() {
         }
 
         const isAdmin = Boolean(
-          claims["superadmin"] === true ||
+          getBooleanClaim(claims, "superadmin") ||
           effectiveRole === "admin" ||
           effectiveRole === "superadmin" ||
           effectiveRole === "operador"
