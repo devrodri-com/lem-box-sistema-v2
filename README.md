@@ -267,6 +267,10 @@ pnpm e2e          # Playwright E2E
 
 ## ▶️ Local development
 
+**Prerequisites**
+- **pnpm** is recommended (the repo includes `pnpm-lock.yaml`).
+- **Node.js 18.17+** (or Node 20+) to match Next.js 15 requirements and typical Vercel defaults.
+
 1. Clone the repo and enter the folder:
    ```bash
    cd /Users/lolo/PROYECTOS/lem-box-sistema-v2
@@ -279,13 +283,23 @@ pnpm e2e          # Playwright E2E
 
 3. Create `.env.local` with Firebase credentials:
    ```env
+   # Client SDK (required)
    NEXT_PUBLIC_FIREBASE_API_KEY=xxx
    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=xxx
    NEXT_PUBLIC_FIREBASE_PROJECT_ID=lem-box-sistema-v2
    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=xxx
    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=xxx
    NEXT_PUBLIC_FIREBASE_APP_ID=xxx
+
+   # Firebase Admin SDK (required for /api/admin/*)
+   FIREBASE_PROJECT_ID=lem-box-sistema-v2
+   FIREBASE_CLIENT_EMAIL=xxx@xxx.iam.gserviceaccount.com
+   FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
    ```
+
+   Notes:
+   - `FIREBASE_PRIVATE_KEY` must preserve newlines (`\n`).
+   - Without the Admin SDK vars, `/api/admin/*` will fail in deploy.
 
 4. Start the dev server:
    ```bash

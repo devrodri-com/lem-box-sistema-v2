@@ -130,7 +130,18 @@ service cloud.firestore {
 
     /* ===================== SHIPMENTS ===================== */
     match /shipments/{id} {
-      allow read: if isStaff();
+      allow read: if isStaff()
+        || (
+          resource.data.clientIds != null
+          && clientId() != null
+          && clientId() in resource.data.clientIds
+        )
+        || (
+          resource.data.clientIds != null
+          && isPartnerAdmin()
+          && resource.data.clientIds.hasAny(managedClientIds())
+        );
+
       allow write: if isStaff();
     }
 
@@ -141,7 +152,7 @@ service cloud.firestore {
 
     /* ===================== COUNTERS ===================== */
     match /counters/{id} {
-      allow read, write: if hasAuth();
+      allow read, write: if isStaff();
     }
   }
 }
