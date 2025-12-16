@@ -144,9 +144,10 @@ export function PartnerContextProvider({ children }: { children: ReactNode }) {
         }
 
         setRoleResolved(true);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
         console.error("[PartnerContext] Error resolving context:", err);
-        setError(err?.message || "Error al obtener permisos");
+        setError(msg || "Error al obtener permisos");
         setRoleResolved(true);
       }
     });

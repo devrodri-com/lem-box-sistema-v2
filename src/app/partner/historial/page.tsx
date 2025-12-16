@@ -22,9 +22,6 @@ function asString(v: unknown): string | undefined {
 function asNumber(v: unknown): number | undefined {
   return typeof v === "number" && Number.isFinite(v) ? v : undefined;
 }
-function asBoolean(v: unknown): boolean | undefined {
-  return typeof v === "boolean" ? v : undefined;
-}
 function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
 }
@@ -79,7 +76,7 @@ export default function PartnerHistorialPage() {
 
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
     boxes: boxesForModal,
-    setBoxes: setBoxesWrapper,
+    setBoxes: setBoxesWrapper as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     setRows: () => {}, // Read-only, no actualizamos inbounds
     clientsById,
   });

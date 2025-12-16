@@ -74,8 +74,8 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
   // Note: setRows is a dummy setter since we don't have an inbounds state here
   // The hook uses it to update inbound status when removing items, but we don't display inbounds
   const { openBoxDetailByBoxId, modalProps, closeModal } = useBoxDetailModal({
-    boxes,
-    setBoxes,
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     setRows: () => {}, // Dummy setter - we don't track inbounds in this view
     clientsById,
   });

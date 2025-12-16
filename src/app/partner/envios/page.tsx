@@ -42,6 +42,24 @@ export default function PartnerEnviosPage() {
     return m;
   }, [clients]);
 
+  // Calcular resumen por shipment: cajas del partner y clientes involucrados
+  const shipmentSummary = useMemo(() => {
+    const summary: Record<string, { boxCount: number; clientCodes: string[] }> = {};
+    shipments.forEach((s) => {
+      if (!s.id) return;
+      const partnerBoxes = boxes.filter((b) => b.shipmentId === s.id);
+      const clientIdsInShipment = Array.from(new Set(partnerBoxes.map((b) => b.clientId)));
+      const clientCodes = clientIdsInShipment
+        .map((cid) => clientsById[cid]?.code)
+        .filter((code): code is string => !!code);
+      summary[s.id] = {
+        boxCount: partnerBoxes.length,
+        clientCodes,
+      };
+    });
+    return summary;
+  }, [shipments, boxes, clientsById]);
+
   // Cargar clientes
   useEffect(() => {
     if (!roleResolved || !uid) return;
@@ -200,24 +218,6 @@ export default function PartnerEnviosPage() {
       </div>
     );
   }
-
-  // Calcular resumen por shipment: cajas del partner y clientes involucrados
-  const shipmentSummary = useMemo(() => {
-    const summary: Record<string, { boxCount: number; clientCodes: string[] }> = {};
-    shipments.forEach((s) => {
-      if (!s.id) return;
-      const partnerBoxes = boxes.filter((b) => b.shipmentId === s.id);
-      const clientIdsInShipment = Array.from(new Set(partnerBoxes.map((b) => b.clientId)));
-      const clientCodes = clientIdsInShipment
-        .map((cid) => clientsById[cid]?.code)
-        .filter((code): code is string => !!code);
-      summary[s.id] = {
-        boxCount: partnerBoxes.length,
-        clientCodes,
-      };
-    });
-    return summary;
-  }, [shipments, boxes, clientsById]);
 
   return (
     <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 space-y-4">

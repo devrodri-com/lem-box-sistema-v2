@@ -1,7 +1,7 @@
 // src/components/boxes/BoxDetailModal.tsx
 "use client";
 import { fmtWeightPairFromLb } from "@/lib/weight";
-import { BrandSelect, type BrandOption } from "@/components/ui/BrandSelect";
+import { BrandSelect } from "@/components/ui/BrandSelect";
 
 // Types
 type Box = {
@@ -92,7 +92,11 @@ export function BoxDetailModal({
             <div className="min-w-[180px]">
               <BrandSelect
                 value={editType}
-                onChange={(val) => onChangeType(val as any)}
+                onChange={(val) => {
+                  if (val === "COMERCIAL" || val === "FRANQUICIA") {
+                    onChangeType(val);
+                  }
+                }}
                 options={[
                   { value: "COMERCIAL", label: "Comercial" },
                   { value: "FRANQUICIA", label: "Franquicia" },

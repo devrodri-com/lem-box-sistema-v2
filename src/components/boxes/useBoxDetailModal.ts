@@ -16,6 +16,7 @@ type BoxRow = {
   type?: "COMERCIAL" | "FRANQUICIA";
   weightLb?: number;
   labelRef?: string;
+  status?: "open" | "closed" | "shipped" | "delivered";
 };
 
 type DetailItem = { id: string; tracking: string; weightLb: number; photoUrl?: string };
@@ -41,8 +42,8 @@ function asStringArray(v: unknown): string[] {
 
 interface UseBoxDetailModalOptions {
   boxes: BoxRow[];
-  setBoxes: React.Dispatch<React.SetStateAction<any[]>>;
-  setRows: React.Dispatch<React.SetStateAction<any[]>>;
+  setBoxes: React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>;
+  setRows: React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>;
   clientsById: Record<string, Client>;
 }
 
@@ -119,7 +120,7 @@ export function useBoxDetailModal({
       setDetailBox({ ...detailBox, itemIds: remainingIds, weightLb: newWeight });
       setBoxes((prev) =>
         prev.map((b) =>
-          b.id === detailBox.id ? { ...b, itemIds: remainingIds, weightLb: newWeight } : b
+          (b as BoxRow).id === detailBox.id ? { ...(b as BoxRow), itemIds: remainingIds, weightLb: newWeight } : b
         )
       );
       setRows((prev) => prev.map((r) => (r.id === itemId ? { ...r, status: "received" } : r)));
@@ -131,7 +132,7 @@ export function useBoxDetailModal({
     if (!detailBox) return;
     await updateDoc(doc(db, "boxes", detailBox.id), { type: editType });
     setDetailBox({ ...detailBox, type: editType });
-    setBoxes((prev) => prev.map((b) => (b.id === detailBox.id ? { ...b, type: editType } : b)));
+    setBoxes((prev) => prev.map((b) => ((b as BoxRow).id === detailBox.id ? { ...(b as BoxRow), type: editType } : b)));
   }, [detailBox, editType, setBoxes]);
 
   const handlePrintLabel = useCallback(() => {

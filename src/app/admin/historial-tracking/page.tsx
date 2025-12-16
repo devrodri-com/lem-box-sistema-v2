@@ -97,9 +97,9 @@ function PageInner() {
 
   // Box detail modal hook
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
-    boxes,
-    setBoxes,
-    setRows,
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
+    setRows: setRows as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     clientsById,
   });
 

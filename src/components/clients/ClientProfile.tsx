@@ -202,7 +202,7 @@ export function ClientProfile({
 
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
     boxes: boxesForModal,
-    setBoxes,
+    setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     setRows: () => {}, // Read-only for inbounds
     clientsById,
   });

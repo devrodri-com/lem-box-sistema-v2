@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { signInWithEmailAndPassword, sendPasswordResetEmail, getIdTokenResult } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import AuthHero from "@/components/auth/AuthHero";
 import LoginCard from "@/components/auth/LoginCard";
