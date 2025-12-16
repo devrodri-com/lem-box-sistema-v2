@@ -246,8 +246,12 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
         try {
           const snap = await getDoc(doc(db, "users", u.uid));
           if (snap.exists()) {
-            const data = snap.data() as any;
-            firestoreRole = (data.role as string) || null;
+            const data = snap.data();
+            if (data && typeof data === "object") {
+              const rec = data as Record<string, unknown>;
+              const role = rec.role;
+              firestoreRole = typeof role === "string" ? role : null;
+            }
           }
         } catch {
           firestoreRole = null;
@@ -276,11 +280,21 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
           getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
             .then((snap) => {
               const admins = snap.docs.map((d) => {
-                const data = d.data() as any;
+                const data = d.data();
+                if (data && typeof data === "object") {
+                  const rec = data as Record<string, unknown>;
+                  const email = rec.email;
+                  const displayName = rec.displayName;
+                  return {
+                    uid: d.id,
+                    email: typeof email === "string" ? email : "",
+                    displayName: typeof displayName === "string" ? displayName : "",
+                  };
+                }
                 return {
                   uid: d.id,
-                  email: (data.email as string) || "",
-                  displayName: (data.displayName as string) || "",
+                  email: "",
+                  displayName: "",
                 };
               });
               setPartnerAdmins(admins);
@@ -295,8 +309,13 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
         getDoc(doc(db, "users", u.uid))
           .then((snap) => {
             if (snap.exists()) {
-              const data = snap.data() as any;
-              const role = (data.role as string) || null;
+              const data = snap.data();
+              let role: string | null = null;
+              if (data && typeof data === "object") {
+                const rec = data as Record<string, unknown>;
+                const roleValue = rec.role;
+                role = typeof roleValue === "string" ? roleValue : null;
+              }
 
               setUserRole(role);
 
@@ -320,11 +339,21 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
                   .then((snap) => {
                     const admins = snap.docs.map((d) => {
-                      const data = d.data() as any;
+                      const data = d.data();
+                      if (data && typeof data === "object") {
+                        const rec = data as Record<string, unknown>;
+                        const email = rec.email;
+                        const displayName = rec.displayName;
+                        return {
+                          uid: d.id,
+                          email: typeof email === "string" ? email : "",
+                          displayName: typeof displayName === "string" ? displayName : "",
+                        };
+                      }
                       return {
                         uid: d.id,
-                        email: (data.email as string) || "",
-                        displayName: (data.displayName as string) || "",
+                        email: "",
+                        displayName: "",
                       };
                     });
                     setPartnerAdmins(admins);
@@ -365,11 +394,21 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
           getDocs(query(collection(db, "users"), where("role", "==", "partner_admin")))
             .then((snap) => {
               const admins = snap.docs.map((d) => {
-                const data = d.data() as any;
+                const data = d.data();
+                if (data && typeof data === "object") {
+                  const rec = data as Record<string, unknown>;
+                  const email = rec.email;
+                  const displayName = rec.displayName;
+                  return {
+                    uid: d.id,
+                    email: typeof email === "string" ? email : "",
+                    displayName: typeof displayName === "string" ? displayName : "",
+                  };
+                }
                 return {
                   uid: d.id,
-                  email: (data.email as string) || "",
-                  displayName: (data.displayName as string) || "",
+                  email: "",
+                  displayName: "",
                 };
               });
               setPartnerAdmins(admins);

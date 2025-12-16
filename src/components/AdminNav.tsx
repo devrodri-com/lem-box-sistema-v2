@@ -19,6 +19,22 @@ const clientTabs = [
   { href: "/mi", label: "Mi perfil" },
 ];
 
+// Tipos mínimos para parse seguro
+type NavItem = {
+  href: string;
+  label: string;
+};
+
+type UserLike = {
+  role?: string;
+  [key: string]: unknown;
+};
+
+// Helper para parse seguro
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+}
+
 export default function AdminNav() {
   const pathname = usePathname();
   const [isSuper, setIsSuper] = useState(false);
@@ -38,21 +54,34 @@ export default function AdminNav() {
       }
       try {
         const r = await user.getIdTokenResult(true);
-        const c = r.claims as any;
-        const superadmin = Boolean(c?.superadmin || c?.role === "superadmin");
-        let role: string | null = (c?.role as string) || (superadmin ? "admin" : null);
+        const c = asRecord(r.claims);
+        const superadmin = Boolean(c?.superadmin === true || c?.role === "superadmin");
+        const claimRole = c?.role;
+        let role: string | null = (typeof claimRole === "string" ? claimRole : null) || (superadmin ? "admin" : null);
 
         // If no role in claims, try Firestore users collection
         if (!role) {
           // First try doc id = uid
           const snap = await getDoc(doc(db, "users", user.uid));
           if (snap.exists()) {
-            role = (snap.data() as any)?.role || null;
+            const data = snap.data();
+            if (data && typeof data === "object") {
+              const rec = data as Record<string, unknown>;
+              const roleValue = rec.role;
+              role = typeof roleValue === "string" ? roleValue : null;
+            }
           } else {
             // Fallback: query by uid field
             const q = query(collection(db, "users"), where("uid", "==", user.uid), limit(1));
             const s = await getDocs(q);
-            if (!s.empty) role = (s.docs[0].data() as any)?.role || null;
+            if (!s.empty) {
+              const data = s.docs[0].data();
+              if (data && typeof data === "object") {
+                const rec = data as Record<string, unknown>;
+                const roleValue = rec.role;
+                role = typeof roleValue === "string" ? roleValue : null;
+              }
+            }
           }
         }
 
