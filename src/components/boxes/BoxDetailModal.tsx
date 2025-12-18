@@ -58,6 +58,7 @@ export interface BoxDetailModalProps {
   onChangeWeightOverrideLb: (v: string) => void;
   onSaveWeightOverride: () => void;
   hideItemsWhenOverride?: boolean;
+  canEditAdminFields: boolean;
   onClose: () => void;
 }
 
@@ -80,6 +81,7 @@ export function BoxDetailModal({
   onChangeWeightOverrideLb,
   onSaveWeightOverride,
   hideItemsWhenOverride = false,
+  canEditAdminFields,
   onClose,
 }: BoxDetailModalProps) {
   if (!open || !box) return null;
@@ -125,29 +127,31 @@ export function BoxDetailModal({
               Aplicar
             </button>
           </div>
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-            <label className="text-sm text-white/60 md:col-span-2">
-              Referencia
-              <input
-                className={inputCls}
-                style={INPUT_BG_STYLE}
-                value={labelRef}
-                onChange={(e) => onChangeLabelRef(e.target.value)}
-                onBlur={() => {
-                  void onBlurSaveLabelRef();
-                }}
-                placeholder="Campo editable"
-              />
-            </label>
-            <div className="flex justify-end">
-              <button
-                className="h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
-                onClick={onPrintLabel}
-              >
-                Imprimir etiqueta
-              </button>
+          {canEditAdminFields && (
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <label className="text-sm text-white/60 md:col-span-2">
+                Referencia
+                <input
+                  className={inputCls}
+                  style={INPUT_BG_STYLE}
+                  value={labelRef}
+                  onChange={(e) => onChangeLabelRef(e.target.value)}
+                  onBlur={() => {
+                    void onBlurSaveLabelRef();
+                  }}
+                  placeholder="Campo editable"
+                />
+              </label>
+              <div className="flex justify-end">
+                <button
+                  className="h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
+                  onClick={onPrintLabel}
+                >
+                  Imprimir etiqueta
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
         {loading ? (
           <div className="text-sm text-white/60">Cargando…</div>
@@ -218,10 +222,11 @@ export function BoxDetailModal({
             })()}
           </>
         )}
-        <div className="mt-4 text-sm text-white/80 font-medium">
-          Peso total: {weightText}
+        <div className="mt-4 flex items-baseline gap-2">
+          <span className="text-sm text-white/60">Peso total:</span>
+          <span className="text-base font-semibold text-white">{weightText}</span>
         </div>
-        {canEditWeightOverride && (
+        {canEditAdminFields && canEditWeightOverride && (
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
             <label className="text-sm text-white/60 md:col-span-2">
               Peso de la caja (override, kg)

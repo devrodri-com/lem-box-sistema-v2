@@ -66,33 +66,48 @@ export function useBoxDetailModal({
   const [labelRef, setLabelRef] = useState<string>("");
   const [weightOverrideLb, setWeightOverrideLb] = useState<string>("");
   const [canEditWeightOverride, setCanEditWeightOverride] = useState<boolean>(false);
+  const [canEditAdminFields, setCanEditAdminFields] = useState<boolean>(false);
 
   // Verificar permisos de admin/superadmin si no se proporciona canEditWeightOverride
   useEffect(() => {
     if (canEditWeightOverrideProp !== undefined) {
       setCanEditWeightOverride(canEditWeightOverrideProp);
+      // Admin fields follow the same gate.
+      setCanEditAdminFields(Boolean(canEditWeightOverrideProp));
       return;
     }
     const checkPermissions = async () => {
       const user = auth.currentUser;
       if (!user) {
         setCanEditWeightOverride(false);
+        setCanEditAdminFields(false);
         return;
       }
       try {
         const tokenResult = await user.getIdTokenResult(true);
         const token = tokenResult.claims as any;
-        const role = String(token.role || "");
-        const isPartner = role === "partner_admin";
-        const isPriv = !isPartner && (
-          role === "admin" || 
-          role === "superadmin" || 
-          token.superadmin === true || 
-          token.admin === true
+        const roleRaw = String(token.role || "");
+        const role = roleRaw.toLowerCase();
+
+        // Treat ANY partner-like role/claim as partner (defense in depth against stale/legacy claims).
+        const isPartner =
+          role.includes("partner") ||
+          token.partner_admin === true ||
+          token.partner === true;
+
+        // Only privileged staff can edit admin-only fields.
+        const isPrivileged = !isPartner && (
+          role === "admin" ||
+          role === "superadmin" ||
+          token.admin === true ||
+          token.superadmin === true
         );
-        setCanEditWeightOverride(isPriv);
+
+        setCanEditWeightOverride(isPrivileged);
+        setCanEditAdminFields(isPrivileged);
       } catch {
         setCanEditWeightOverride(false);
+        setCanEditAdminFields(false);
       }
     };
     void checkPermissions();
@@ -254,6 +269,7 @@ export function useBoxDetailModal({
     onChangeWeightOverrideLb: setWeightOverrideLb,
     onSaveWeightOverride: saveWeightOverride,
     hideItemsWhenOverride,
+    canEditAdminFields,
     onClose: closeModal,
   };
 
