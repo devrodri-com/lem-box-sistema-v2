@@ -18,6 +18,7 @@ import { BrandSelect, type BrandOption } from "@/components/ui/BrandSelect";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 import Link from "next/link";
+import { IconPhoto } from "@/components/ui/icons";
 
 const COUNTRIES: string[] = ["Uruguay", "Argentina", "United States"];
 
@@ -253,7 +254,7 @@ export function ClientProfile({
             const tracking = asString(rec.tracking) ?? "";
             const carrier = asString(rec.carrier) as Inbound["carrier"] | undefined;
             const weightLb = asNumber(rec.weightLb) ?? 0;
-            const weightKg = asNumber(rec.weightKg);
+            const weightKg = asNumber(rec.weightKg) ?? (weightLb ? weightLb / 2.20462 : 0);
             const photoUrl = asString(rec.photoUrl);
             const invoiceUrl = asString(rec.invoiceUrl);
             const status = asString(rec.status) as Inbound["status"] | undefined;
@@ -286,7 +287,7 @@ export function ClientProfile({
             const tracking = asString(rec.tracking) ?? "";
             const carrier = asString(rec.carrier) as Inbound["carrier"] | undefined;
             const weightLb = asNumber(rec.weightLb) ?? 0;
-            const weightKg = asNumber(rec.weightKg);
+            const weightKg = asNumber(rec.weightKg) ?? (weightLb ? weightLb / 2.20462 : 0);
             const photoUrl = asString(rec.photoUrl);
             const invoiceUrl = asString(rec.invoiceUrl);
             const status = asString(rec.status) as Inbound["status"] | undefined;
@@ -479,7 +480,7 @@ export function ClientProfile({
 
   // Unified styles
   const inputCls =
-    "h-11 w-full rounded-md border border-[#1f3f36] !bg-[#0f2a22] px-3 !text-white caret-white placeholder:text-white/40 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+    "h-10 w-full rounded-md border border-[#1f3f36] !bg-[#0f2a22] px-3 !text-white caret-white placeholder:text-white/40 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
   const labelCls = "text-xs font-medium text-white/60";
   const cardCls = "rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6";
   const btnPrimaryCls =
@@ -500,8 +501,9 @@ export function ClientProfile({
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28 space-y-6">
-      <header className="flex items-center justify-between">
+    <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28">
+      <div className="mx-auto w-full max-w-5xl space-y-6">
+        <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {backHref ? (
             <Link href={backHref} className="text-sm text-white/70 hover:text-white" aria-label={backLabel}>
@@ -534,10 +536,10 @@ export function ClientProfile({
               e.preventDefault();
               save();
             }}
-            className="grid gap-4 md:grid-cols-20"
+            className="grid gap-3 md:grid-cols-4"
           >
             {/* Fila 1: Código 20% · Nombre 40% · Contacto/Referencia 40% */}
-            <label className="grid gap-1 md:col-span-4">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>Código</span>
               <input
                 className={`${inputCls} !bg-[#071f19] !text-white/70`}
@@ -546,7 +548,7 @@ export function ClientProfile({
                 aria-readonly="true"
               />
             </label>
-            <label className="grid gap-1 md:col-span-8">
+            <label className="grid gap-0.5 md:col-span-2">
               <span className={labelCls}>Nombre</span>
               <input
                 className={inputCls}
@@ -554,7 +556,7 @@ export function ClientProfile({
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
             </label>
-            <label className="grid gap-1 md:col-span-8">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>Contacto / Referente</span>
               <input
                 className={inputCls}
@@ -564,9 +566,9 @@ export function ClientProfile({
             </label>
 
             {/* Fila 2: Tipo doc 20% · Nº doc 40% */}
-            <label className="grid gap-1 md:col-span-4">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>Tipo de documento</span>
-              <div className="[&>div>button]:h-11 [&>div>button]:mt-0">
+              <div className="[&>div>button]:h-10 [&>div>button]:mt-0">
                 <BrandSelect
                   value={form.docType || ""}
                   onChange={(val) => setForm((f) => ({ ...f, docType: val }))}
@@ -578,7 +580,7 @@ export function ClientProfile({
                 />
               </div>
             </label>
-            <label className="grid gap-1 md:col-span-8">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>Número de documento</span>
               <input
                 className={inputCls}
@@ -586,12 +588,11 @@ export function ClientProfile({
                 onChange={(e) => setForm((f) => ({ ...f, docNumber: e.target.value }))}
               />
             </label>
-            <div className="md:col-span-8" />
 
             {/* Fila 3: País 30% · Estado 30% · Ciudad 40% */}
-            <label className="grid gap-1 md:col-span-6">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>País</span>
-              <div className="[&>div>button]:h-11 [&>div>button]:mt-0">
+              <div className="[&>div>button]:h-10 [&>div>button]:mt-0">
                 <BrandSelect
                   value={form.country || ""}
                   onChange={(val) => setForm((f) => ({ ...f, country: val, state: "" }))}
@@ -600,9 +601,9 @@ export function ClientProfile({
                 />
               </div>
             </label>
-            <label className="grid gap-1 md:col-span-6">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>Estado / Depto / Provincia</span>
-              <div className="[&>div>button]:h-11 [&>div>button]:mt-0">
+              <div className="[&>div>button]:h-10 [&>div>button]:mt-0">
                 <BrandSelect
                   value={form.state || ""}
                   onChange={(val) => setForm((f) => ({ ...f, state: val }))}
@@ -615,7 +616,7 @@ export function ClientProfile({
                 />
               </div>
             </label>
-            <label className="grid gap-1 md:col-span-8">
+            <label className="grid gap-0.5 md:col-span-2">
               <span className={labelCls}>Ciudad</span>
               <input
                 className={inputCls}
@@ -625,7 +626,7 @@ export function ClientProfile({
             </label>
 
             {/* Fila 4: Dirección 80% · Código postal 20% */}
-            <label className="grid gap-1 md:col-span-16">
+            <label className="grid gap-0.5 md:col-span-3">
               <span className={labelCls}>Dirección</span>
               <input
                 className={inputCls}
@@ -633,7 +634,7 @@ export function ClientProfile({
                 onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
               />
             </label>
-            <label className="grid gap-1 md:col-span-4">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>Código postal</span>
               <input
                 className={inputCls}
@@ -643,7 +644,7 @@ export function ClientProfile({
             </label>
 
             {/* Fila 5: Teléfono 30% · Email 35% · Email adicional 35% */}
-            <label className="grid gap-1 md:col-span-6">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>Teléfono</span>
               <input
                 className={inputCls}
@@ -651,7 +652,7 @@ export function ClientProfile({
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
               />
             </label>
-            <label className="grid gap-1 md:col-span-7">
+            <label className="grid gap-0.5 md:col-span-2">
               <span className={labelCls}>Email</span>
               <input
                 className={inputCls}
@@ -659,7 +660,7 @@ export function ClientProfile({
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               />
             </label>
-            <label className="grid gap-1 md:col-span-7">
+            <label className="grid gap-0.5 md:col-span-1">
               <span className={labelCls}>Email adicional</span>
               <input
                 className={inputCls}
@@ -669,9 +670,9 @@ export function ClientProfile({
             </label>
 
             {permissions.canEditManagerUid && partnerAdmins.length > 0 ? (
-              <label className="grid gap-1 md:col-span-20">
+              <label className="grid gap-0.5 md:col-span-2">
                 <span className={labelCls}>Admin asociado</span>
-                <div className="[&>div>button]:h-11 [&>div>button]:mt-0">
+                <div className="[&>div>button]:h-10 [&>div>button]:mt-0">
                   <BrandSelect
                     value={form.managerUid || ""}
                     onChange={(val) => setForm((f) => ({ ...f, managerUid: val || null }))}
@@ -687,12 +688,12 @@ export function ClientProfile({
                 </div>
               </label>
             ) : mode === "partner" ? (
-              <div className="md:col-span-20 text-xs text-white/60">
+              <div className="md:col-span-2 text-xs text-white/60">
                 No puedes cambiar el admin asociado de este cliente.
               </div>
             ) : null}
 
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 md:col-span-2">
               <input
                 type="checkbox"
                 checked={form.activo !== false}
@@ -701,7 +702,7 @@ export function ClientProfile({
               <span className="text-sm">Activo</span>
             </label>
 
-            <div className="md:col-span-20 flex justify-end gap-3 pt-2">
+            <div className="md:col-span-4 flex justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => client && setForm(client)}
@@ -722,7 +723,7 @@ export function ClientProfile({
                 Solo super admin. Mínimo 8 caracteres. Esto cambia la contraseña del usuario del
                 cliente.
               </p>
-              <label className="grid gap-1">
+              <label className="grid gap-0.5">
                 <span className={labelCls}>Nueva contraseña</span>
                 <input
                   type="password"
@@ -731,7 +732,7 @@ export function ClientProfile({
                   onChange={(e) => setPw1(e.target.value)}
                 />
               </label>
-              <label className="grid gap-1">
+              <label className="grid gap-0.5">
                 <span className={labelCls}>Repetir contraseña</span>
                 <input
                   type="password"
@@ -783,7 +784,7 @@ export function ClientProfile({
                       </td>
                       <td className="p-2 font-mono text-white">{r.tracking}</td>
                       <td className="p-2 text-white">
-                        {Number(r.weightLb || 0).toFixed(2)} lb / {Number(r.weightKg || 0).toFixed(2)} kg
+                        {Number(r.weightLb || 0).toFixed(2)} lb / {Number((r.weightKg ?? (Number(r.weightLb || 0) / 2.20462)) || 0).toFixed(2)} kg
                       </td>
                       <td className="p-2 text-white">
                         {r.status === "boxed"
@@ -802,9 +803,11 @@ export function ClientProfile({
                             href={r.photoUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
+                            aria-label="Ver foto"
+                            title="Ver foto"
+                            className="inline-flex items-center justify-center text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
                           >
-                            📷
+                            <IconPhoto />
                           </a>
                         ) : (
                           "-"
@@ -878,7 +881,8 @@ export function ClientProfile({
         </section>
       ) : null}
 
-      <BoxDetailModal {...modalProps} />
+        <BoxDetailModal {...modalProps} />
+      </div>
     </main>
   );
 }
