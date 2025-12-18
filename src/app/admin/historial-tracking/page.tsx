@@ -97,10 +97,11 @@ function PageInner() {
 
   // Box detail modal hook
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
-    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; weightOverrideLb?: number | null; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
     setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     setRows: setRows as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     clientsById,
+    hideItemsWhenOverride: false, // Admin siempre ve items
   });
 
   const boxByInbound = useMemo(() => {
@@ -504,6 +505,7 @@ function PageInner() {
                   <th className="text-left p-2">Tipo</th>
                   <th className="text-left p-2">Items</th>
                   <th className="text-left p-2">Peso</th>
+                  <th className="text-left p-2">Estado</th>
                   <th className="text-left p-2">Acciones</th>
                 </tr>
               </thead>
@@ -526,10 +528,13 @@ function PageInner() {
                         {b.type === "FRANQUICIA" ? "Franquicia" : "Comercial"}
                       </td>
                       <td className="p-2">{b.itemIds?.length || 0}</td>
-                      <td className="p-2">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
+                      <td className="p-2 whitespace-nowrap">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
+                      <td className="p-2">
+                        <StatusBadge scope="package" status="boxed" />
+                      </td>
                       <td className="p-2">
                         <button
-                          className="px-2 py-1 border rounded"
+                          className="inline-flex items-center justify-center rounded-md border border-[#1f3f36] bg-white/5 px-3 py-1.5 text-white/90 hover:bg-white/10"
                           onClick={() => openBoxDetailByBoxId(b.id)}
                         >
                           Ver
@@ -540,7 +545,7 @@ function PageInner() {
                 })}
                 {!filteredBoxes.length ? (
                   <tr>
-                    <td className="p-3 text-white/40" colSpan={6}>
+                    <td className="p-3 text-white/40" colSpan={7}>
                       Sin cajas.
                     </td>
                   </tr>
@@ -588,7 +593,7 @@ function PageInner() {
                         </a>
                       </td>
                       <td className="p-2">{r.carrier}</td>
-                      <td className="p-2">
+                      <td className="p-2 whitespace-nowrap">
                         {fmtWeightPairFromLb(Number(r.weightLb || 0))}
                       </td>
                       <td className="p-2">

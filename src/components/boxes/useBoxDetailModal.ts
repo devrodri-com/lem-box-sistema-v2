@@ -1,7 +1,7 @@
 // src/components/boxes/useBoxDetailModal.ts
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { printBoxLabel } from "@/lib/printBoxLabel";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import type { BoxDetailModalProps } from "./BoxDetailModal";
@@ -15,6 +15,7 @@ type BoxRow = {
   clientId: string;
   type?: "COMERCIAL" | "FRANQUICIA";
   weightLb?: number;
+  weightOverrideLb?: number | null;
   labelRef?: string;
   status?: "open" | "closed" | "shipped" | "delivered";
 };
@@ -45,6 +46,8 @@ interface UseBoxDetailModalOptions {
   setBoxes: React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>;
   setRows: React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>;
   clientsById: Record<string, Client>;
+  canEditWeightOverride?: boolean;
+  hideItemsWhenOverride?: boolean;
 }
 
 export function useBoxDetailModal({
@@ -52,6 +55,8 @@ export function useBoxDetailModal({
   setBoxes,
   setRows,
   clientsById,
+  canEditWeightOverride: canEditWeightOverrideProp,
+  hideItemsWhenOverride = false,
 }: UseBoxDetailModalOptions) {
   const [boxDetailOpen, setBoxDetailOpen] = useState(false);
   const [detailBox, setDetailBox] = useState<ModalBox | null>(null);
@@ -59,6 +64,39 @@ export function useBoxDetailModal({
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [editType, setEditType] = useState<"COMERCIAL" | "FRANQUICIA">("COMERCIAL");
   const [labelRef, setLabelRef] = useState<string>("");
+  const [weightOverrideLb, setWeightOverrideLb] = useState<string>("");
+  const [canEditWeightOverride, setCanEditWeightOverride] = useState<boolean>(false);
+
+  // Verificar permisos de admin/superadmin si no se proporciona canEditWeightOverride
+  useEffect(() => {
+    if (canEditWeightOverrideProp !== undefined) {
+      setCanEditWeightOverride(canEditWeightOverrideProp);
+      return;
+    }
+    const checkPermissions = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        setCanEditWeightOverride(false);
+        return;
+      }
+      try {
+        const tokenResult = await user.getIdTokenResult(true);
+        const token = tokenResult.claims as any;
+        const role = String(token.role || "");
+        const isPartner = role === "partner_admin";
+        const isPriv = !isPartner && (
+          role === "admin" || 
+          role === "superadmin" || 
+          token.superadmin === true || 
+          token.admin === true
+        );
+        setCanEditWeightOverride(isPriv);
+      } catch {
+        setCanEditWeightOverride(false);
+      }
+    };
+    void checkPermissions();
+  }, [canEditWeightOverrideProp]);
 
   const openBoxDetailByBoxId = useCallback(
     async (boxId: string) => {
@@ -78,23 +116,46 @@ export function useBoxDetailModal({
       const labelRefRaw = bRecord ? asString(bRecord["labelRef"]) : undefined;
       setLabelRef(labelRefRaw || "");
       
+      // Parse weightOverrideLb: convertir de lb a kg para mostrar en el input
+      const weightOverrideValue = bRecord ? bRecord["weightOverrideLb"] : undefined;
+      if (weightOverrideValue === null) {
+        setWeightOverrideLb("");
+      } else {
+        const weightOverrideNum = asNumber(weightOverrideValue);
+        if (weightOverrideNum !== undefined) {
+          const kg = weightOverrideNum / 2.20462;
+          setWeightOverrideLb(kg ? kg.toFixed(2) : "");
+        } else {
+          setWeightOverrideLb("");
+        }
+      }
+      
       setBoxDetailOpen(true);
       setLoadingDetail(true);
       try {
         const items: DetailItem[] = [];
-        for (const id of (normalizedBox.itemIds || [])) {
-          const snap = await getDoc(doc(db, "inboundPackages", id));
-          if (snap.exists()) {
-            const rec = asRecord(snap.data());
-            const tracking = asString(rec?.tracking) ?? "";
-            const weightLb = asNumber(rec?.weightLb) ?? 0;
-            const photoUrl = asString(rec?.photoUrl);
-            items.push({
-              id: snap.id,
-              tracking,
-              weightLb,
-              photoUrl,
-            });
+        const shouldHideItems = Boolean(hideItemsWhenOverride && normalizedBox.weightOverrideLb != null);
+        if (shouldHideItems) {
+          setDetailItems([]);
+          setLoadingDetail(false);
+          return;
+        }
+        // Cargar items si hay itemIds
+        if (Array.isArray(normalizedBox.itemIds) && normalizedBox.itemIds.length) {
+          for (const id of normalizedBox.itemIds) {
+            const snap = await getDoc(doc(db, "inboundPackages", id));
+            if (snap.exists()) {
+              const rec = asRecord(snap.data());
+              const tracking = asString(rec?.tracking) ?? "";
+              const weightLb = asNumber(rec?.weightLb) ?? 0;
+              const photoUrl = asString(rec?.photoUrl);
+              items.push({
+                id: snap.id,
+                tracking,
+                weightLb,
+                photoUrl,
+              });
+            }
           }
         }
         setDetailItems(items);
@@ -151,10 +212,28 @@ export function useBoxDetailModal({
     setDetailBox({ ...detailBox, labelRef });
   }, [detailBox, labelRef]);
 
+  const saveWeightOverride = useCallback(async () => {
+    if (!detailBox) return;
+    const raw = weightOverrideLb.trim();
+    const parsedKg = raw === "" ? null : Number(raw);
+    if (parsedKg !== null && (!Number.isFinite(parsedKg) || parsedKg < 0)) {
+      alert("Peso inválido");
+      return;
+    }
+    const parsedLb = parsedKg === null ? null : parsedKg * 2.20462;
+    await updateDoc(doc(db, "boxes", detailBox.id), { weightOverrideLb: parsedLb });
+    setDetailBox({ ...detailBox, weightOverrideLb: parsedLb as any });
+    setBoxes(prev => prev.map(b => (b as any).id === detailBox.id ? { ...(b as any), weightOverrideLb: parsedLb } : b));
+  }, [detailBox, weightOverrideLb, setBoxes]);
+
   const closeModal = useCallback(() => {
     setBoxDetailOpen(false);
     setDetailBox(null);
   }, []);
+
+  const effectiveLb = (detailBox as any)?.weightOverrideLb != null
+    ? Number((detailBox as any).weightOverrideLb)
+    : Number(detailBox?.weightLb || 0);
 
   const modalProps: BoxDetailModalProps = {
     open: boxDetailOpen,
@@ -169,7 +248,12 @@ export function useBoxDetailModal({
     onBlurSaveLabelRef: saveLabelRef,
     onPrintLabel: handlePrintLabel,
     onRemoveItem: removeItemFromBox,
-    weightText: fmtWeightPairFromLb(Number(detailBox?.weightLb || 0)),
+    weightText: fmtWeightPairFromLb(effectiveLb),
+    canEditWeightOverride,
+    weightOverrideLbValue: weightOverrideLb,
+    onChangeWeightOverrideLb: setWeightOverrideLb,
+    onSaveWeightOverride: saveWeightOverride,
+    hideItemsWhenOverride,
     onClose: closeModal,
   };
 

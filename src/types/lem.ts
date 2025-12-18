@@ -42,6 +42,7 @@ export interface Box {
   clientId: string;
   itemIds?: string[]; // inbound IDs
   weightLb?: number;
+  weightOverrideLb?: number | null;
   status: "open" | "closed" | "shipped" | "delivered";
   createdAt?: number;
   closedAt?: number;

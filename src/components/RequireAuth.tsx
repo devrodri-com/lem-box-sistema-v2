@@ -38,12 +38,13 @@ export default function RequireAuth({ children, requireAdmin = false }: { childr
         const claimRoleRaw = getStringClaim(claims, "role");
         const claimRole = isRole(claimRoleRaw) ? claimRoleRaw : undefined;
         const isSuperAdminClaim = getBooleanClaim(claims, "superadmin");
-        isAdmin = Boolean(
+        const isStaff = Boolean(
           isSuperAdminClaim ||
             claimRole === "admin" ||
             claimRole === "superadmin" ||
-            claimRole === "partner_admin"
+            claimRole === "operador"
         );
+        isAdmin = isStaff;
 
         // 2) Si no hay rol en claims, mirar en Firestore users
         if (!isAdmin) {
@@ -64,13 +65,14 @@ export default function RequireAuth({ children, requireAdmin = false }: { childr
               role = isRole(r) ? r : null;
             }
           }
-          isAdmin = role === "admin" || role === "superadmin" || role === "partner_admin";
+          // Least privilege: partner_admin in Firestore must NOT be treated as staff.
+          isAdmin = role === "admin" || role === "superadmin" || role === "operador";
         }
 
-        // 3) Último fallback: si existe un doc en `admins/{uid}`, tratarlo como admin
+        // 3) Último fallback: si existe un doc en `admins/{uid}`, tratarlo como staff privilegiado (admin/superadmin).
+        // Para evitar que un partner termine tratado como staff por accidente, NO elevamos acá.
         if (!isAdmin) {
-          const a = await getDoc(doc(db, "admins", u.uid));
-          if (a.exists()) isAdmin = true;
+          // intentionally no-op (deprecated fallback)
         }
       } catch {
         isAdmin = false;

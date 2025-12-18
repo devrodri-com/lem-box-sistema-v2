@@ -63,11 +63,12 @@ export default function PartnerCajasPage() {
   }, [scopedClientIds, clientMap]);
 
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
-    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; weightOverrideLb?: number | null; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
     setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     // This page is read-only; we do not manage inbound rows here.
     setRows: (() => {}) as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     clientsById,
+    hideItemsWhenOverride: false, // Partner siempre ve items
   });
 
   // Cargar clientes para el dropdown
@@ -115,7 +116,7 @@ export default function PartnerCajasPage() {
 
   // Cargar cajas según selección
   useEffect(() => {
-    if (scopedClientIds.length === 0) {
+    if (!uid || scopedClientIds.length === 0) {
       setBoxes([]);
       setLoading(false);
       return;
@@ -127,30 +128,22 @@ export default function PartnerCajasPage() {
         let allBoxes: Box[] = [];
 
         if (selectedClientId) {
-          // Cliente específico
+          // Cliente específico: filtrar por managerUid y luego por clientId
           const q = query(
             collection(db, "boxes"),
+            where("managerUid", "==", uid),
             where("clientId", "==", selectedClientId)
           );
           const snap = await getDocs(q);
           allBoxes = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) } as Box));
         } else {
-          // Todas las cuentas: batch queries
-          const chunks = chunk(scopedClientIds, 10);
-          
-          for (const chunkIds of chunks) {
-            try {
-              const q = query(
-                collection(db, "boxes"),
-                where("clientId", "in", chunkIds)
-              );
-              const snap = await getDocs(q);
-              const chunkBoxes = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) } as Box));
-              allBoxes.push(...chunkBoxes);
-            } catch (err) {
-              console.error("[PartnerCajas] Error loading boxes chunk:", err);
-            }
-          }
+          // Todas las cuentas: query por managerUid
+          const q = query(
+            collection(db, "boxes"),
+            where("managerUid", "==", uid)
+          );
+          const snap = await getDocs(q);
+          allBoxes = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) } as Box));
         }
 
         // Ordenar: primero por createdAt (si existe), luego por code
@@ -178,7 +171,7 @@ export default function PartnerCajasPage() {
     }
 
     void loadBoxes();
-  }, [scopedClientIds, selectedClientId]);
+  }, [uid, scopedClientIds, selectedClientId]);
 
   if (scopedClientIds.length === 0) {
     return (
@@ -226,54 +219,57 @@ export default function PartnerCajasPage() {
               </tr>
             </thead>
             <tbody>
-              {boxes.map((b) => (
-                <tr
-                  key={b.id}
-                  className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10 h-11"
-                >
-                  <td className="p-2 font-mono text-white">{b.code}</td>
-                  <td className="p-2 text-white">
-                    {(() => {
-                      const c = clientMap[b.clientId];
-                      if (c) return `${c.code || b.clientId} ${c.name || ""}`.trim();
-                      return b.clientId;
-                    })()}
-                  </td>
-                  <td className="p-2 text-white">{(() => {
-                    const rec = asRecord(b);
-                    const country = rec ? asString(rec.country) : undefined;
-                    return country || "-";
-                  })()}</td>
-                  <td className="p-2 text-white">{(() => {
-                    const rec = asRecord(b);
-                    const type = rec ? asString(rec.type) : undefined;
-                    return type || "-";
-                  })()}</td>
-                  <td className="p-2 text-right tabular-nums text-white">{b.itemIds?.length || 0}</td>
-                  <td className="p-2 text-right tabular-nums text-white">
-                    {fmtWeightPairFromLb(Number(b.weightLb || 0))}
-                  </td>
-                  <td className="p-2">
-                    {b.status === "open" || b.status === "closed" ? (
-                      <StatusBadge scope="box" status={b.status} />
-                    ) : (
-                      <span className="text-white/60">{b.status || " "}</span>
-                    )}
-                  </td>
-                  <td className="p-2">
-                    <button
-                      className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => {
-                        if (!b.id) return;
-                        openBoxDetailByBoxId(b.id);
-                      }}
-                      disabled={!b.id}
-                    >
-                      Ver detalle
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {boxes.map((b) => {
+                const effectiveLb = b.weightOverrideLb != null ? Number(b.weightOverrideLb) : Number(b.weightLb || 0);
+                return (
+                  <tr
+                    key={b.id}
+                    className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10 h-11"
+                  >
+                    <td className="p-2 font-mono text-white">{b.code}</td>
+                    <td className="p-2 text-white">
+                      {(() => {
+                        const c = clientMap[b.clientId];
+                        if (c) return `${c.code || b.clientId} ${c.name || ""}`.trim();
+                        return b.clientId;
+                      })()}
+                    </td>
+                    <td className="p-2 text-white">{(() => {
+                      const rec = asRecord(b);
+                      const country = rec ? asString(rec.country) : undefined;
+                      return country || "-";
+                    })()}</td>
+                    <td className="p-2 text-white">{(() => {
+                      const rec = asRecord(b);
+                      const type = rec ? asString(rec.type) : undefined;
+                      return type || "-";
+                    })()}</td>
+                    <td className="p-2 text-right tabular-nums text-white">{b.itemIds?.length || 0}</td>
+                    <td className="p-2 text-right tabular-nums text-white">
+                      {fmtWeightPairFromLb(effectiveLb)}
+                    </td>
+                    <td className="p-2">
+                      {b.status === "open" || b.status === "closed" ? (
+                        <StatusBadge scope="box" status={b.status} />
+                      ) : (
+                        <span className="text-white/60">{b.status || " "}</span>
+                      )}
+                    </td>
+                    <td className="p-2">
+                      <button
+                        className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => {
+                          if (!b.id) return;
+                          openBoxDetailByBoxId(b.id);
+                        }}
+                        disabled={!b.id}
+                      >
+                        Ver detalle
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
               {!boxes.length ? (
                 <tr>
                   <td colSpan={8} className="p-3 text-white/60">

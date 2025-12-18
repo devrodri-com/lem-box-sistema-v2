@@ -2,11 +2,13 @@
 "use client";
 import { useEffect, useMemo, useState, Fragment } from "react";
 import RequireAuth from "@/components/RequireAuth";
-import { collection, doc, getDoc, getDocs, getFirestore, orderBy, query, updateDoc, where } from "firebase/firestore";
+import { collection, doc, deleteDoc, getDoc, getDocs, getFirestore, orderBy, query, updateDoc, where } from "firebase/firestore";
 import Script from "next/script";
 import type { Client, Shipment as ShipmentType } from "@/types/lem";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmtWeightPairFromLb } from "@/lib/weight";
+import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
+import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 
 type Shipment = {
   id: string;
@@ -27,6 +29,7 @@ type Box = {
   type: "COMERCIAL" | "FRANQUICIA";
   itemIds: string[];
   weightLb?: number;
+  weightOverrideLb?: number | null;
   shipmentId?: string | null;
   managerUid?: string | null;
 };
@@ -40,12 +43,51 @@ export default function EstadoEnviosPage() {
   const [expandedId, setExpandedId] = useState<string>("");
   const [boxesByShipment, setBoxesByShipment] = useState<Record<string, Box[]>>({});
   const [loadingDetail, setLoadingDetail] = useState<string>("");
-  const [boxDetailOpen, setBoxDetailOpen] = useState(false);
-  const [detailBox, setDetailBox] = useState<Box | null>(null);
-  type DetailItem = { id: string; tracking: string; weightLb: number; photoUrl?: string };
-  const [detailItems, setDetailItems] = useState<DetailItem[]>([]);
-  const [loadingBox, setLoadingBox] = useState(false);
   const [clientsById, setClientsById] = useState<Record<string, Client>>({});
+  const [deletingShipmentId, setDeletingShipmentId] = useState<string>("");
+
+  // Flatten all boxes for useBoxDetailModal
+  const allBoxes = useMemo(() => {
+    const boxes: Box[] = [];
+    for (const boxesList of Object.values(boxesByShipment)) {
+      boxes.push(...boxesList);
+    }
+    return boxes;
+  }, [boxesByShipment]);
+
+  // Dummy setRows (estado-envios doesn't manage inbound rows)
+  const [rows, setRows] = useState<Array<Record<string, unknown> & { id: string }>>([]);
+
+  // Custom setBoxes that updates boxesByShipment
+  const setBoxes = useMemo(() => {
+    return ((updater: React.SetStateAction<Array<Record<string, unknown> & { id: string }>>) => {
+      setBoxesByShipment((prev) => {
+        const next = { ...prev };
+        const newBoxes = typeof updater === "function" 
+          ? updater(allBoxes as Array<Record<string, unknown> & { id: string }>)
+          : updater;
+        
+        // Update boxes in boxesByShipment
+        for (const shipmentId in next) {
+          next[shipmentId] = next[shipmentId].map((b) => {
+            const updated = newBoxes.find((nb) => (nb as any).id === b.id);
+            return updated ? ({ ...b, ...updated } as Box) : b;
+          });
+        }
+        
+        return next;
+      });
+    }) as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>;
+  }, [allBoxes]);
+
+  // Box detail modal hook
+  const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
+    boxes: allBoxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; weightOverrideLb?: number | null; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    setBoxes,
+    setRows,
+    clientsById,
+    hideItemsWhenOverride: false, // Admin siempre ve items
+  });
 
   const db = getFirestore();
 
@@ -83,25 +125,6 @@ export default function EstadoEnviosPage() {
     setShipments(list => list.map(s => s.id === shipmentId ? { ...s, status } : s));
   }
 
-  async function openBoxDetail(box: Box) {
-    setDetailBox(box);
-    setBoxDetailOpen(true);
-    setLoadingBox(true);
-    try {
-      const items: DetailItem[] = [];
-      for (const id of box.itemIds || []) {
-        const s = await getDoc(doc(db, "inboundPackages", id));
-        if (s.exists()) {
-          const d = s.data() as any;
-          items.push({ id: s.id, tracking: d.tracking, weightLb: d.weightLb || 0, photoUrl: d.photoUrl });
-        }
-      }
-      setDetailItems(items);
-    } finally {
-      setLoadingBox(false);
-    }
-  }
-
   async function removeBoxFromShipment(box: Box, shipment: Shipment) {
     // 1) detach box from shipment
     await updateDoc(doc(db, "boxes", box.id), { shipmentId: null });
@@ -131,8 +154,40 @@ export default function EstadoEnviosPage() {
     }
     // 3) update local boxes list for that shipment
     setBoxesByShipment(prev => ({ ...prev, [shipment.id]: (prev[shipment.id] || []).filter(b => b.id !== box.id) }));
-    // 4) close modal if showing this box
-    if (detailBox?.id === box.id) { setBoxDetailOpen(false); setDetailBox(null); }
+  }
+
+  async function deleteShipment(shipmentId: string) {
+    setDeletingShipmentId(shipmentId);
+    try {
+      // Query a boxes donde shipmentId == shipmentId
+      const boxesSnap = await getDocs(query(collection(db, "boxes"), where("shipmentId", "==", shipmentId)));
+      
+      // Si hay resultados → bloquear
+      if (!boxesSnap.empty) {
+        alert("No se puede eliminar un embarque que tiene cajas asociadas.");
+        return;
+      }
+      
+      // Si está vacío → deleteDoc
+      await deleteDoc(doc(db, "shipments", shipmentId));
+      
+      // Remover de state
+      setShipments(list => list.filter(s => s.id !== shipmentId));
+      setBoxesByShipment(prev => {
+        const next = { ...prev };
+        delete next[shipmentId];
+        return next;
+      });
+      
+      // Si estaba expandido, cerrar
+      if (expandedId === shipmentId) {
+        setExpandedId("");
+      }
+    } catch (e: any) {
+      alert(e?.message || "No se pudo eliminar el embarque");
+    } finally {
+      setDeletingShipmentId("");
+    }
   }
 
   const statusLabel = (s: Shipment["status"]) => {
@@ -196,16 +251,27 @@ export default function EstadoEnviosPage() {
                         <td className="px-3 py-2">{renderShipmentStatus(s.status)}</td>
                         <td className="px-3 py-2 text-white">{s.openedAt ? new Date(s.openedAt).toLocaleDateString() : "-"}</td>
                         <td className="px-3 py-2 text-white">
-                          {s.status === "open" && (
-                            <button className="h-9 px-4 rounded-md bg-[#cf6934] text-white font-medium hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#cf6934]" onClick={() => setStatus(s.id, "shipped")}>
-                              Marcar En Tránsito
-                            </button>
-                          )}
-                          {s.status === "shipped" && (
-                            <button className="h-9 px-4 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]" onClick={() => setStatus(s.id, "arrived")}>
-                              Marcar En Destino
-                            </button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {s.status === "open" && (
+                              <button className="h-9 px-4 rounded-md bg-[#cf6934] text-white font-medium hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#cf6934]" onClick={() => setStatus(s.id, "shipped")}>
+                                Marcar En Tránsito
+                              </button>
+                            )}
+                            {s.status === "shipped" && (
+                              <button className="h-9 px-4 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]" onClick={() => setStatus(s.id, "arrived")}>
+                                Marcar En Destino
+                              </button>
+                            )}
+                            {(!boxesByShipment[s.id]?.length) && (
+                              <button
+                                className="h-9 px-4 rounded-md border border-red-500/70 bg-[#0f2a22] text-red-300 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                                onClick={() => deleteShipment(s.id)}
+                                disabled={deletingShipmentId === s.id}
+                              >
+                                {deletingShipmentId === s.id ? "Eliminando…" : "Eliminar embarque"}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                       {expandedId === s.id && (
@@ -226,26 +292,29 @@ export default function EstadoEnviosPage() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {(boxesByShipment[s.id] || []).map((b) => (
-                                      <tr key={b.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
-                                        <td className="px-2 py-1 font-mono text-white">
-                                          <button className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm" onClick={() => openBoxDetail(b)}>
-                                            {b.code}
-                                          </button>
-                                        </td>
-                                        <td className="px-2 py-1 text-white">{clientsById[b.clientId]?.name || b.clientId}</td>
-                                        <td className="px-2 py-1 text-white">{b.itemIds?.length || 0}</td>
-                                        <td className="px-2 py-1 text-white">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
-                                        <td className="px-2 py-1 text-white">
-                                          <button
-                                            className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
-                                            onClick={() => removeBoxFromShipment(b, s)}
-                                          >
-                                            Eliminar de embarque
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    ))}
+                                    {(boxesByShipment[s.id] || []).map((b) => {
+                                      const effectiveLb = b.weightOverrideLb != null ? Number(b.weightOverrideLb) : Number(b.weightLb || 0);
+                                      return (
+                                        <tr key={b.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                                          <td className="px-2 py-1 font-mono text-white">
+                                            <button className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm" onClick={() => openBoxDetailByBoxId(b.id)}>
+                                              {b.code}
+                                            </button>
+                                          </td>
+                                          <td className="px-2 py-1 text-white">{clientsById[b.clientId]?.name || b.clientId}</td>
+                                          <td className="px-2 py-1 text-white">{b.itemIds?.length || 0}</td>
+                                          <td className="px-2 py-1 text-white">{fmtWeightPairFromLb(effectiveLb)}</td>
+                                          <td className="px-2 py-1 text-white">
+                                            <button
+                                              className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                                              onClick={() => removeBoxFromShipment(b, s)}
+                                            >
+                                              Eliminar de embarque
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
                                     {!boxesByShipment[s.id]?.length && (
                                       <tr>
                                         <td colSpan={5} className="px-2 py-2 text-white/60">
@@ -272,66 +341,7 @@ export default function EstadoEnviosPage() {
           />
         </div>
 
-        {boxDetailOpen && detailBox ? (
-          <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center">
-            <div className="w-[95vw] max-w-3xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-xl p-4 md:p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Caja {detailBox.code}</h3>
-                <button
-                  className="h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40]"
-                  onClick={() => {
-                    setBoxDetailOpen(false);
-                    setDetailBox(null);
-                  }}
-                >
-                  Cerrar
-                </button>
-              </div>
-              {loadingBox ? (
-                <div className="text-sm text-white/60">Cargando…</div>
-              ) : (
-                <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
-                  <table className="w-full text-sm">
-                    <thead className="bg-[#0f2a22]">
-                      <tr>
-                        <th className="text-left p-2 text-white/80 text-xs font-medium">Tracking</th>
-                        <th className="text-left p-2 text-white/80 text-xs font-medium">Peso</th>
-                        <th className="text-left p-2 text-white/80 text-xs font-medium">Foto</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detailItems.map((i) => (
-                        <tr key={i.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
-                          <td className="p-2 font-mono text-white">{i.tracking}</td>
-                          <td className="p-2 text-white">{fmtWeightPairFromLb(Number(i.weightLb || 0))}</td>
-                          <td className="p-2">
-                            {i.photoUrl ? (
-                              <a href={i.photoUrl} target="_blank" aria-label="Ver foto" className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm">
-                                📷
-                              </a>
-                            ) : (
-                              " "
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                      {!detailItems.length ? (
-                        <tr>
-                          <td className="p-3 text-white/60" colSpan={3}>
-                            Caja sin items.
-                          </td>
-                        </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              <div className="mt-3 text-sm text-white/80">
-                Peso total: {fmtWeightPairFromLb(Number(detailBox.weightLb || 0))}
-              </div>
-            </div>
-          </div>
-        ) : null}
+        <BoxDetailModal {...modalProps} />
       </main>
     </RequireAuth>
   );

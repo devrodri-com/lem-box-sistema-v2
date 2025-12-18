@@ -28,6 +28,23 @@ import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 import { IconTrash } from "@/components/ui/icons";
 
+const normalizeCountry = (c: unknown) => {
+  if (typeof c !== "string") return "";
+  const s = c.trim();
+  if (!s) return "";
+  // Si existe COUNTRY_OPTIONS, map label->value; si no, fallback
+  try {
+    // @ts-ignore
+    const opts = typeof COUNTRY_OPTIONS !== "undefined" ? COUNTRY_OPTIONS : [];
+    // @ts-ignore
+    const found = Array.isArray(opts) ? opts.find((o: any) => o?.value === s || o?.label === s) : null;
+    return (found?.value || s).toUpperCase();
+  } catch {
+    return s.toUpperCase();
+  }
+};
+const normalizeType = (t: unknown) => (typeof t === "string" ? t.trim().toUpperCase() : "");
+
 async function nextShipmentCode(): Promise<string> {
   const n = Math.floor(Date.now() / 1000) % 100000;
   return `E${String(n).padStart(4, "0")}`;
@@ -74,10 +91,11 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
   // Note: setRows is a dummy setter since we don't have an inbounds state here
   // The hook uses it to update inbound status when removing items, but we don't display inbounds
   const { openBoxDetailByBoxId, modalProps, closeModal } = useBoxDetailModal({
-    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; weightOverrideLb?: number | null; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
     setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     setRows: () => {}, // Dummy setter - we don't track inbounds in this view
     clientsById,
+    hideItemsWhenOverride: false, // Admin siempre ve items
   });
 
   const [confirmDelete, setConfirmDelete] = useState<null | { id: string; code: string; clientLabel: string }>(null);
@@ -143,14 +161,22 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
   }, [country, type]);
 
   useEffect(() => {
-    // Cargar embarques abiertos
+    // Cargar embarques abiertos (sin filtrar por country/type en query para evitar problemas con formato legacy)
     getDocs(query(
       collection(db, "shipments"),
-      where("status", "==", "open"),
-      where("country", "==", country),
-      where("type", "==", type),
-      orderBy("openedAt", "desc")
-    )).then(s => setShipments(s.docs.map(d => ({ id: d.id, ...(d.data() as any) }))));
+      where("status", "==", "open")
+    )).then(s => {
+      const list = s.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      const sorted = list.sort((a: any, b: any) => Number(b.openedAt || 0) - Number(a.openedAt || 0));
+      const filtered = sorted.filter((sh: any) => {
+        return normalizeCountry(sh.country) === normalizeCountry(country) && normalizeType(sh.type) === normalizeType(type);
+      });
+      setShipments(filtered);
+      setTargetShipmentId((prev: string) => (prev && !filtered.find((x: any) => x.id === prev) ? "" : prev));
+    }).catch((e) => {
+      console.error("Failed to load open shipments", e);
+      setShipments([]);
+    });
   }, [country, type]);
 
   const totalLb = useMemo(
@@ -186,12 +212,15 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
         });
 
         // Validaciones de integridad
-        const countries = new Set(boxesData.map(b => b.country));
-        const types = new Set(boxesData.map(b => b.type));
+        const countries = new Set(boxesData.map(b => normalizeCountry((b as any).country)));
+        const types = new Set(boxesData.map(b => normalizeType((b as any).type)));
         if (countries.size !== 1 || types.size !== 1) throw new Error("El embarque debe tener cajas del mismo país y tipo.");
         for (const b of boxesData) {
           if (b.shipmentId) throw new Error(`Caja ${b.code} ya tiene embarque`);
         }
+
+        const normalizedCountry = Array.from(countries)[0];
+        const normalizedType = Array.from(types)[0];
 
         const clientIds = Array.from(new Set(boxesData.map(b => b.clientId)));
         // Construir array de managerUids sin duplicados y sin nulos
@@ -206,8 +235,8 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
         const shipRef = doc(collection(db, "shipments"));
         tx.set(shipRef, {
           code,
-          country: boxesData[0].country,
-          type: boxesData[0].type,
+          country: normalizedCountry,
+          type: normalizedType,
           boxIds: boxesData.map(b => b.id),
           clientIds,
           managerUids,
@@ -251,10 +280,14 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
         });
 
         // Validar país/tipo y estado de caja
-        const countries = new Set(boxesData.map(b => b.country));
-        const types = new Set(boxesData.map(b => b.type));
+        const countries = new Set(boxesData.map(b => normalizeCountry((b as any).country)));
+        const types = new Set(boxesData.map(b => normalizeType((b as any).type)));
         if (countries.size !== 1 || types.size !== 1) throw new Error("Las cajas deben ser del mismo país y tipo.");
-        if (ship.country !== boxesData[0].country || ship.type !== boxesData[0].type) throw new Error("País/tipo no coinciden con el embarque.");
+        const normalizedCountry = Array.from(countries)[0];
+        const normalizedType = Array.from(types)[0];
+        if (normalizeCountry((ship as any).country) !== normalizedCountry || normalizeType((ship as any).type) !== normalizedType) {
+          throw new Error("País/tipo no coinciden con el embarque.");
+        }
         for (const b of boxesData) {
           if (b.shipmentId) throw new Error(`Caja ${b.code} ya tiene embarque`);
         }

@@ -2,6 +2,7 @@
 "use client";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import { BrandSelect } from "@/components/ui/BrandSelect";
+import { IconPhoto } from "@/components/ui/icons";
 
 // Types
 type Box = {
@@ -12,6 +13,7 @@ type Box = {
   country?: string;
   type?: "COMERCIAL" | "FRANQUICIA";
   weightLb?: number;
+  weightOverrideLb?: number | null;
   labelRef?: string;
 };
 
@@ -51,6 +53,11 @@ export interface BoxDetailModalProps {
   onPrintLabel: () => void;
   onRemoveItem: (itemId: string) => void;
   weightText: string;
+  canEditWeightOverride: boolean;
+  weightOverrideLbValue: string;
+  onChangeWeightOverrideLb: (v: string) => void;
+  onSaveWeightOverride: () => void;
+  hideItemsWhenOverride?: boolean;
   onClose: () => void;
 }
 
@@ -68,6 +75,11 @@ export function BoxDetailModal({
   onPrintLabel,
   onRemoveItem,
   weightText,
+  canEditWeightOverride,
+  weightOverrideLbValue,
+  onChangeWeightOverrideLb,
+  onSaveWeightOverride,
+  hideItemsWhenOverride = false,
   onClose,
 }: BoxDetailModalProps) {
   if (!open || !box) return null;
@@ -140,67 +152,104 @@ export function BoxDetailModal({
         {loading ? (
           <div className="text-sm text-white/60">Cargando…</div>
         ) : (
-          <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
-            <table className="w-full text-sm tabular-nums">
-              <thead className="bg-[#0f2a22]">
-                <tr>
-                  <th className="text-left p-2 text-white/80 text-xs font-medium">Tracking</th>
-                  <th className="text-left p-2 text-white/80 text-xs font-medium">Peso</th>
-                  <th className="text-left p-2 text-white/80 text-xs font-medium">Foto</th>
-                  <th className="text-left p-2 text-white/80 text-xs font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((i) => (
-                  <tr
-                    key={i.id}
-                    className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10"
-                  >
-                    <td className="p-2 font-mono text-white">{i.tracking}</td>
-                    <td className="p-2 text-white">
-                      {fmtWeightPairFromLb(Number(i.weightLb || 0))}
-                    </td>
-                    <td className="p-2">
-                      {i.photoUrl ? (
-                        <a
-                          href={i.photoUrl}
-                          target="_blank"
-                          aria-label="Ver foto"
-                          className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
+          <>
+            {(() => {
+              const shouldHideItems = Boolean(hideItemsWhenOverride && box?.weightOverrideLb != null);
+              return !shouldHideItems ? (
+                <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
+                  <table className="w-full text-sm tabular-nums">
+                    <thead className="bg-[#0f2a22]">
+                      <tr>
+                        <th className="text-left p-2 text-white/80 text-xs font-medium">Tracking</th>
+                        <th className="text-left p-2 text-white/80 text-xs font-medium">Peso</th>
+                        <th className="text-left p-2 text-white/80 text-xs font-medium">Foto</th>
+                        <th className="text-left p-2 text-white/80 text-xs font-medium">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((i) => (
+                        <tr
+                          key={i.id}
+                          className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10"
                         >
-                          📷
-                        </a>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="p-2">
-                      <button
-                        className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-red-500/70 bg-[#0f2a22] text-red-300 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-red-500"
-                        title="Eliminar de la caja"
-                        onClick={() => {
-                          void onRemoveItem(i.id);
-                        }}
-                      >
-                        <IconTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {!items.length ? (
-                  <tr>
-                    <td className="p-3 text-white/40" colSpan={4}>
-                      Caja sin items.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+                          <td className="p-2 font-mono text-white">{i.tracking}</td>
+                          <td className="p-2 text-white">
+                            {fmtWeightPairFromLb(Number(i.weightLb || 0))}
+                          </td>
+                          <td className="p-2">
+                            {i.photoUrl ? (
+                              <a
+                                href={i.photoUrl}
+                                target="_blank"
+                                aria-label="Ver foto"
+                                title="Ver foto"
+                                className="inline-flex items-center justify-center text-white/80 hover:text-white"
+                              >
+                                <IconPhoto />
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="p-2">
+                            <button
+                              className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-red-500/70 bg-[#0f2a22] text-red-300 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-red-500"
+                              title="Eliminar de la caja"
+                              onClick={() => {
+                                void onRemoveItem(i.id);
+                              }}
+                            >
+                              <IconTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {!items.length ? (
+                        <tr>
+                          <td className="p-3 text-white/40" colSpan={4}>
+                            Caja sin items.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null;
+            })()}
+          </>
         )}
         <div className="mt-4 text-sm text-white/80 font-medium">
           Peso total: {weightText}
         </div>
+        {canEditWeightOverride && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+            <label className="text-sm text-white/60 md:col-span-2">
+              Peso de la caja (override, kg)
+              <input
+                className={`${inputCls} appearance-none`}
+                style={{
+                  ...INPUT_BG_STYLE,
+                  MozAppearance: "textfield",
+                }}
+                type="text"
+                inputMode="decimal"
+                value={weightOverrideLbValue}
+                onChange={(e) => onChangeWeightOverrideLb(e.target.value)}
+                placeholder="Dejar vacío para usar peso calculado"
+              />
+            </label>
+            <div className="flex justify-end">
+              <button
+                className={btnSecondaryCls}
+                onClick={() => {
+                  void onSaveWeightOverride();
+                }}
+              >
+                Guardar peso
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

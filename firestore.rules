@@ -11,14 +11,22 @@ service cloud.firestore {
         : null;
     }
 
-    /* ROLE: SIEMPRE CLAIMS PRIMERO */
+    /* ROLE: CLAIMS PRIMERO, PERO FIRESTORE `partner_admin` OVERRIDES (claims stale hardening) */
     function role() {
       return hasAuth()
-        ? (request.auth.token.role != null
-            ? request.auth.token.role
-            : (userDoc() != null && userDoc().data.role != null
-                ? userDoc().data.role
-                : null))
+        ? (
+            (userDoc() != null && userDoc().data.role == 'partner_admin')
+              ? 'partner_admin'
+              : (
+                  request.auth.token.role != null
+                    ? request.auth.token.role
+                    : (
+                        userDoc() != null && userDoc().data.role != null
+                          ? userDoc().data.role
+                          : null
+                      )
+                )
+          )
         : null;
     }
 
@@ -43,11 +51,35 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return role() == 'admin';
+      return request.auth.token.admin == true || role() == 'admin';
     }
 
-    /* STAFF = SOLO ADMIN / SUPERADMIN */
+    function isOperador() {
+      return role() == 'operador';
+    }
+
+    // Claims-only staff check (avoids recursive dependency on userDoc())
+    function isStaffClaim() {
+      return request.auth.token.superadmin == true
+        || request.auth.token.role == 'superadmin'
+        || request.auth.token.role == 'admin'
+        || request.auth.token.role == 'operador';
+    }
+
+    // Claims-only privileged staff check (avoids recursive dependency on userDoc())
+    function isPrivilegedStaffClaim() {
+      return request.auth.token.superadmin == true
+        || request.auth.token.role == 'superadmin'
+        || request.auth.token.role == 'admin';
+    }
+
+    /* STAFF OPERATIVO = SUPERADMIN / ADMIN / OPERADOR */
     function isStaff() {
+      return isSuperAdmin() || isAdmin() || isOperador();
+    }
+
+    /* STAFF PRIVILEGIADO = SUPERADMIN / ADMIN (sin operador) */
+    function isPrivilegedStaff() {
       return isSuperAdmin() || isAdmin();
     }
 
@@ -57,7 +89,16 @@ service cloud.firestore {
     }
 
     function isManagedClient(cid) {
-      return isPartnerAdmin() && managedClientIds().hasAny([cid]);
+      return isPartnerAdmin()
+        && (cid is string)
+        && managedClientIds().hasAny([cid]);
+    }
+
+    function isClientManagedByUid(cid) {
+      return isPartnerAdmin()
+        && (cid is string)
+        && get(/databases/$(db)/documents/clients/$(cid)).exists()
+        && get(/databases/$(db)/documents/clients/$(cid)).data.managerUid == request.auth.uid;
     }
 
     function isOwner(cid) {
@@ -66,12 +107,13 @@ service cloud.firestore {
 
     /* ===================== USERS ===================== */
     match /users/{uid} {
-      allow read: if isStaff() || (hasAuth() && uid == request.auth.uid);
+      // IMPORTANT: avoid isStaff()/role() here to prevent recursion via userDoc()
+      allow read: if isPrivilegedStaffClaim() || (hasAuth() && uid == request.auth.uid);
 
-      allow create: if isStaff() || (hasAuth() && uid == request.auth.uid);
+      allow create: if isPrivilegedStaffClaim() || (hasAuth() && uid == request.auth.uid);
 
       /* SELF UPDATE MUY LIMITADO (NO ROLE, NO managedClientIds) */
-      allow update: if isStaff()
+      allow update: if isPrivilegedStaffClaim()
         || (hasAuth() && uid == request.auth.uid
             && request.resource.data.diff(resource.data).changedKeys().hasOnly([
               'displayName',
@@ -80,14 +122,15 @@ service cloud.firestore {
               'updatedAt'
             ]));
 
-      allow delete: if isSuperAdmin();
+      allow delete: if request.auth.token.superadmin == true;
     }
 
     /* ===================== CLIENTS ===================== */
     match /clients/{id} {
       allow read: if isStaff()
         || isOwner(id)
-        || isManagedClient(id);
+        || isManagedClient(id)
+        || (isPartnerAdmin() && resource.data.managerUid == request.auth.uid);
 
       /* Partner puede crear clientes SOLO para sí */
       allow create: if isStaff()
@@ -95,19 +138,36 @@ service cloud.firestore {
 
       allow update: if isStaff()
         || (isOwner(id) && request.resource.data.diff(resource.data)
-            .changedKeys().hasOnly(['name','phone','country','state','city','address']))
+            .changedKeys().hasOnly([
+              'name','phone','country','state','city','address',
+              'postalCode','emailAlt','docType','docNumber','contact'
+            ]))
         || (isPartnerAdmin()
             && resource.data.managerUid == request.auth.uid
-            && request.resource.data.managerUid == resource.data.managerUid);
+            && request.resource.data.managerUid == resource.data.managerUid
+            && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+              'name','phone','country','state','city','address',
+              'postalCode','emailAlt','docType','docNumber','contact',
+              'activo'
+            ]));
 
-      allow delete: if isStaff();
+      allow delete: if isPrivilegedStaff();
     }
 
     /* ===================== INBOUND PACKAGES ===================== */
     match /inboundPackages/{inbId} {
       allow read: if isStaff()
-        || isOwner(resource.data.clientId)
-        || isManagedClient(resource.data.clientId);
+        || (
+          isPartnerAdmin()
+          && (
+            // PRIMARY: allow by managedClientIds
+            isManagedClient(resource.data.clientId)
+            // Fallback: allow if the client doc is managed by this partner
+            || isClientManagedByUid(resource.data.clientId)
+            // Back-compat: inbound may store managerUid directly
+            || (resource.data.managerUid == request.auth.uid)
+          )
+        );
 
       /* Partner NO puede crear */
       allow create: if isStaff();
@@ -120,11 +180,26 @@ service cloud.firestore {
     /* ===================== BOXES ===================== */
     match /boxes/{boxId} {
       allow read: if isStaff()
-        || isOwner(resource.data.clientId)
-        || isManagedClient(resource.data.clientId);
+        || (
+          isPartnerAdmin()
+          && (
+            // PRIMARY: allow by managedClientIds
+            isManagedClient(resource.data.clientId)
+            // Fallback: allow if the client doc is managed by this partner
+            || isClientManagedByUid(resource.data.clientId)
+            // Back-compat: box may store managerUid directly
+            || (resource.data.managerUid == request.auth.uid)
+          )
+        );
 
       allow create: if isStaff();
-      allow update: if isStaff();
+
+      allow update: if isPrivilegedStaff()
+        || (isOperador()
+            && !request.resource.data.diff(resource.data).changedKeys().hasAny(['weightOverrideLb']));
+      // NOTA: Si en el futuro se permite que isPartnerAdmin() actualice boxes,
+      // asegurar que weightOverrideLb esté explícitamente excluido en changedKeys().hasOnly([...])
+
       allow delete: if isStaff();
     }
 
@@ -132,17 +207,21 @@ service cloud.firestore {
     match /shipments/{id} {
       allow read: if isStaff()
         || (
+          // Client view
           resource.data.clientIds != null
           && clientId() != null
           && clientId() in resource.data.clientIds
         )
         || (
-          resource.data.clientIds != null
-          && isPartnerAdmin()
+          // Partner view by managed clients
+          isPartnerAdmin()
+          && resource.data.clientIds != null
           && resource.data.clientIds.hasAny(managedClientIds())
         );
 
-      allow write: if isStaff();
+    // Staff can create/update. Deletion is restricted below.
+    allow create, update: if isStaff();
+    allow delete: if isPrivilegedStaff() && (resource.data.boxIds == null || resource.data.boxIds.size() == 0);
     }
 
     /* ===================== ADMINS ===================== */

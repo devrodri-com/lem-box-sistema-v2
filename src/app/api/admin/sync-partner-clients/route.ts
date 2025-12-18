@@ -1,4 +1,5 @@
-// src/app/api/admin/assign-partner-clients/route.ts
+// src/app/api/admin/sync-partner-clients/route.ts
+// Sincroniza users/{partnerUid}.managedClientIds basado en clientes donde managerUid == partnerUid
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
@@ -13,14 +14,14 @@ export async function POST(req: NextRequest) {
     const isSuper = me?.superadmin === true || me?.role === "superadmin";
     if (!isSuper) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-    const { partnerUidOrDocId, managedClientIds } = await req.json();
-    if (!partnerUidOrDocId || !Array.isArray(managedClientIds)) {
+    const { partnerUidOrDocId } = await req.json();
+    if (!partnerUidOrDocId || typeof partnerUidOrDocId !== "string") {
       return NextResponse.json({ error: "invalid_input" }, { status: 400 });
     }
 
     let partnerUid: string;
 
-    // Intentar resolver partner UID real
+    // Resolver partner UID real
     try {
       const user = await adminAuth.getUser(partnerUidOrDocId);
       partnerUid = user.uid;
@@ -49,28 +50,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Validar que los clientIds existen (opcional pero recomendado)
-    const uniqueClientIds = Array.from(new Set(managedClientIds.filter((id: any) => typeof id === "string" && id.trim())));
-    
-    // Asegurar que los clientes tengan managerUid == partnerUid
-    const batch = adminDb.batch();
-    for (const clientId of uniqueClientIds) {
-      const clientRef = adminDb.collection("clients").doc(clientId);
-      batch.set(clientRef, { managerUid: partnerUid }, { merge: true });
-    }
-    await batch.commit();
-    
-    // Setear/mergear users/{partnerUid}.managedClientIds
+    // Consultar todos los clientes donde managerUid == partnerUid
+    const clientsSnap = await adminDb
+      .collection("clients")
+      .where("managerUid", "==", partnerUid)
+      .get();
+
+    const managedClientIds = clientsSnap.docs.map((d) => d.id);
+
+    // Actualizar users/{partnerUid}.managedClientIds
     await adminDb.collection("users").doc(partnerUid).set(
       {
-        managedClientIds: uniqueClientIds,
+        managedClientIds,
         role: "partner_admin", // Asegurar que el role esté correcto
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
     );
 
-    return NextResponse.json({ ok: true, partnerUid, count: uniqueClientIds.length });
+    return NextResponse.json({ 
+      ok: true, 
+      partnerUid, 
+      count: managedClientIds.length,
+      managedClientIds 
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "unknown_error" }, { status: 500 });
   }

@@ -114,10 +114,11 @@ function ClienteInner() {
 
   // Box detail modal hook
   const { openBoxDetailByBoxId, modalProps } = useBoxDetailModal({
-    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
+    boxes: boxes as Array<{ id: string; code: string; itemIds?: string[]; clientId: string; type?: "COMERCIAL" | "FRANQUICIA"; weightLb?: number; weightOverrideLb?: number | null; labelRef?: string; status?: "open" | "closed" | "shipped" | "delivered" }>,
     setBoxes: setBoxes as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     setRows: setInbounds as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     clientsById,
+    hideItemsWhenOverride: false, // Admin siempre ve items
   });
 
   const visibleInbounds = useMemo(() => {

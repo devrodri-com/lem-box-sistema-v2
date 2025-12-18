@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { collection, query, where, getDocs, doc, getDoc, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -101,6 +101,7 @@ export default function PartnerHistorialPage() {
           clientId: b.clientId,
           itemIds: b.itemIds,
           weightLb: b.weightLb,
+          weightOverrideLb: b.weightOverrideLb,
           status: b.status,
           ...(labelRef ? { labelRef } : {}),
           ...(type ? { type } : {}),
@@ -113,6 +114,7 @@ export default function PartnerHistorialPage() {
     setBoxes: setBoxesWrapper as unknown as React.Dispatch<React.SetStateAction<Array<Record<string, unknown> & { id: string }>>>,
     setRows: () => {}, // Read-only, no actualizamos inbounds
     clientsById,
+    hideItemsWhenOverride: false, // Partner siempre ve items
   });
 
   // Mapa inboundId -> Box
@@ -182,39 +184,41 @@ export default function PartnerHistorialPage() {
     }
 
     async function loadBoxes() {
-      const chunks = chunk(scopedClientIds, 10);
-      const boxPromises = chunks.map((chunkIds) =>
-        getDocs(query(collection(db, "boxes"), where("clientId", "in", chunkIds)))
-      );
-
       try {
-        const boxSnaps = await Promise.all(boxPromises);
+        const q = query(
+          collection(db, "boxes"),
+          where("managerUid", "==", uid)
+        );
+        const snap = await getDocs(q);
         const loadedBoxes: Box[] = [];
         const seenIds = new Set<string>();
 
-        boxSnaps.forEach((snap) => {
-          snap.docs.forEach((d) => {
-            const boxId = d.id;
-            if (!seenIds.has(boxId) && boxId) {
-              seenIds.add(boxId);
-              const rec = asRecord(d.data());
-              if (rec) {
-                const code = asString(rec.code) ?? "";
-                const clientId = asString(rec.clientId) ?? "";
-                const status = asString(rec.status) as Box["status"] | undefined;
-                const itemIds = asStringArray(rec.itemIds);
-                const weightLb = asNumber(rec.weightLb);
-                loadedBoxes.push({
-                  id: boxId,
-                  code,
-                  clientId,
-                  status: status || "open",
-                  itemIds,
-                  weightLb,
-                });
-              }
+        snap.docs.forEach((d) => {
+          const boxId = d.id;
+          if (!seenIds.has(boxId) && boxId) {
+            seenIds.add(boxId);
+            const rec = asRecord(d.data());
+            if (rec) {
+              const code = asString(rec.code) ?? "";
+              const clientId = asString(rec.clientId) ?? "";
+              const status = asString(rec.status) as Box["status"] | undefined;
+              const itemIds = asStringArray(rec.itemIds);
+              const weightLb = asNumber(rec.weightLb);
+              const weightOverrideLbValue = rec.weightOverrideLb;
+              const weightOverrideLb = weightOverrideLbValue === null 
+                ? null 
+                : (asNumber(weightOverrideLbValue) ?? undefined);
+              loadedBoxes.push({
+                id: boxId,
+                code,
+                clientId,
+                status: status || "open",
+                itemIds,
+                weightLb,
+                ...(weightOverrideLb !== undefined ? { weightOverrideLb } : {}),
+              });
             }
-          });
+          }
         });
         setBoxes(loadedBoxes);
       } catch (err) {
@@ -223,7 +227,7 @@ export default function PartnerHistorialPage() {
       }
     }
     void loadBoxes();
-  }, [scopedClientIds, uid, roleResolved]);
+  }, [uid, roleResolved]);
 
   // Cargar inbounds
   useEffect(() => {
@@ -235,66 +239,58 @@ export default function PartnerHistorialPage() {
 
     async function loadInbounds() {
       setLoading(true);
-      const chunks = chunk(scopedClientIds, 10);
-      const inboundPromises = chunks.map((chunkIds) => {
+      try {
         let qBase = query(
           collection(db, "inboundPackages"),
-          where("clientId", "in", chunkIds),
-          orderBy("receivedAt", "desc"),
-          limit(LIMIT_INITIAL)
+          where("managerUid", "==", uid)
         );
         if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
         if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
-        return getDocs(qBase);
-      });
 
-      try {
-        const inboundSnaps = await Promise.all(inboundPromises);
+        const snap = await getDocs(qBase);
         const loadedInbounds: Inbound[] = [];
-        const seenIds = new Set<string>();
 
-        inboundSnaps.forEach((snap) => {
-          snap.docs.forEach((d) => {
-            const inboundId = d.id;
-            if (!seenIds.has(inboundId) && inboundId) {
-              seenIds.add(inboundId);
-              const rec = asRecord(d.data());
-              if (rec) {
-                const tracking = asString(rec.tracking) ?? "";
-                const carrierRaw = asString(rec.carrier);
-                const carrier = carrierRaw as Inbound["carrier"] | undefined;
-                const clientId = asString(rec.clientId) ?? "";
-                // Filtrar docs sin clientId válido
-                if (!clientId) {
-                  return;
-                }
-                const weightLb = asNumber(rec.weightLb) ?? 0;
-                const photoUrl = asString(rec.photoUrl);
-                const status = asString(rec.status);
-                const receivedAt = asNumber(rec.receivedAt);
-                loadedInbounds.push({
-                  id: inboundId,
-                  tracking,
-                  carrier: carrier || "Other",
-                  clientId,
-                  weightLb,
-                  photoUrl,
-                  status: status as Inbound["status"] | undefined,
-                  receivedAt,
-                });
+        snap.docs.forEach((d) => {
+          const inboundId = d.id;
+          if (inboundId) {
+            const rec = asRecord(d.data());
+            if (rec) {
+              const tracking = asString(rec.tracking) ?? "";
+              const carrierRaw = asString(rec.carrier);
+              const carrier = carrierRaw as Inbound["carrier"] | undefined;
+              const clientId = asString(rec.clientId) ?? "";
+              // Filtrar docs sin clientId válido
+              if (!clientId) {
+                return;
               }
+              const weightLb = asNumber(rec.weightLb) ?? 0;
+              const photoUrl = asString(rec.photoUrl);
+              const status = asString(rec.status);
+              const receivedAt = asNumber(rec.receivedAt);
+              loadedInbounds.push({
+                id: inboundId,
+                tracking,
+                carrier: carrier || "Other",
+                clientId,
+                weightLb,
+                photoUrl,
+                status: status as Inbound["status"] | undefined,
+                receivedAt,
+              });
             }
-          });
+          }
         });
 
-        // Ordenar por receivedAt desc (puede haber duplicados entre chunks)
+        // Ordenar en memoria por receivedAt desc
         loadedInbounds.sort((a, b) => {
           const aTime = a.receivedAt || 0;
           const bTime = b.receivedAt || 0;
-          return bTime - aTime;
+          return bTime - aTime; // desc
         });
 
-        setInbounds(loadedInbounds.slice(0, LIMIT_INITIAL));
+        // Aplicar limit después del sort
+        const limited = loadedInbounds.slice(0, LIMIT_INITIAL);
+        setInbounds(limited);
         setHasMore(loadedInbounds.length > LIMIT_INITIAL);
       } catch (err) {
         console.error("[PartnerHistorial] Error loading inbounds:", err);
@@ -304,7 +300,7 @@ export default function PartnerHistorialPage() {
       }
     }
     void loadInbounds();
-  }, [scopedClientIds, uid, roleResolved, dateFrom, dateTo]);
+  }, [uid, roleResolved, dateFrom, dateTo]);
 
   if (!roleResolved) {
     return (

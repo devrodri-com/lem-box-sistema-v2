@@ -104,7 +104,7 @@ export default function PartnerEnviosPage() {
 
   // Cargar cajas
   useEffect(() => {
-    if (!roleResolved || !uid || scopedClientIds.length === 0) {
+    if (!roleResolved || !uid) {
       setBoxes([]);
       setShipments([]);
       setShipmentsLoading(false);
@@ -114,38 +114,39 @@ export default function PartnerEnviosPage() {
 
     async function loadBoxes() {
       setLoading(true);
-      const chunks = chunk(scopedClientIds, 10);
-      const boxPromises = chunks.map((chunkIds) =>
-        getDocs(query(collection(db, "boxes"), where("clientId", "in", chunkIds)))
-      );
-
       try {
-        const boxSnaps = await Promise.all(boxPromises);
+        // Una sola query por managerUid
+        const q = query(
+          collection(db, "boxes"),
+          where("managerUid", "==", uid)
+        );
+        const snap = await getDocs(q);
         const loadedBoxes: PartnerBox[] = [];
         const seenIds = new Set<string>();
 
-        boxSnaps.forEach((snap) => {
-          snap.docs.forEach((d) => {
-            const boxId = d.id;
-            if (!seenIds.has(boxId)) {
-              seenIds.add(boxId);
-              const rec = asRecord(d.data());
-              const shipmentId = asString(rec?.shipmentId);
-              const b: PartnerBox = {
-                id: boxId,
-                code: asString(rec?.code) ?? "",
-                clientId: asString(rec?.clientId) ?? "",
-                status: asBoxStatus(rec?.status) ?? "open",
-                itemIds: asStringArray(rec?.itemIds),
-                weightLb: asNumber(rec?.weightLb) ?? 0,
-                ...(asString(rec?.country) ? { country: asString(rec?.country) } : {}),
-                ...(asString(rec?.type) ? { type: asString(rec?.type) } : {}),
-                ...(shipmentId ? { shipmentId } : {}),
-              };
-              loadedBoxes.push(b);
-            }
-          });
+        snap.docs.forEach((d) => {
+          const boxId = d.id;
+          if (!seenIds.has(boxId)) {
+            seenIds.add(boxId);
+            const rec = asRecord(d.data());
+            const shipmentId = asString(rec?.shipmentId);
+            const b: PartnerBox = {
+              id: boxId,
+              code: asString(rec?.code) ?? "",
+              clientId: asString(rec?.clientId) ?? "",
+              status: asBoxStatus(rec?.status) ?? "open",
+              itemIds: asStringArray(rec?.itemIds),
+              weightLb: asNumber(rec?.weightLb) ?? 0,
+              ...(asString(rec?.country) ? { country: asString(rec?.country) } : {}),
+              ...(asString(rec?.type) ? { type: asString(rec?.type) } : {}),
+              ...(shipmentId ? { shipmentId } : {}),
+            };
+            loadedBoxes.push(b);
+          }
         });
+
+        // Filtrar en memoria por clientId si es necesario (para futuro filtro de cliente)
+        // Por ahora, no hay filtro, así que se cargan todas las boxes del partner
         setBoxes(loadedBoxes);
       } catch (err) {
         console.error("[PartnerEnvios] Error loading boxes:", err);
@@ -155,7 +156,7 @@ export default function PartnerEnviosPage() {
       }
     }
     void loadBoxes();
-  }, [scopedClientIds, uid, roleResolved]);
+  }, [uid, roleResolved]);
 
   // Derivar shipments desde las cajas
   useEffect(() => {
