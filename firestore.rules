@@ -151,7 +151,7 @@ service cloud.firestore {
               'activo'
             ]));
 
-      allow delete: if isPrivilegedStaff();
+      allow delete: if false;
     }
 
     /* ===================== INBOUND PACKAGES ===================== */

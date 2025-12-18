@@ -5,7 +5,6 @@ import { db, auth } from "@/lib/firebase";
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -179,6 +178,7 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
   const [roleResolved, setRoleResolved] = useState<boolean>(false);
   const [roleResolveError, setRoleResolveError] = useState<string | null>(null);
   const [isStaff, setIsStaff] = useState<boolean>(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
   const [partnerAdmins, setPartnerAdmins] = useState<
     Array<{ uid: string; email: string; displayName?: string }>
   >([]);
@@ -265,6 +265,10 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
         setRoleResolved(true);
         setRoleResolveError(null);
 
+        // Check superadmin
+        const isSuper = Boolean(claims.superadmin === true || claimRole === "superadmin" || normalized === "superadmin");
+        setIsSuperAdmin(isSuper);
+
         // Whitelist explícita para staff (no usar negación de partner_admin)
         const staff = isStaffRole(normalized);
         setIsStaff(staff);
@@ -325,6 +329,10 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
               setRoleResolved(true);
               setRoleResolveError(null);
 
+              // Check superadmin
+              const isSuper = normalized === "superadmin";
+              setIsSuperAdmin(isSuper);
+
               // Whitelist explícita para staff
               const staff = isStaffRole(normalized);
               setIsStaff(staff);
@@ -332,6 +340,7 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
               // Si role es null/undefined o desconocido, no autorizado
               if (!normalized || (!isStaffRole(normalized) && !isPartnerRole(normalized))) {
                 setIsStaff(false);
+                setIsSuperAdmin(false);
                 return;
               }
 
@@ -386,6 +395,10 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
         setEffectiveRole(normalized);
         setRoleResolved(true);
         setRoleResolveError(null);
+
+        // Check superadmin
+        const isSuper = Boolean(claims.superadmin === true || normalized === "superadmin");
+        setIsSuperAdmin(isSuper);
 
         const staff = isStaffRole(normalized);
         setIsStaff(staff);
@@ -602,8 +615,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
   }
 
   async function removeClient(id: string, code: string) {
-    // Guard: solo staff puede eliminar
-    if (!isStaff) {
+    // Guard: solo superadmin puede eliminar
+    if (!isSuperAdmin) {
       alert("No tenés permisos para eliminar clientes.");
       return;
     }
@@ -611,8 +624,23 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
     if (!ok) return;
     try {
       setBusyId(id);
-      await deleteDoc(doc(db, "clients", id));
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/admin/delete-client", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ clientId: id }),
+      });
+      if (!res.ok) {
+        const js = await res.json();
+        throw new Error(js?.error || `HTTP ${res.status}`);
+      }
       setRows((r) => r.filter((c) => c.id !== id));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      alert(`Error al eliminar cliente: ${msg}`);
     } finally {
       setBusyId("");
     }
@@ -949,7 +977,7 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
               >
                 {c.activo !== false ? "Desactivar" : "Activar"}
               </button>
-              {isStaff ? (
+              {isSuperAdmin ? (
                 <button
                   onClick={() => removeClient(c.id!, c.code)}
                   disabled={busyId === c.id}
