@@ -8,10 +8,16 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { useMiContext } from "../layout";
 import type { Client } from "@/types/lem";
 
+const CONTROL_BORDER = "border-[#1f3f36]";
 const btnSecondary =
-  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
 const inputCls =
-  "h-11 w-full rounded-md border border-slate-300 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+  "h-10 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
 const btnPrimary =
   "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
@@ -141,9 +147,10 @@ export default function MiHistorialPage() {
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div className="max-w-md w-full">
-          <label className="text-xs text-neutral-600">Buscar tracking</label>
+          <label className="text-xs text-white/60">Buscar tracking</label>
           <input
             className={inputCls}
+            style={INPUT_BG_STYLE}
             placeholder="Escribí el tracking"
             value={qTrack}
             onChange={(e) => setQTrack(e.target.value)}
@@ -152,6 +159,7 @@ export default function MiHistorialPage() {
         <div className="flex gap-2">
           <select
             className={inputCls}
+            style={INPUT_BG_STYLE}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
           >
@@ -166,9 +174,9 @@ export default function MiHistorialPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto border rounded">
+      <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-neutral-50 shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)]">
+          <thead className="bg-[#0f2a22] text-white/80 text-xs font-medium">
             <tr>
               <th className="text-left p-2">Fecha</th>
               <th className="text-left p-2">Tracking</th>
@@ -180,11 +188,11 @@ export default function MiHistorialPage() {
           </thead>
           <tbody>
             {filteredRows.map((r) => (
-              <tr key={r.id} className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50 h-11">
-                <td className="p-2">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : " "}</td>
-                <td className="p-2 font-mono">{r.tracking}</td>
-                <td className="p-2">{r.carrier}</td>
-                <td className="p-2 text-right tabular-nums">{fmtWeightPairFromLb(Number(r.weightLb || 0))}</td>
+              <tr key={r.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                <td className="p-2 text-white">{r.receivedAt ? new Date(r.receivedAt).toLocaleDateString() : " "}</td>
+                <td className="p-2 font-mono text-white">{r.tracking}</td>
+                <td className="p-2 text-white">{r.carrier}</td>
+                <td className="p-2 text-right tabular-nums text-white">{fmtWeightPairFromLb(Number(r.weightLb || 0))}</td>
                 <td className="p-2">
                   <div className="flex items-center gap-2">
                     {r.status === "boxed" ? (
@@ -193,15 +201,15 @@ export default function MiHistorialPage() {
                       <StatusBadge scope="package" status="received" />
                     )}
                     {alertedTrackings.has(String(r.tracking || "").toUpperCase()) && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/25 text-amber-100 ring-amber-400/60 border border-amber-400/60">
                         Alertado
                       </span>
                     )}
                   </div>
                 </td>
-                <td className="p-2">
+                <td className="p-2 text-white/80">
                   {r.photoUrl ? (
-                    <a href={r.photoUrl} target="_blank" className="underline text-sky-700">
+                    <a href={r.photoUrl} target="_blank" className="underline hover:text-white">
                       Ver
                     </a>
                   ) : (
@@ -212,7 +220,7 @@ export default function MiHistorialPage() {
             ))}
             {!filteredRows.length ? (
               <tr>
-                <td colSpan={6} className="p-3 text-neutral-500">
+                <td colSpan={6} className="p-3 text-white/40">
                   Sin registros.
                 </td>
               </tr>
@@ -223,26 +231,28 @@ export default function MiHistorialPage() {
 
       {alertOpen ? (
         <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center p-4">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-xl p-5">
+          <div className="bg-[#071f19] border border-[#1f3f36] w-full max-w-md rounded-xl shadow-xl p-5">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold">Alertar tracking</h3>
+              <h3 className="text-lg font-semibold text-white">Alertar tracking</h3>
               <button className={btnSecondary} onClick={() => setAlertOpen(false)}>
                 Cerrar
               </button>
             </div>
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">Tracking</span>
+              <span className="text-xs font-medium text-white/60">Tracking</span>
               <input
                 className={inputCls}
+                style={INPUT_BG_STYLE}
                 value={alertTracking}
                 onChange={(e) => setAlertTracking(e.target.value)}
                 placeholder="Ingresá el tracking esperado"
               />
             </label>
             <label className="grid gap-1 mt-2">
-              <span className="text-xs font-medium text-neutral-600">Nota (opcional)</span>
+              <span className="text-xs font-medium text-white/60">Nota (opcional)</span>
               <input
                 className={inputCls}
+                style={INPUT_BG_STYLE}
                 value={alertNote}
                 onChange={(e) => setAlertNote(e.target.value)}
                 placeholder="Ej: proveedor / compra #"
@@ -267,10 +277,10 @@ export default function MiHistorialPage() {
       {/* Sección "Mis alertas" */}
       {myAlerts.length > 0 && (
         <div className="mt-6 space-y-2">
-          <h2 className="text-lg font-semibold text-neutral-800">Mis alertas</h2>
-          <div className="overflow-x-auto border rounded">
+          <h2 className="text-lg font-semibold text-white">Mis alertas</h2>
+          <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 z-10 bg-neutral-50 shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)]">
+              <thead className="bg-[#0f2a22] text-white/80 text-xs font-medium">
                 <tr>
                   <th className="text-left p-2">Tracking</th>
                   <th className="text-left p-2">Nota</th>
@@ -280,14 +290,14 @@ export default function MiHistorialPage() {
               </thead>
               <tbody>
                 {myAlerts.map((alert) => (
-                  <tr key={alert.id} className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50 h-11">
-                    <td className="p-2 font-mono">{alert.tracking}</td>
-                    <td className="p-2">{alert.note || "-"}</td>
-                    <td className="p-2">
+                  <tr key={alert.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                    <td className="p-2 font-mono text-white">{alert.tracking}</td>
+                    <td className="p-2 text-white/80">{alert.note || "-"}</td>
+                    <td className="p-2 text-white/80">
                       {alert.createdAt ? new Date(alert.createdAt).toLocaleDateString() : "-"}
                     </td>
                     <td className="p-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/25 text-amber-100 ring-amber-400/60 border border-amber-400/60">
                         {alert.status === "open" ? "Abierta" : alert.status || "Abierta"}
                       </span>
                     </td>

@@ -25,8 +25,10 @@ export function useMiContext() {
 }
 
 const tabBtn = (active: boolean) =>
-  `px-4 h-10 text-sm font-semibold rounded-full flex items-center justify-center ${
-    active ? 'bg-[#005f40] !text-white font-bold shadow' : 'text-slate-800 hover:bg-white'
+  `px-4 h-10 text-sm font-semibold rounded-full flex items-center justify-center transition ${
+    active
+      ? "bg-[#005f40] text-white font-bold shadow"
+      : "text-white/80 hover:text-white hover:bg-white/10"
   }`;
 
 export default function MiLayout({ children }: { children: ReactNode }) {
@@ -116,8 +118,8 @@ export default function MiLayout({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <main className="min-h-[100dvh] grid place-items-center p-6">
-        <div className="text-sm text-neutral-600">Cargando…</div>
+      <main className="min-h-[100dvh] bg-[#02120f] grid place-items-center p-6">
+        <div className="text-sm text-white/60">Cargando…</div>
       </main>
     );
   }
@@ -136,7 +138,7 @@ export default function MiLayout({ children }: { children: ReactNode }) {
       <main className="min-h-[100dvh] p-4 md:p-8 space-y-6 bg-[#02120f]">
         <header className="flex flex-col items-center gap-3">
           <h1 className="text-2xl font-semibold text-white">Mi cuenta</h1>
-          <div className="inline-flex items-center gap-1 rounded-full bg-neutral-100 p-1 ring-1 ring-slate-200">
+          <nav className="inline-flex items-center gap-1 rounded-full bg-white/5 backdrop-blur-sm p-1 ring-1 ring-white/10">
             <Link href="/mi/historial" className={tabBtn(isActive("/mi/historial"))}>
               Historial
             </Link>
@@ -152,7 +154,7 @@ export default function MiLayout({ children }: { children: ReactNode }) {
             <Link href="/mi/cuenta" className={tabBtn(isActive("/mi/cuenta"))}>
               Cuenta
             </Link>
-          </div>
+          </nav>
         </header>
         {children}
       </main>

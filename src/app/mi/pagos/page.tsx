@@ -11,8 +11,9 @@ import { normalizeInvoiceStatus } from "@/types/lem";
 const btnPrimary =
   "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
+const CONTROL_BORDER = "border-[#1f3f36]";
 const btnSecondary =
-  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
 
 export default function MiPagosPage() {
   const { clientId } = useMiContext();
@@ -165,7 +166,7 @@ export default function MiPagosPage() {
   if (loading) {
     return (
       <section className="space-y-3">
-        <div className="text-sm text-neutral-600">Cargando facturas…</div>
+        <div className="text-sm text-white/60">Cargando facturas…</div>
       </section>
     );
   }
@@ -186,9 +187,9 @@ export default function MiPagosPage() {
         {openInvoices.length === 0 ? (
           <div className="text-sm text-white/60">No hay facturas pendientes.</div>
         ) : (
-          <div className="overflow-x-auto border rounded">
+          <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 z-10 bg-neutral-50 shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)]">
+              <thead className="bg-[#0f2a22] text-white/80 text-xs font-medium">
                 <tr>
                   <th className="text-left p-2">Fecha</th>
                   <th className="text-left p-2">Descripción</th>
@@ -199,11 +200,11 @@ export default function MiPagosPage() {
               </thead>
               <tbody>
                 {openInvoices.map((inv) => (
-                  <tr key={inv.id} className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50 h-11">
-                    <td className="p-2">
+                  <tr key={inv.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                    <td className="p-2 text-white">
                       {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : "-"}
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 text-white">
                       {inv.items.length > 0
                         ? inv.items.map((item, idx) => (
                             <div key={idx} className="text-sm">
@@ -213,11 +214,11 @@ export default function MiPagosPage() {
                           ))
                         : "Factura sin items"}
                     </td>
-                    <td className="p-2 text-right tabular-nums font-medium">
+                    <td className="p-2 text-right tabular-nums font-medium text-white">
                       ${inv.totalUsd.toFixed(2)} USD
                     </td>
                     <td className="p-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/25 text-amber-100 ring-amber-400/60 border border-amber-400/60">
                         Pendiente
                       </span>
                     </td>
@@ -253,9 +254,9 @@ export default function MiPagosPage() {
         {paidInvoices.length === 0 ? (
           <div className="text-sm text-white/60">No hay facturas pagadas.</div>
         ) : (
-          <div className="overflow-x-auto border rounded">
+          <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 z-10 bg-neutral-50 shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)]">
+              <thead className="bg-[#0f2a22] text-white/80 text-xs font-medium">
                 <tr>
                   <th className="text-left p-2">Fecha</th>
                   <th className="text-left p-2">Descripción</th>
@@ -267,11 +268,11 @@ export default function MiPagosPage() {
               </thead>
               <tbody>
                 {paidInvoices.map((inv) => (
-                  <tr key={inv.id} className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50 h-11">
-                    <td className="p-2">
+                  <tr key={inv.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                    <td className="p-2 text-white">
                       {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : "-"}
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 text-white">
                       {inv.items.length > 0
                         ? inv.items.map((item, idx) => (
                             <div key={idx} className="text-sm">
@@ -281,15 +282,15 @@ export default function MiPagosPage() {
                           ))
                         : "Factura sin items"}
                     </td>
-                    <td className="p-2 text-right tabular-nums font-medium">
+                    <td className="p-2 text-right tabular-nums font-medium text-white">
                       ${inv.totalUsd.toFixed(2)} USD
                     </td>
                     <td className="p-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-100 ring-emerald-400/60 border border-emerald-400/60">
                         Pagada
                       </span>
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 text-white/80">
                       {inv.paidAt ? new Date(inv.paidAt).toLocaleDateString() : "-"}
                     </td>
                     <td className="p-2">
@@ -320,11 +321,11 @@ export default function MiPagosPage() {
 
         return (
           <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center p-4">
-            <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl p-6">
+            <div className="bg-[#071f19] border border-[#1f3f36] w-full max-w-2xl rounded-xl shadow-xl p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-neutral-800">Factura</h3>
+                <h3 className="text-xl font-semibold text-white">Factura</h3>
                 <button
-                  className="text-neutral-400 hover:text-neutral-600 text-2xl leading-none"
+                  className="text-white/60 hover:text-white text-2xl leading-none"
                   onClick={() => setOpenInvoiceId(null)}
                 >
                   ×
@@ -334,15 +335,15 @@ export default function MiPagosPage() {
               <div className="space-y-4">
                 {/* Embarque */}
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-neutral-600">Embarque:</span>
-                  <span className="text-sm text-neutral-800 font-mono">
+                  <span className="text-sm text-white/80">Embarque:</span>
+                  <span className="text-sm text-white font-mono">
                     {invoice.shipmentCode || invoice.shipmentId || "-"}
                   </span>
                 </div>
 
                 {/* Estado */}
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-neutral-600">Estado:</span>
+                  <span className="text-sm text-white/80">Estado:</span>
                   {invoice.status === "open" ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
                       Pendiente
@@ -364,42 +365,42 @@ export default function MiPagosPage() {
 
                 {/* Total */}
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm text-neutral-600">Total:</span>
-                  <span className="text-lg font-semibold text-neutral-800">
+                  <span className="text-sm text-white/80">Total:</span>
+                  <span className="text-lg font-semibold text-white">
                     ${invoice.totalUsd.toFixed(2)} USD
                   </span>
                 </div>
 
                 {/* Tabla de items */}
-                <div className="overflow-x-auto border rounded">
+                <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
                   <table className="w-full text-sm">
-                    <thead className="bg-neutral-50">
+                    <thead className="bg-[#0f2a22] text-white/80 text-xs font-medium">
                       <tr>
-                        <th className="text-left p-2 text-xs font-medium text-neutral-700">Descripción</th>
-                        <th className="text-right p-2 text-xs font-medium text-neutral-700">Cantidad</th>
-                        <th className="text-right p-2 text-xs font-medium text-neutral-700">Unit USD</th>
-                        <th className="text-right p-2 text-xs font-medium text-neutral-700">Total USD</th>
+                        <th className="text-left p-2">Descripción</th>
+                        <th className="text-right p-2">Cantidad</th>
+                        <th className="text-right p-2">Unit USD</th>
+                        <th className="text-right p-2">Total USD</th>
                       </tr>
                     </thead>
                     <tbody>
                       {invoice.items.length > 0 ? (
                         invoice.items.map((item, idx) => (
-                          <tr key={idx} className="border-t odd:bg-white even:bg-neutral-50">
-                            <td className="p-2 text-neutral-800">{item.description}</td>
-                            <td className="p-2 text-right tabular-nums text-neutral-800">
+                          <tr key={idx} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                            <td className="p-2 text-white">{item.description}</td>
+                            <td className="p-2 text-right tabular-nums text-white">
                               {item.quantity}
                             </td>
-                            <td className="p-2 text-right tabular-nums text-neutral-800">
+                            <td className="p-2 text-right tabular-nums text-white">
                               ${item.unitPriceUsd.toFixed(2)}
                             </td>
-                            <td className="p-2 text-right tabular-nums font-medium text-neutral-800">
+                            <td className="p-2 text-right tabular-nums font-medium text-white">
                               ${item.totalUsd.toFixed(2)}
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td className="p-3 text-neutral-500 text-center" colSpan={4}>
+                          <td className="p-3 text-white/40 text-center" colSpan={4}>
                             Sin items
                           </td>
                         </tr>

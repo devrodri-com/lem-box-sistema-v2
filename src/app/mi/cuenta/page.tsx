@@ -7,12 +7,18 @@ import { db } from "@/lib/firebase";
 import { useMiContext } from "../layout";
 
 
+const CONTROL_BORDER = "border-[#1f3f36]";
 const btnPrimary =
   "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 const btnSecondary =
-  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
 const inputCls =
-  "h-11 w-full rounded-md border border-slate-300 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+  "h-10 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
 
 const STATES_BY_COUNTRY: Record<string, string[]> = {
   Uruguay: [
@@ -169,11 +175,11 @@ function LemSelect({ value, onChange, options, placeholder = "Seleccionar…", d
           if (!disabled) setOpen((o) => !o);
         }}
         className={cx(
-          "h-11 w-full rounded-md border border-slate-300 px-3 shadow-sm flex items-center justify-between text-left bg-white focus:outline-none focus:ring-2 focus:ring-[#005f40]",
-          disabled && "bg-slate-100 text-slate-400 cursor-not-allowed opacity-70"
+          "h-10 w-full rounded-md border border-[#1f3f36] px-3 flex items-center justify-between text-left bg-[#0f2a22] text-white focus:outline-none focus:ring-2 focus:ring-[#005f40]",
+          disabled && "bg-[#0f2a22]/50 text-white/40 cursor-not-allowed opacity-70"
         )}
       >
-        <span className={value ? "text-slate-900" : "text-slate-400"}>
+        <span className={value ? "text-white" : "text-white/40"}>
           {selectedLabel || placeholder}
         </span>
         <svg
@@ -181,25 +187,25 @@ function LemSelect({ value, onChange, options, placeholder = "Seleccionar…", d
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#005f40"
+          stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={cx("transition-transform", open && "rotate-180")}
+          className={cx("transition-transform text-white/60", open && "rotate-180")}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
 
       {open && !disabled && (
-        <div className="absolute left-0 right-0 mt-1 rounded-md border border-slate-200 bg-white shadow-lg z-20 max-h-60 overflow-auto">
+        <div className="absolute left-0 right-0 mt-1 rounded-md border border-[#1f3f36] bg-[#071f19] shadow-lg z-20 max-h-60 overflow-auto">
           {options.map((opt) => (
             <button
               key={opt.value}
               type="button"
               className={cx(
-                "w-full text-left px-3 py-2 text-sm hover:bg-[#005f4015]",
-                value === opt.value && "bg-[#005f4020] text-[#005f40] font-medium"
+                "w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10",
+                value === opt.value && "bg-white/20 text-white font-medium"
               )}
               onClick={() => {
                 onChange(opt.value);
@@ -289,17 +295,18 @@ export default function MiCuentaPage() {
 
   return (
     <section className="space-y-3">
-      <div className="rounded-lg border ring-1 ring-slate-200 bg-white shadow-sm p-4 grid gap-3">
+      <div className="rounded-lg border border-[#1f3f36] ring-1 ring-white/10 bg-[#071f19] shadow-sm p-4 grid gap-3">
         {/* Código + Nombre */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="grid gap-1 md:col-span-1">
-            <span className="text-xs font-medium text-neutral-600">Código</span>
-            <input className={inputCls} value={form.code} disabled readOnly />
+            <span className="text-xs font-medium text-white/80">Código</span>
+            <input className={inputCls} style={INPUT_BG_STYLE} value={form.code} disabled readOnly />
           </label>
           <label className="grid gap-1 md:col-span-2">
-            <span className="text-xs font-medium text-neutral-600">Nombre</span>
+            <span className="text-xs font-medium text-white/80">Nombre</span>
             <input
               className={inputCls}
+              style={INPUT_BG_STYLE}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
@@ -309,7 +316,7 @@ export default function MiCuentaPage() {
         {/* Tipo/Número de documento */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="grid gap-1 md:col-span-1">
-            <span className="text-xs font-medium text-neutral-600">Tipo de documento</span>
+            <span className="text-xs font-medium text-white/80">Tipo de documento</span>
             <LemSelect
               value={form.docType}
               onChange={(v) => setForm((f) => ({ ...f, docType: v }))}
@@ -318,9 +325,10 @@ export default function MiCuentaPage() {
             />
           </label>
           <label className="grid gap-1 md:col-span-2">
-            <span className="text-xs font-medium text-neutral-600">Número de documento</span>
+            <span className="text-xs font-medium text-white/80">Número de documento</span>
             <input
               className={inputCls}
+              style={INPUT_BG_STYLE}
               value={form.docNumber}
               onChange={(e) => setForm((f) => ({ ...f, docNumber: e.target.value }))}
             />
@@ -330,7 +338,7 @@ export default function MiCuentaPage() {
         {/* País / Estado / Ciudad */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">País</span>
+            <span className="text-xs font-medium text-white/80">País</span>
             <LemSelect
               value={form.country}
               onChange={(v) => setForm((f) => ({ ...f, country: v, state: "" }))}
@@ -343,7 +351,7 @@ export default function MiCuentaPage() {
             />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Estado / Depto / Provincia</span>
+            <span className="text-xs font-medium text-white/80">Estado / Depto / Provincia</span>
             <LemSelect
               value={form.state}
               onChange={(v) => setForm((f) => ({ ...f, state: v }))}
@@ -353,9 +361,10 @@ export default function MiCuentaPage() {
             />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Ciudad</span>
+            <span className="text-xs font-medium text-white/80">Ciudad</span>
             <input
               className={inputCls}
+              style={INPUT_BG_STYLE}
               value={form.city}
               onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             />
@@ -365,17 +374,19 @@ export default function MiCuentaPage() {
         {/* Dirección / Código postal */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="grid gap-1 md:col-span-2">
-            <span className="text-xs font-medium text-neutral-600">Dirección</span>
+            <span className="text-xs font-medium text-white/80">Dirección</span>
             <input
               className={inputCls}
+              style={INPUT_BG_STYLE}
               value={form.address}
               onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
             />
           </label>
           <label className="grid gap-1 md:col-span-1">
-            <span className="text-xs font-medium text-neutral-600">Código postal</span>
+            <span className="text-xs font-medium text-white/80">Código postal</span>
             <input
               className={inputCls}
+              style={INPUT_BG_STYLE}
               value={form.postalCode}
               onChange={(e) => setForm((f) => ({ ...f, postalCode: e.target.value }))}
             />
@@ -385,22 +396,24 @@ export default function MiCuentaPage() {
         {/* Teléfono / Email / Email adicional */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Teléfono</span>
+            <span className="text-xs font-medium text-white/80">Teléfono</span>
             <input
               className={inputCls}
+              style={INPUT_BG_STYLE}
               inputMode="tel"
               value={form.phone}
               onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
             />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Email</span>
-            <input className={inputCls} value={form.email} disabled readOnly />
+            <span className="text-xs font-medium text-white/80">Email</span>
+            <input className={inputCls} style={INPUT_BG_STYLE} value={form.email} disabled readOnly />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-medium text-neutral-600">Email adicional</span>
+            <span className="text-xs font-medium text-white/80">Email adicional</span>
             <input
               className={inputCls}
+              style={INPUT_BG_STYLE}
               value={form.emailAlt}
               onChange={(e) => setForm((f) => ({ ...f, emailAlt: e.target.value }))}
             />

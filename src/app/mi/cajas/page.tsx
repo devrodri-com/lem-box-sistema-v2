@@ -7,8 +7,16 @@ import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { useMiContext } from "../layout";
 
+const CONTROL_BORDER = "border-[#1f3f36]";
 const btnSecondary =
-  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+const inputCls =
+  "h-10 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
 
 type Box = {
   id: string;
@@ -58,9 +66,9 @@ export default function MiCajasPage() {
 
   return (
     <section className="space-y-3">
-      <div className="overflow-x-auto border rounded">
+      <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-neutral-50 shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)]">
+          <thead className="bg-[#0f2a22] text-white/80 text-xs font-medium">
             <tr>
               <th className="text-left p-2">Caja</th>
               <th className="text-left p-2">País</th>
@@ -75,12 +83,12 @@ export default function MiCajasPage() {
             {boxes.map((b) => {
               const effectiveLb = b.weightOverrideLb != null ? Number(b.weightOverrideLb) : Number(b.weightLb || 0);
               return (
-                <tr key={b.id} className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50 h-11">
-                  <td className="p-2 font-mono">{b.code}</td>
-                  <td className="p-2">{b.country}</td>
-                  <td className="p-2">{b.type}</td>
-                  <td className="p-2 text-right tabular-nums">{b.itemIds?.length || 0}</td>
-                  <td className="p-2 text-right tabular-nums">{fmtWeightPairFromLb(effectiveLb)}</td>
+                <tr key={b.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                  <td className="p-2 font-mono text-white">{b.code}</td>
+                  <td className="p-2 text-white">{b.country}</td>
+                  <td className="p-2 text-white">{b.type}</td>
+                  <td className="p-2 text-right tabular-nums text-white">{b.itemIds?.length || 0}</td>
+                  <td className="p-2 text-right tabular-nums text-white">{fmtWeightPairFromLb(effectiveLb)}</td>
                   <td className="p-2">{b.status ? <StatusBadge scope="box" status={b.status as "open" | "closed"} /> : " "}</td>
                   <td className="p-2">
                     <button className={btnSecondary} onClick={() => openBoxDetail(b)}>
@@ -92,7 +100,7 @@ export default function MiCajasPage() {
             })}
             {!boxes.length ? (
               <tr>
-                <td colSpan={7} className="p-3 text-neutral-500">
+                <td colSpan={7} className="p-3 text-white/40">
                   Sin cajas.
                 </td>
               </tr>
@@ -108,17 +116,17 @@ export default function MiCajasPage() {
         
         return (
           <div className="fixed inset-0 z-40 bg-black/40 grid place-items-center p-4">
-            <div className="bg-white w-full max-w-xl rounded-xl shadow-xl p-5">
+            <div className="bg-[#071f19] border border-[#1f3f36] w-full max-w-xl rounded-xl shadow-xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold">Caja {detailBox.code}</h3>
+                <h3 className="text-lg font-semibold text-white">Caja {detailBox.code}</h3>
                 <button className={btnSecondary} onClick={() => setDetailBox(null)}>
                   Cerrar
                 </button>
               </div>
               {!hasOverride && (
-                <div className="overflow-x-auto border rounded mb-3">
+                <div className="overflow-x-auto rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10 mb-3">
                   <table className="w-full text-sm">
-                    <thead className="bg-neutral-50">
+                    <thead className="bg-[#0f2a22] text-white/80 text-xs font-medium">
                       <tr>
                         <th className="text-left p-2">Tracking</th>
                         <th className="text-left p-2">Carrier</th>
@@ -127,15 +135,15 @@ export default function MiCajasPage() {
                     </thead>
                     <tbody>
                       {detailItems.map((i) => (
-                        <tr key={i.id} className="border-t">
-                          <td className="p-2 font-mono">{i.tracking}</td>
-                          <td className="p-2">{i.carrier}</td>
-                          <td className="p-2 text-right tabular-nums">{fmtWeightPairFromLb(Number(i.weightLb || 0))}</td>
+                        <tr key={i.id} className="border-t border-white/10 odd:bg-transparent even:bg-white/5 hover:bg-white/10">
+                          <td className="p-2 font-mono text-white">{i.tracking}</td>
+                          <td className="p-2 text-white">{i.carrier}</td>
+                          <td className="p-2 text-right tabular-nums text-white">{fmtWeightPairFromLb(Number(i.weightLb || 0))}</td>
                         </tr>
                       ))}
                       {!detailItems.length ? (
                         <tr>
-                          <td colSpan={3} className="p-3 text-neutral-500">
+                          <td colSpan={3} className="p-3 text-white/40">
                             Caja sin items.
                           </td>
                         </tr>
@@ -144,7 +152,7 @@ export default function MiCajasPage() {
                   </table>
                 </div>
               )}
-              <div className="text-sm font-medium text-neutral-700">
+              <div className="text-sm font-medium text-white">
                 Peso total: {fmtWeightPairFromLb(effectiveLb)}
               </div>
             </div>
