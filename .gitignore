@@ -47,4 +47,8 @@ firestore-debug.log
 *.key.json
 *.cred.json
 .firebase/
-AUDITORIA_CODIGO_BASURA.md
+# Auditorías locales
+AUDITORIA*.md
+
+# Email (feature pausada)
+src/lib/email.ts
