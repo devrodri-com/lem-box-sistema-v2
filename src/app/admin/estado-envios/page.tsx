@@ -1,8 +1,10 @@
 // src/app/admin/estado-envios/page.tsx
 "use client";
 import { useEffect, useMemo, useState, Fragment } from "react";
+import { useRouter } from "next/navigation";
 import RequireAuth from "@/components/RequireAuth";
-import { collection, doc, deleteDoc, getDoc, getDocs, getFirestore, orderBy, query, updateDoc, where } from "firebase/firestore";
+import { collection, doc, deleteDoc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
 import Script from "next/script";
 import type { Client, Shipment as ShipmentType } from "@/types/lem";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -36,8 +38,11 @@ type Box = {
 
 
 export default function EstadoEnviosPage() {
+  const router = useRouter();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isStaff, setIsStaff] = useState(false);
+  const [roleChecked, setRoleChecked] = useState(false);
 
   // expand / detail state
   const [expandedId, setExpandedId] = useState<string>("");
@@ -45,6 +50,7 @@ export default function EstadoEnviosPage() {
   const [loadingDetail, setLoadingDetail] = useState<string>("");
   const [clientsById, setClientsById] = useState<Record<string, Client>>({});
   const [deletingShipmentId, setDeletingShipmentId] = useState<string>("");
+  const [generatingInvoices, setGeneratingInvoices] = useState<string>("");
 
   // Flatten all boxes for useBoxDetailModal
   const allBoxes = useMemo(() => {
@@ -91,18 +97,52 @@ export default function EstadoEnviosPage() {
 
   const db = getFirestore();
 
+  // Verificar rol de staff
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) {
+      setRoleChecked(true);
+      return;
+    }
+    user
+      .getIdTokenResult(true)
+      .then((r) => {
+        const claims = r.claims as any;
+        const role = claims?.role || "";
+        const isStaffRole =
+          role === "admin" ||
+          role === "superadmin" ||
+          role === "operador" ||
+          claims?.admin === true ||
+          claims?.superadmin === true;
+        setIsStaff(isStaffRole);
+      })
+      .catch(() => setIsStaff(false))
+      .finally(() => setRoleChecked(true));
+  }, []);
+
   useEffect(() => {
     async function fetchShipments() {
-      const q = query(collection(db, "shipments"), orderBy("openedAt", "desc"));
-      const snap = await getDocs(q);
-      const list: Shipment[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
-      setShipments(list);
-      setLoading(false);
+      try {
+        const q = query(collection(db, "shipments"));
+        const snap = await getDocs(q);
+        const list: Shipment[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        list.sort((a: any, b: any) => Number(b.openedAt || b.opened || b.createdAt || 0) - Number(a.openedAt || a.opened || a.createdAt || 0));
+        setShipments(list);
 
-      const snapClients = await getDocs(collection(db, "clients"));
-      const map: Record<string, Client> = {};
-      snapClients.docs.forEach(d => { map[d.id] = { id: d.id, ...(d.data() as any) } as Client });
-      setClientsById(map);
+        try {
+          const snapClients = await getDocs(collection(db, "clients"));
+          const map: Record<string, Client> = {};
+          snapClients.docs.forEach(d => { map[d.id] = { id: d.id, ...(d.data() as any) } as Client });
+          setClientsById(map);
+        } catch (e) {
+          console.error("[estado-envios] fetchClients failed", e);
+        }
+      } catch (e) {
+        console.error("[estado-envios] fetchShipments failed", e);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchShipments();
   }, [db]);
@@ -190,6 +230,91 @@ export default function EstadoEnviosPage() {
     }
   }
 
+  async function generateInvoiceDrafts(shipment: Shipment) {
+    setGeneratingInvoices(shipment.id);
+    try {
+      // Obtener cajas del embarque
+      const boxes = boxesByShipment[shipment.id] || [];
+      if (boxes.length === 0) {
+        // Si no están cargadas, cargarlas
+        const snap = await getDocs(query(collection(db, "boxes"), where("shipmentId", "==", shipment.id)));
+        const loadedBoxes: Box[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        setBoxesByShipment(prev => ({ ...prev, [shipment.id]: loadedBoxes }));
+        boxes.push(...loadedBoxes);
+      }
+
+      if (boxes.length === 0) {
+        alert("Este embarque no tiene cajas.");
+        return;
+      }
+
+      // Agrupar por clientId
+      const boxesByClient: Record<string, Box[]> = {};
+      for (const box of boxes) {
+        if (!box.clientId) continue;
+        if (!boxesByClient[box.clientId]) {
+          boxesByClient[box.clientId] = [];
+        }
+        boxesByClient[box.clientId].push(box);
+      }
+
+      const clientIds = Object.keys(boxesByClient);
+      if (clientIds.length === 0) {
+        alert("No se encontraron clientes en las cajas de este embarque.");
+        return;
+      }
+
+      let created = 0;
+      let skipped = 0;
+
+      // Crear/Upsert invoice draft para cada clientId
+      for (const clientId of clientIds) {
+        const invoiceId = `invoice_${shipment.id}_${clientId}`;
+        const invoiceRef = doc(db, "invoices", invoiceId);
+
+        try {
+          const existingDoc = await getDoc(invoiceRef);
+          if (existingDoc.exists()) {
+            const existingData = existingDoc.data();
+            const status = existingData.status;
+            // Si ya existe y está open o paid, skip
+            if (status === "open" || status === "paid") {
+              skipped++;
+              continue;
+            }
+          }
+
+          // Crear o actualizar invoice draft
+          await setDoc(invoiceRef, {
+            shipmentId: shipment.id,
+            clientId,
+            currency: "usd",
+            status: "draft",
+            items: [
+              { description: "Carga comercial (kg)", quantity: 0, unitPriceUsd: 0, totalUsd: 0 },
+              { description: "Celulares / Apple", quantity: 0, unitPriceUsd: 0, totalUsd: 0 },
+              { description: "Pickup", quantity: 0, unitPriceUsd: 0, totalUsd: 0 },
+              { description: "Manejo de carga", quantity: 0, unitPriceUsd: 0, totalUsd: 0 },
+            ],
+            totalUsd: 0,
+            createdAt: Date.now(),
+          }, { merge: true });
+
+          created++;
+        } catch (e: any) {
+          console.error(`[estado-envios] Error creating invoice for client ${clientId}:`, e);
+        }
+      }
+
+      alert(`Creadas ${created} factura(s) borrador. ${skipped > 0 ? `Omitidas ${skipped} (ya están abiertas o pagadas).` : ""}`);
+    } catch (e: any) {
+      console.error("[estado-envios] Error generating invoices:", e);
+      alert(`Error: ${e?.message || "No se pudieron generar las facturas"}`);
+    } finally {
+      setGeneratingInvoices("");
+    }
+  }
+
   const statusLabel = (s: Shipment["status"]) => {
     switch (s) {
       case "open": return "En Proceso";
@@ -251,7 +376,7 @@ export default function EstadoEnviosPage() {
                         <td className="px-3 py-2">{renderShipmentStatus(s.status)}</td>
                         <td className="px-3 py-2 text-white">{s.openedAt ? new Date(s.openedAt).toLocaleDateString() : "-"}</td>
                         <td className="px-3 py-2 text-white">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {s.status === "open" && (
                               <button className="h-9 px-4 rounded-md bg-[#cf6934] text-white font-medium hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#cf6934]" onClick={() => setStatus(s.id, "shipped")}>
                                 Marcar En Tránsito
@@ -261,6 +386,23 @@ export default function EstadoEnviosPage() {
                               <button className="h-9 px-4 rounded-md bg-[#eb6619] text-white font-medium hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]" onClick={() => setStatus(s.id, "arrived")}>
                                 Marcar En Destino
                               </button>
+                            )}
+                            {isStaff && (
+                              <button
+                                className="h-9 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50"
+                                onClick={() => generateInvoiceDrafts(s)}
+                                disabled={generatingInvoices === s.id}
+                              >
+                                {generatingInvoices === s.id ? "Generando…" : "Generar borradores"}
+                              </button>
+                            )}
+                            {isStaff && (
+                              <a
+                                href={`/admin/facturas?shipmentId=${s.id}`}
+                                className="h-9 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] inline-flex items-center justify-center"
+                              >
+                                Ver facturas
+                              </a>
                             )}
                             {(!boxesByShipment[s.id]?.length) && (
                               <button

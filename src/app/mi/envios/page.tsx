@@ -1,3 +1,4 @@
+// src/app/mi/envios/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ import { useMiContext } from "../layout";
 export default function MiEnviosPage() {
   const { clientId } = useMiContext();
   const [shipments, setShipments] = useState<any[]>([]);
+  const [boxesByShipment, setBoxesByShipment] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     if (clientId) {
@@ -20,6 +22,17 @@ export default function MiEnviosPage() {
     const qb = query(collection(db, "boxes"), where("clientId", "==", cid));
     const sb = await getDocs(qb);
     const bs = sb.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+    const byShipment: Record<string, any[]> = {};
+    for (const b of bs) {
+      const sid = b.shipmentId;
+      if (!sid) continue;
+      (byShipment[sid] ||= []).push(b);
+    }
+    // Sort boxes by code for stable display
+    for (const sid of Object.keys(byShipment)) {
+      byShipment[sid].sort((a: any, b: any) => String(a.code || "").localeCompare(String(b.code || "")));
+    }
+    setBoxesByShipment(byShipment);
     const shipmentIds = Array.from(
       new Set(bs.map((b) => b.shipmentId).filter((x: string | null | undefined) => !!x))
     ) as string[];
@@ -44,6 +57,7 @@ export default function MiEnviosPage() {
             <tr>
               <th className="text-left p-2">Embarque</th>
               <th className="text-left p-2">País/Tipo</th>
+              <th className="text-left p-2">Cajas</th>
               <th className="text-left p-2">Estado</th>
             </tr>
           </thead>
@@ -53,6 +67,22 @@ export default function MiEnviosPage() {
                 <td className="p-2 font-mono">{s.code}</td>
                 <td className="p-2">
                   {s.country} / {s.type}
+                </td>
+                <td className="p-2">
+                  {Array.isArray(boxesByShipment[s.id]) && boxesByShipment[s.id].length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {boxesByShipment[s.id].map((b) => (
+                        <span
+                          key={b.id}
+                          className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs bg-white/60"
+                        >
+                          {b.code}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-neutral-500">-</span>
+                  )}
                 </td>
                 <td className="p-2">
                   {s.status === "open" ? (
@@ -69,7 +99,7 @@ export default function MiEnviosPage() {
             ))}
             {!shipments.length ? (
               <tr>
-                <td colSpan={3} className="p-3 text-neutral-500">
+                <td colSpan={4} className="p-3 text-neutral-500">
                   Sin envíos.
                 </td>
               </tr>
@@ -80,4 +110,3 @@ export default function MiEnviosPage() {
     </section>
   );
 }
-

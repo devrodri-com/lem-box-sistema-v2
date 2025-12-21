@@ -4,7 +4,7 @@ import RequireAuth from "@/components/RequireAuth";
 import { auth, db } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId, limit } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
-import type { Carrier, Client } from "@/types/lem";
+import type { Carrier, Client, Shipment } from "@/types/lem";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { fmtWeightPairFromLb, lbToKg } from "@/lib/weight";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
@@ -62,6 +62,7 @@ type Box = {
   type?: "COMERCIAL" | "FRANQUICIA";
   weightLb?: number;
   labelRef?: string;
+  shipmentId?: string | null;
 };
 
 export default function HistorialTrackingPage() {
@@ -87,7 +88,10 @@ function PageInner() {
   const [qTracking, setQTracking] = useState("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<'all' | 'received' | 'boxed'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'alerted' | 'received' | 'boxed'>('all');
+  const [alertedTrackings, setAlertedTrackings] = useState<Set<string>>(new Set());
+  const [openAlerts, setOpenAlerts] = useState<Array<{ id: string; tracking: string; clientId: string; createdAt?: number; note?: string }>>([]);
+  const [shipmentsById, setShipmentsById] = useState<Record<string, Shipment>>({});
 
   const clientsById = useMemo(() => {
     const m: Record<string, Client> = {};
@@ -271,6 +275,132 @@ function PageInner() {
         setClients(nextClients);
         setRows(nextRows);
         setBoxes(nextBoxes);
+
+        // Cargar shipments en batch (sin N+1)
+        try {
+          const shipmentIds = Array.from(
+            new Set(
+              nextBoxes
+                .map((b) => (b as any).shipmentId)
+                .filter((x): x is string => !!x && typeof x === "string")
+            )
+          );
+
+          if (shipmentIds.length > 0) {
+            let shipmentDocs: any[] = [];
+            if (shipmentIds.length <= 10) {
+              const q = query(
+                collection(db, "shipments"),
+                where(documentId(), "in", shipmentIds)
+              );
+              const snap = await getDocs(q);
+              shipmentDocs = snap.docs;
+            } else {
+              const chunks = chunk(shipmentIds, 10);
+              const snaps = await Promise.all(
+                chunks.map((ids) =>
+                  getDocs(
+                    query(
+                      collection(db, "shipments"),
+                      where(documentId(), "in", ids)
+                    )
+                  )
+                )
+              );
+              shipmentDocs = snaps.flatMap((s) => s.docs);
+            }
+
+            const shipmentsMap: Record<string, Shipment> = {};
+            shipmentDocs.forEach((d) => {
+              const data = d.data();
+              shipmentsMap[d.id] = {
+                id: d.id,
+                code: typeof data.code === "string" ? data.code : "",
+                status: (["open", "shipped", "arrived", "closed"].includes(
+                  data.status
+                )
+                  ? data.status
+                  : "open") as Shipment["status"],
+                country: typeof data.country === "string" ? data.country : "",
+                type:
+                  data.type === "COMERCIAL" || data.type === "FRANQUICIA"
+                    ? data.type
+                    : "COMERCIAL",
+              };
+            });
+
+            if (!alive) return;
+            setShipmentsById(shipmentsMap);
+          } else {
+            if (!alive) return;
+            setShipmentsById({});
+          }
+        } catch (e) {
+          console.error("Error loading shipments:", e);
+          if (!alive) return;
+          setShipmentsById({});
+        }
+
+        // Cargar alertas para los trackings visibles
+        const trackings = nextRows.map((r) => r.tracking.toUpperCase());
+        if (trackings.length > 0) {
+          const alertSet = new Set<string>();
+          const trackingChunks = chunk(trackings, 10);
+          for (const chunk of trackingChunks) {
+            try {
+              const alertQuery = query(
+                collection(db, "trackingAlerts"),
+                where("tracking", "in", chunk),
+                where("status", "==", "open")
+              );
+              const alertSnap = await getDocs(alertQuery);
+              alertSnap.docs.forEach((d) => {
+                const data = d.data();
+                if (data.tracking && typeof data.tracking === "string") {
+                  alertSet.add(data.tracking.toUpperCase());
+                }
+              });
+            } catch (e) {
+              console.error("Error loading alerts:", e);
+            }
+          }
+          if (!alive) return;
+          setAlertedTrackings(alertSet);
+        } else {
+          setAlertedTrackings(new Set());
+        }
+
+        // Cargar todas las alertas abiertas (para partner: solo de sus clientes gestionados)
+        try {
+          const allAlertsQuery = query(
+            collection(db, "trackingAlerts"),
+            where("status", "==", "open")
+          );
+          const allAlertsSnap = await getDocs(allAlertsQuery);
+          let allAlerts = allAlertsSnap.docs.map((d) => {
+            const data = d.data();
+            return {
+              id: d.id,
+              tracking: typeof data.tracking === "string" ? data.tracking.toUpperCase() : "",
+              clientId: typeof data.clientId === "string" ? data.clientId : "",
+              createdAt: typeof data.createdAt === "number" ? data.createdAt : undefined,
+              note: typeof data.note === "string" ? data.note : undefined,
+            };
+          }).filter((a) => a.tracking && a.clientId);
+
+          // Para partner: filtrar en memoria solo alertas de sus clientes gestionados
+          if (isPartner && managedIds.length > 0) {
+            const managedSet = new Set(managedIds);
+            allAlerts = allAlerts.filter((a) => managedSet.has(a.clientId));
+          }
+
+          if (!alive) return;
+          setOpenAlerts(allAlerts);
+        } catch (e) {
+          console.error("Error loading all alerts:", e);
+          if (!alive) return;
+          setOpenAlerts([]);
+        }
         return;
       }
 
@@ -296,8 +426,130 @@ function PageInner() {
 
       if (!alive) return;
       setClients(cs.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, "id">) })));
-      setRows(is.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) })));
-      setBoxes(bs.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) })));
+      const nextRows = is.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) }));
+      setRows(nextRows);
+      const nextBoxes = bs.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
+      setBoxes(nextBoxes);
+
+      // Cargar shipments en batch (sin N+1)
+      try {
+        const shipmentIds = Array.from(
+          new Set(
+            nextBoxes
+              .map((b) => (b as any).shipmentId)
+              .filter((x): x is string => !!x && typeof x === "string")
+          )
+        );
+
+        if (shipmentIds.length > 0) {
+          let shipmentDocs: any[] = [];
+          if (shipmentIds.length <= 10) {
+            const q = query(
+              collection(db, "shipments"),
+              where(documentId(), "in", shipmentIds)
+            );
+            const snap = await getDocs(q);
+            shipmentDocs = snap.docs;
+          } else {
+            const chunks = chunk(shipmentIds, 10);
+            const snaps = await Promise.all(
+              chunks.map((ids) =>
+                getDocs(
+                  query(
+                    collection(db, "shipments"),
+                    where(documentId(), "in", ids)
+                  )
+                )
+              )
+            );
+            shipmentDocs = snaps.flatMap((s) => s.docs);
+          }
+
+          const shipmentsMap: Record<string, Shipment> = {};
+          shipmentDocs.forEach((d) => {
+            const data = d.data();
+            shipmentsMap[d.id] = {
+              id: d.id,
+              code: typeof data.code === "string" ? data.code : "",
+              status: (["open", "shipped", "arrived", "closed"].includes(
+                data.status
+              )
+                ? data.status
+                : "open") as Shipment["status"],
+              country: typeof data.country === "string" ? data.country : "",
+              type:
+                data.type === "COMERCIAL" || data.type === "FRANQUICIA"
+                  ? data.type
+                  : "COMERCIAL",
+            };
+          });
+
+          if (!alive) return;
+          setShipmentsById(shipmentsMap);
+        } else {
+          if (!alive) return;
+          setShipmentsById({});
+        }
+      } catch (e) {
+        console.error("Error loading shipments:", e);
+        if (!alive) return;
+        setShipmentsById({});
+      }
+
+      // Cargar alertas para los trackings visibles
+      const trackings = nextRows.map((r) => r.tracking.toUpperCase());
+      if (trackings.length > 0) {
+        const alertSet = new Set<string>();
+        const trackingChunks = chunk(trackings, 10);
+        for (const chunk of trackingChunks) {
+          try {
+            const alertQuery = query(
+              collection(db, "trackingAlerts"),
+              where("tracking", "in", chunk),
+              where("status", "==", "open")
+            );
+            const alertSnap = await getDocs(alertQuery);
+            alertSnap.docs.forEach((d) => {
+              const data = d.data();
+              if (data.tracking && typeof data.tracking === "string") {
+                alertSet.add(data.tracking.toUpperCase());
+              }
+            });
+          } catch (e) {
+            console.error("Error loading alerts:", e);
+          }
+        }
+        if (!alive) return;
+        setAlertedTrackings(alertSet);
+      } else {
+        setAlertedTrackings(new Set());
+      }
+
+      // Cargar todas las alertas abiertas (para staff: todas)
+      try {
+        const allAlertsQuery = query(
+          collection(db, "trackingAlerts"),
+          where("status", "==", "open")
+        );
+        const allAlertsSnap = await getDocs(allAlertsQuery);
+        const allAlerts = allAlertsSnap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            tracking: typeof data.tracking === "string" ? data.tracking.toUpperCase() : "",
+            clientId: typeof data.clientId === "string" ? data.clientId : "",
+            createdAt: typeof data.createdAt === "number" ? data.createdAt : undefined,
+            note: typeof data.note === "string" ? data.note : undefined,
+          };
+        }).filter((a) => a.tracking && a.clientId);
+
+        if (!alive) return;
+        setOpenAlerts(allAlerts);
+      } catch (e) {
+        console.error("Error loading all alerts:", e);
+        if (!alive) return;
+        setOpenAlerts([]);
+      }
     }
 
     void load();
@@ -401,9 +653,12 @@ function PageInner() {
         if (r.status !== 'received') return false;
         if (boxByInbound[r.id]) return false; // sólo sueltos
       }
+      if (statusFilter === 'alerted') {
+        if (!alertedTrackings.has(r.tracking.toUpperCase())) return false;
+      }
       return true;
     });
-  }, [rows, clientsById, qClient, qTracking, statusFilter, boxByInbound]);
+  }, [rows, clientsById, qClient, qTracking, statusFilter, boxByInbound, alertedTrackings]);
 
   const filteredBoxes = useMemo(() => {
     if (statusFilter !== 'boxed') return [] as Box[];
@@ -476,6 +731,7 @@ function PageInner() {
             onChange={(val) => setStatusFilter(val as any)}
             options={[
               { value: "all", label: "Todos" },
+              { value: "alerted", label: "Alertados" },
               { value: "received", label: "Recibido" },
               { value: "boxed", label: "Consolidado" },
             ]}
@@ -568,86 +824,284 @@ function PageInner() {
                 </tr>
               </thead>
               <tbody>
-                {(statusFilter === "received"
-                  ? filtered.filter((r) => !boxByInbound[r.id])
-                  : filtered
-                ).map((r) => {
-                  const c = clientsById[r.clientId];
-                  const cliente = c?.code
-                    ? `${c.code} ${c.name}`
-                    : r.clientId;
-                  return (
-                    <tr key={r.id} className="border-t border-white/10">
-                      <td className="p-2">
-                        {r.receivedAt
-                          ? new Date(r.receivedAt).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td className="p-2">{cliente}</td>
-                      <td className="p-2 font-mono text-sm">
-                        <a
-                          className="underline text-white/80 hover:text-white"
-                          href={`/admin/trackings/${r.id}`}
-                        >
-                          {r.tracking}
-                        </a>
-                      </td>
-                      <td className="p-2">{r.carrier}</td>
-                      <td className="p-2 whitespace-nowrap">
-                        {fmtWeightPairFromLb(Number(r.weightLb || 0))}
-                      </td>
-                      <td className="p-2">
-                        {boxByInbound[r.id]?.code ? (
-                          <button
-                            className="underline text-sm text-white/80 hover:text-white"
-                            onClick={() => openBoxDetailByInbound(r.id)}
-                          >
-                            {boxByInbound[r.id]?.code}
-                          </button>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="p-2">
-                        {r.status === "boxed" ? (
-                          <StatusBadge scope="package" status="boxed" />
-                        ) : r.status === "received" ? (
-                          <StatusBadge scope="package" status="received" />
-                        ) : (
-                          <span className="text-xs">{r.status}</span>
-                        )}
-                      </td>
-                      <td className="p-2">
-                        {r.photoUrl ? (
+                {(() => {
+                  // Para filtro "alerted": mostrar inboundPackages alertados + alertas sin inboundPackage
+                  if (statusFilter === "alerted") {
+                    const rowTrackings = new Set(filtered.map((r) => String(r.tracking || "").toUpperCase()));
+                    const inboundRows = filtered.filter((r) => alertedTrackings.has(String(r.tracking || "").toUpperCase()));
+                    const alertOnlyRows = openAlerts.filter((alert) => !rowTrackings.has(alert.tracking));
+                    
+                    return (
+                      <>
+                        {/* InboundPackages alertados */}
+                        {inboundRows.map((r) => {
+                          const c = clientsById[r.clientId];
+                          const cliente = c?.code
+                            ? `${c.code} ${c.name}`
+                            : r.clientId;
+                          return (
+                            <tr key={r.id} className="border-t border-white/10">
+                              <td className="p-2">
+                                {r.receivedAt
+                                  ? new Date(r.receivedAt).toLocaleDateString()
+                                  : "-"}
+                              </td>
+                              <td className="p-2">{cliente}</td>
+                              <td className="p-2 font-mono text-sm">
+                                <a
+                                  className="underline text-white/80 hover:text-white"
+                                  href={`/admin/trackings/${r.id}`}
+                                >
+                                  {r.tracking}
+                                </a>
+                              </td>
+                              <td className="p-2">{r.carrier}</td>
+                              <td className="p-2 whitespace-nowrap">
+                                {fmtWeightPairFromLb(Number(r.weightLb || 0))}
+                              </td>
+                              <td className="p-2">
+                                {boxByInbound[r.id]?.code ? (
+                                  <button
+                                    className="underline text-sm text-white/80 hover:text-white"
+                                    onClick={() => openBoxDetailByInbound(r.id)}
+                                  >
+                                    {boxByInbound[r.id]?.code}
+                                  </button>
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                              <td className="p-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {(() => {
+                                    const box = boxByInbound[r.id];
+                                    const sid = box?.shipmentId;
+                                    const sh = sid ? shipmentsById[sid] : undefined;
+                                    const shipStatus = sh?.status;
+
+                                    if (r.status === "received") {
+                                      return (
+                                        <>
+                                          <StatusBadge scope="package" status="received" />
+                                        </>
+                                      );
+                                    }
+
+                                    if (r.status === "boxed") {
+                                      if (shipStatus === "shipped") {
+                                        return (
+                                          <>
+                                            <StatusBadge scope="shipment" status="shipped" />
+                                          </>
+                                        );
+                                      }
+                                      if (shipStatus === "arrived" || shipStatus === "closed") {
+                                        return (
+                                          <>
+                                            <StatusBadge scope="shipment" status="arrived" />
+                                          </>
+                                        );
+                                      }
+                                      return (
+                                        <>
+                                          <StatusBadge scope="package" status="boxed" />
+                                        </>
+                                      );
+                                    }
+
+                                    return <span className="text-xs">{r.status}</span>;
+                                  })()}
+                                  {alertedTrackings.has(r.tracking.toUpperCase()) && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">
+                                      Alertado
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-2">
+                                {r.photoUrl ? (
+                                  <a
+                                    href={r.photoUrl}
+                                    target="_blank"
+                                    title="Ver foto"
+                                    aria-label="Ver foto"
+                                    className="inline-flex items-center justify-center text-white/80 hover:text-white"
+                                  >
+                                    <IconPhoto />
+                                  </a>
+                                ) : (
+                                  <span className="text-white/40">-</span>
+                                )}
+                              </td>
+                              <td className="p-2">
+                                {isStaffState && !boxByInbound[r.id] && r.status === "received" ? (
+                                  <button
+                                    className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-white/80 hover:text-red-400 hover:border-red-400"
+                                    title="Eliminar"
+                                    onClick={() => deleteTracking(r)}
+                                  >
+                                    <IconTrash />
+                                  </button>
+                                ) : (
+                                  <span className="text-white/40">-</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {/* Alertas sin inboundPackage */}
+                        {alertOnlyRows.map((alert) => {
+                          const c = clientsById[alert.clientId];
+                          const cliente = c?.code
+                            ? `${c.code} ${c.name}`
+                            : alert.clientId;
+                          return (
+                            <tr key={`alert-${alert.id}`} className="border-t border-white/10 opacity-75">
+                              <td className="p-2">
+                                {alert.createdAt
+                                  ? new Date(alert.createdAt).toLocaleDateString()
+                                  : "-"}
+                              </td>
+                              <td className="p-2">{cliente}</td>
+                              <td className="p-2 font-mono text-sm">{alert.tracking}</td>
+                              <td className="p-2 text-white/40">-</td>
+                              <td className="p-2 text-white/40">-</td>
+                              <td className="p-2 text-white/40">-</td>
+                              <td className="p-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">
+                                  Alertado
+                                </span>
+                              </td>
+                              <td className="p-2 text-white/40">-</td>
+                              <td className="p-2 text-white/40">-</td>
+                            </tr>
+                          );
+                        })}
+                      </>
+                    );
+                  }
+                  
+                  // Para otros filtros: comportamiento normal
+                  const rowsToShow = statusFilter === "received"
+                    ? filtered.filter((r) => !boxByInbound[r.id])
+                    : filtered;
+                  
+                  return rowsToShow.map((r) => {
+                    const c = clientsById[r.clientId];
+                    const cliente = c?.code
+                      ? `${c.code} ${c.name}`
+                      : r.clientId;
+                    return (
+                      <tr key={r.id} className="border-t border-white/10">
+                        <td className="p-2">
+                          {r.receivedAt
+                            ? new Date(r.receivedAt).toLocaleDateString()
+                            : "-"}
+                        </td>
+                        <td className="p-2">{cliente}</td>
+                        <td className="p-2 font-mono text-sm">
                           <a
-                            href={r.photoUrl}
-                            target="_blank"
-                            title="Ver foto"
-                            aria-label="Ver foto"
-                            className="inline-flex items-center justify-center text-white/80 hover:text-white"
+                            className="underline text-white/80 hover:text-white"
+                            href={`/admin/trackings/${r.id}`}
                           >
-                            <IconPhoto />
+                            {r.tracking}
                           </a>
-                        ) : (
-                          <span className="text-white/40">-</span>
-                        )}
-                      </td>
-                      <td className="p-2">
-                        {isStaffState && !boxByInbound[r.id] && r.status === "received" ? (
-                          <button
-                            className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-white/80 hover:text-red-400 hover:border-red-400"
-                            title="Eliminar"
-                            onClick={() => deleteTracking(r)}
-                          >
-                            <IconTrash />
-                          </button>
-                        ) : (
-                          <span className="text-white/40">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                        <td className="p-2">{r.carrier}</td>
+                        <td className="p-2 whitespace-nowrap">
+                          {fmtWeightPairFromLb(Number(r.weightLb || 0))}
+                        </td>
+                        <td className="p-2">
+                          {boxByInbound[r.id]?.code ? (
+                            <button
+                              className="underline text-sm text-white/80 hover:text-white"
+                              onClick={() => openBoxDetailByInbound(r.id)}
+                            >
+                              {boxByInbound[r.id]?.code}
+                            </button>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {(() => {
+                              const box = boxByInbound[r.id];
+                              const sid = box?.shipmentId;
+                              const sh = sid ? shipmentsById[sid] : undefined;
+                              const shipStatus = sh?.status;
+
+                              if (r.status === "received") {
+                                return (
+                                  <>
+                                    <StatusBadge scope="package" status="received" />
+                                  </>
+                                );
+                              }
+
+                              if (r.status === "boxed") {
+                                if (shipStatus === "shipped") {
+                                  return (
+                                    <>
+                                      <StatusBadge scope="shipment" status="shipped" />
+                                    </>
+                                  );
+                                }
+                                if (shipStatus === "arrived" || shipStatus === "closed") {
+                                  return (
+                                    <>
+                                      <StatusBadge scope="shipment" status="arrived" />
+                                    </>
+                                  );
+                                }
+                                return (
+                                  <>
+                                    <StatusBadge scope="package" status="boxed" />
+                                  </>
+                                );
+                              }
+
+                              return <span className="text-xs">{r.status}</span>;
+                            })()}
+                            {alertedTrackings.has(r.tracking.toUpperCase()) && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">
+                                Alertado
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          {r.photoUrl ? (
+                            <a
+                              href={r.photoUrl}
+                              target="_blank"
+                              title="Ver foto"
+                              aria-label="Ver foto"
+                              className="inline-flex items-center justify-center text-white/80 hover:text-white"
+                            >
+                              <IconPhoto />
+                            </a>
+                          ) : (
+                            <span className="text-white/40">-</span>
+                          )}
+                        </td>
+                        <td className="p-2">
+                          {isStaffState && !boxByInbound[r.id] && r.status === "received" ? (
+                            <button
+                              className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-white/80 hover:text-red-400 hover:border-red-400"
+                              title="Eliminar"
+                              onClick={() => deleteTracking(r)}
+                            >
+                              <IconTrash />
+                            </button>
+                          ) : (
+                            <span className="text-white/40">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
                 {!rows.length ? (
                   <tr>
                     <td className="p-3 text-white/40" colSpan={9}>

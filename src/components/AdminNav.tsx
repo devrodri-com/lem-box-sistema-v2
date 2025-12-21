@@ -102,7 +102,9 @@ export default function AdminNav() {
   useEffect(() => { setMounted(true); }, []);
 
   const showUsuarios = isSuper || (email === "r.opalo@icloud.com" || email === "r.opali@icloud.com");
-  const adminTabs = showUsuarios ? [...baseTabs, { href: "/admin/usuarios", label: "Usuarios" }] : baseTabs;
+  const adminTabs = showUsuarios
+    ? [...baseTabs, { href: "/admin/facturas", label: "Facturas" }, { href: "/admin/usuarios", label: "Usuarios" }]
+    : baseTabs;
   const tabs = isAdmin ? adminTabs : clientTabs;
 
   if (!mounted || !claimsChecked) return null;

@@ -45,9 +45,16 @@ const normalizeCountry = (c: unknown) => {
 };
 const normalizeType = (t: unknown) => (typeof t === "string" ? t.trim().toUpperCase() : "");
 
-async function nextShipmentCode(): Promise<string> {
-  const n = Math.floor(Date.now() / 1000) % 100000;
-  return `E${String(n).padStart(4, "0")}`;
+const MONTHS_ES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
+function formatShipmentCode(tsMs: number, country: string, type: string): string {
+  const date = new Date(tsMs);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = MONTHS_ES[date.getMonth()] || "ENE";
+  const year = date.getFullYear();
+  const countryUpper = country.toUpperCase();
+  const typeUpper = type.toUpperCase();
+  return `${day}-${month}-${year}-${countryUpper}-${typeUpper}`;
 }
 
 export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btnPrimaryCls?: string, btnSecondaryCls?: string, linkCls?: string }) {
@@ -229,7 +236,8 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
             .map(b => b.managerUid)
             .filter((uid): uid is string => uid != null && uid !== "")
         ));
-        const code = await nextShipmentCode();
+        const openedAt = Date.now();
+        const code = formatShipmentCode(openedAt, normalizedCountry, normalizedType);
 
         // Crear doc de embarque con id auto
         const shipRef = doc(collection(db, "shipments"));
@@ -241,7 +249,7 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
           clientIds,
           managerUids,
           status: "open",
-          openedAt: Date.now(),
+          openedAt,
         });
 
         // Marcar cajas con shipmentId

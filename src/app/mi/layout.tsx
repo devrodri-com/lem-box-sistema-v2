@@ -40,10 +40,20 @@ export default function MiLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (u) => {
       if (!u) {
+        setLoading(false);
         router.replace("/acceder");
         return;
       }
       setUid(u.uid);
+      // Enforce that only client users can access /mi (defense-in-depth).
+      // We check token claims first (source of truth for privileged roles).
+      const tokenResult = await u.getIdTokenResult(true);
+      const claimRole = String((tokenResult.claims as any)?.role || "");
+      if (claimRole && claimRole !== "client") {
+        setLoading(false);
+        router.replace("/acceder");
+        return;
+      }
       // mapear user->clientId (users/{uid} o query por uid)
       type UserDocData = { clientId?: string; role?: string; uid?: string; email?: string; displayName?: string };
       let userDocData: UserDocData | null = null;
@@ -83,6 +93,12 @@ export default function MiLayout({ children }: { children: ReactNode }) {
       if (!userDocData) {
         setErr("No se encontró tu perfil.");
         setLoading(false);
+        return;
+      }
+      const resolvedRole = String(userDocData.role ?? "");
+      if (resolvedRole && resolvedRole !== "client") {
+        setLoading(false);
+        router.replace("/acceder");
         return;
       }
 
@@ -129,6 +145,9 @@ export default function MiLayout({ children }: { children: ReactNode }) {
             </Link>
             <Link href="/mi/envios" className={tabBtn(isActive("/mi/envios"))}>
               Envíos
+            </Link>
+            <Link href="/mi/pagos" className={tabBtn(isActive("/mi/pagos"))}>
+              Pagos
             </Link>
             <Link href="/mi/cuenta" className={tabBtn(isActive("/mi/cuenta"))}>
               Cuenta

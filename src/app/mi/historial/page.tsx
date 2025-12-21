@@ -19,6 +19,9 @@ export default function MiHistorialPage() {
   const { uid, clientId } = useMiContext();
   const [rows, setRows] = useState<any[]>([]);
   const [qTrack, setQTrack] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'alerted' | 'received' | 'boxed'>('all');
+  const [alertedTrackings, setAlertedTrackings] = useState<Set<string>>(new Set());
+  const [myAlerts, setMyAlerts] = useState<any[]>([]);
 
   // Alertar tracking
   const [alertOpen, setAlertOpen] = useState(false);
@@ -29,6 +32,7 @@ export default function MiHistorialPage() {
   useEffect(() => {
     if (clientId) {
       loadTrackings(clientId);
+      loadAlerts(clientId);
     }
   }, [clientId]);
 
@@ -47,11 +51,53 @@ export default function MiHistorialPage() {
     }
   }
 
+  async function loadAlerts(cid: string) {
+    try {
+      // Cargar alertas abiertas (status == "open" o sin status)
+      const alertQuery = query(
+        collection(db, "trackingAlerts"),
+        where("clientId", "==", cid),
+        where("status", "==", "open")
+      );
+      const alertSnap = await getDocs(alertQuery);
+      const alerts = alertSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      setMyAlerts(alerts);
+      
+      // Construir set de trackings alertados
+      const alertSet = new Set<string>();
+      alerts.forEach((a) => {
+        if (a.tracking && typeof a.tracking === "string") {
+          alertSet.add(a.tracking.toUpperCase());
+        }
+      });
+      setAlertedTrackings(alertSet);
+    } catch (e) {
+      console.error("Error loading alerts:", e);
+      setMyAlerts([]);
+      setAlertedTrackings(new Set());
+    }
+  }
+
   const filteredRows = useMemo(() => {
+    let filtered = rows;
+    
+    // Filtro por texto
     const q = qTrack.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => String(r.tracking || "").toLowerCase().includes(q));
-  }, [rows, qTrack]);
+    if (q) {
+      filtered = filtered.filter((r) => String(r.tracking || "").toLowerCase().includes(q));
+    }
+    
+    // Filtro por estado
+    if (statusFilter === 'received') {
+      filtered = filtered.filter((r) => r.status === 'received');
+    } else if (statusFilter === 'boxed') {
+      filtered = filtered.filter((r) => r.status === 'boxed');
+    } else if (statusFilter === 'alerted') {
+      filtered = filtered.filter((r) => alertedTrackings.has(String(r.tracking || "").toUpperCase()));
+    }
+    
+    return filtered;
+  }, [rows, qTrack, statusFilter, alertedTrackings]);
 
   async function submitAlert() {
     if (!clientId || !uid || !alertTracking.trim()) return;
@@ -77,10 +123,15 @@ export default function MiHistorialPage() {
         note: alertNote.trim() || "",
         createdAt: Date.now(),
         managerUid: managerUid,
+        status: "open",
       });
       setAlertTracking("");
       setAlertNote("");
       setAlertOpen(false);
+      // Recargar alertas después de crear una nueva
+      if (clientId) {
+        await loadAlerts(clientId);
+      }
     } finally {
       setAlertSaving(false);
     }
@@ -88,7 +139,7 @@ export default function MiHistorialPage() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex items-end justify-between gap-3 flex-wrap">
         <div className="max-w-md w-full">
           <label className="text-xs text-neutral-600">Buscar tracking</label>
           <input
@@ -98,9 +149,21 @@ export default function MiHistorialPage() {
             onChange={(e) => setQTrack(e.target.value)}
           />
         </div>
-        <button className={btnSecondary} onClick={() => setAlertOpen(true)}>
-          Alertar tracking
-        </button>
+        <div className="flex gap-2">
+          <select
+            className={inputCls}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+          >
+            <option value="all">Todos</option>
+            <option value="alerted">Alertados</option>
+            <option value="received">Recibidos</option>
+            <option value="boxed">Consolidado</option>
+          </select>
+          <button className={btnSecondary} onClick={() => setAlertOpen(true)}>
+            Alertar tracking
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto border rounded">
@@ -123,11 +186,18 @@ export default function MiHistorialPage() {
                 <td className="p-2">{r.carrier}</td>
                 <td className="p-2 text-right tabular-nums">{fmtWeightPairFromLb(Number(r.weightLb || 0))}</td>
                 <td className="p-2">
-                  {r.status === "boxed" ? (
-                    <StatusBadge scope="package" status="boxed" />
-                  ) : (
-                    <StatusBadge scope="package" status="received" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    {r.status === "boxed" ? (
+                      <StatusBadge scope="package" status="boxed" />
+                    ) : (
+                      <StatusBadge scope="package" status="received" />
+                    )}
+                    {alertedTrackings.has(String(r.tracking || "").toUpperCase()) && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                        Alertado
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="p-2">
                   {r.photoUrl ? (
@@ -193,6 +263,41 @@ export default function MiHistorialPage() {
           </div>
         </div>
       ) : null}
+
+      {/* Sección "Mis alertas" */}
+      {myAlerts.length > 0 && (
+        <div className="mt-6 space-y-2">
+          <h2 className="text-lg font-semibold text-neutral-800">Mis alertas</h2>
+          <div className="overflow-x-auto border rounded">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-neutral-50 shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)]">
+                <tr>
+                  <th className="text-left p-2">Tracking</th>
+                  <th className="text-left p-2">Nota</th>
+                  <th className="text-left p-2">Fecha</th>
+                  <th className="text-left p-2">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myAlerts.map((alert) => (
+                  <tr key={alert.id} className="border-t odd:bg-white even:bg-neutral-50 hover:bg-slate-50 h-11">
+                    <td className="p-2 font-mono">{alert.tracking}</td>
+                    <td className="p-2">{alert.note || "-"}</td>
+                    <td className="p-2">
+                      {alert.createdAt ? new Date(alert.createdAt).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="p-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                        {alert.status === "open" ? "Abierta" : alert.status || "Abierta"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

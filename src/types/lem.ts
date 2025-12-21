@@ -74,3 +74,40 @@ export interface TrackingAlert {
   createdAt?: number;
   managerUid?: string | null;
 }
+
+export interface InvoiceItem {
+  description: string;
+  quantity: number;
+  unitPriceUsd: number;
+  totalUsd: number;
+}
+
+export interface Invoice {
+  id?: string;
+  shipmentId: string;
+  shipmentCode?: string;
+  clientId: string;
+  currency: "usd";
+  status: "draft" | "open" | "paid" | "void";
+  items: InvoiceItem[];
+  totalUsd: number;
+  createdAt: number;
+  publishedAt?: number;
+  paidAt?: number;
+  stripeSessionId?: string;
+  stripePaymentIntentId?: string;
+}
+
+/**
+ * Normaliza el estado de una invoice, convirtiendo estados legacy a los nuevos.
+ * Fallback para datos existentes en dev que puedan tener "published" o "cancelled".
+ */
+export function normalizeInvoiceStatus(status: string): Invoice["status"] {
+  if (status === "published") return "open";
+  if (status === "cancelled") return "void";
+  if (status === "draft" || status === "open" || status === "paid" || status === "void") {
+    return status as Invoice["status"];
+  }
+  // Fallback a "draft" si el estado es desconocido
+  return "draft";
+}

@@ -157,6 +157,7 @@ service cloud.firestore {
     /* ===================== INBOUND PACKAGES ===================== */
     match /inboundPackages/{inbId} {
       allow read: if isStaff()
+        || (clientId() != null && resource.data.clientId == clientId())
         || (
           isPartnerAdmin()
           && (
@@ -180,6 +181,7 @@ service cloud.firestore {
     /* ===================== BOXES ===================== */
     match /boxes/{boxId} {
       allow read: if isStaff()
+        || (clientId() != null && resource.data.clientId == clientId())
         || (
           isPartnerAdmin()
           && (
@@ -222,6 +224,35 @@ service cloud.firestore {
     // Staff can create/update. Deletion is restricted below.
     allow create, update: if isStaff();
     allow delete: if isPrivilegedStaff() && (resource.data.boxIds == null || resource.data.boxIds.size() == 0);
+    }
+
+    /* ===================== INVOICES ===================== */
+    match /invoices/{invoiceId} {
+      // Cliente: solo sus invoices; Superadmin: todas
+      allow read: if (clientId() != null && resource.data.clientId == clientId())
+        || isSuperAdmin();
+
+      // Solo superadmin puede crear/editar invoices
+      allow create, update: if isSuperAdmin();
+
+      // Nadie puede borrar desde el front
+      allow delete: if false;
+    }
+
+    /* ===================== TRACKING ALERTS ===================== */
+    match /trackingAlerts/{id} {
+      // Clients can create alerts for themselves.
+      allow create: if hasAuth()
+        && clientId() != null
+        && request.resource.data.clientId == clientId()
+        && request.resource.data.uid == request.auth.uid;
+
+      // Clients can read their own alerts; staff can read all.
+      allow read: if isStaff()
+        || (clientId() != null && resource.data.clientId == clientId());
+
+      // Only staff can manage alerts.
+      allow update, delete: if isStaff();
     }
 
     /* ===================== ADMINS ===================== */

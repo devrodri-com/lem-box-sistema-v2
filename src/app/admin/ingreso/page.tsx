@@ -12,6 +12,7 @@ import {
   orderBy,
   query,
   Timestamp,
+  updateDoc,
   where,
   limit,
 } from "firebase/firestore";
@@ -358,12 +359,47 @@ function PageInner() {
 
   // Crear inbound
   const createInbound = useCallback(async (trackingValue: string) => {
+    // Normalizar tracking a uppercase
+    const trackingUpper = trackingValue.trim().toUpperCase();
+    
     // Unicidad por tracking
-    const dupeSnap = await getDocs(query(collection(db, "inboundPackages"), where("tracking", "==", trackingValue), limit(1)));
+    const dupeSnap = await getDocs(query(collection(db, "inboundPackages"), where("tracking", "==", trackingUpper), limit(1)));
     if (!dupeSnap.empty) {
-      setErrMsg(`El tracking ${trackingValue} ya existe en el sistema.`);
+      setErrMsg(`El tracking ${trackingUpper} ya existe en el sistema.`);
       return false;
     }
+
+    // Buscar alerta pendiente
+    const alertQuery = query(
+      collection(db, "trackingAlerts"),
+      where("tracking", "==", trackingUpper),
+      where("status", "==", "open"),
+      limit(1)
+    );
+    const alertSnap = await getDocs(alertQuery);
+    let alertDoc = alertSnap.empty ? null : alertSnap.docs[0];
+    let alertData = alertDoc ? alertDoc.data() : null;
+
+    // Si existe alerta y clientId no coincide, pedir confirmación
+    if (alertDoc && alertData && alertData.clientId !== form.clientId) {
+      const alertClient = clientsById[alertData.clientId];
+      const selectedClient = clientsById[form.clientId];
+      const alertClientName = alertClient 
+        ? `${alertClient.code || ""} ${alertClient.name || ""}`.trim() || alertData.clientId
+        : alertData.clientId;
+      const selectedClientName = selectedClient
+        ? `${selectedClient.code || ""} ${selectedClient.name || ""}`.trim() || form.clientId
+        : form.clientId;
+      
+      const confirmed = window.confirm(
+        `El tracking ${trackingUpper} está alertado por ${alertClientName}. ¿Seguro querés asignarlo a ${selectedClientName}?`
+      );
+      
+      if (!confirmed) {
+        return false; // Abortar createInbound
+      }
+    }
+
     // Validaciones de negocio
     const weightLbVal = computeWeightLb();
     if (weightLbVal <= 0) { setErrMsg("Ingrese un peso válido en lb o kg."); return false; }
@@ -386,13 +422,19 @@ function PageInner() {
     let photoUrl: string | undefined;
     if (form.photo) {
       const blob = await processImage(form.photo);
-      const dest = `inbound/${Date.now()}-${trackingValue}.jpg`;
+      const dest = `inbound/${Date.now()}-${trackingUpper}.jpg`;
       const r = ref(storage, dest);
       await uploadBytes(r, blob, { contentType: "image/jpeg" });
       photoUrl = await getDownloadURL(r);
     }
+
+    // Obtener uid del admin actual
+    const auth = getAuth();
+    const adminUid = auth.currentUser?.uid || null;
+
+    // Crear inbound
     const docRef = await addDoc(collection(db, "inboundPackages"), {
-      tracking: trackingValue,
+      tracking: trackingUpper,
       carrier: form.carrier,
       clientId: form.clientId,
       weightLb: weightLbVal,
@@ -401,11 +443,33 @@ function PageInner() {
       receivedAt: Timestamp.now().toMillis(),
       managerUid: managerUid,
     });
-    setRows([{ id: docRef.id, tracking: trackingValue, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, receivedAt: Date.now(), status: "received" }, ...rows]);
+
+    // Actualizar alerta si existe
+    if (alertDoc && alertData) {
+      if (alertData.clientId === form.clientId) {
+        // Resolver alerta (mismo cliente)
+        await updateDoc(alertDoc.ref, {
+          status: "resolved",
+          resolvedAt: Date.now(),
+          resolvedByUid: adminUid,
+          assignedClientId: form.clientId,
+        });
+      } else {
+        // Ignorar alerta (cliente diferente, pero admin confirmó)
+        await updateDoc(alertDoc.ref, {
+          status: "ignored",
+          ignoredAt: Date.now(),
+          ignoredByUid: adminUid,
+          assignedClientId: form.clientId,
+        });
+      }
+    }
+
+    setRows([{ id: docRef.id, tracking: trackingUpper, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, receivedAt: Date.now(), status: "received" }, ...rows]);
     setForm({ tracking: "", carrier: form.carrier, clientId: form.clientId, weightLb: 0, weightKg: 0, photo: null });
     setPhotoPreview(null);
     return true;
-  }, [form.carrier, form.clientId, form.photo, rows, computeWeightLb]);
+  }, [form.carrier, form.clientId, form.photo, rows, computeWeightLb, clientsById]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
