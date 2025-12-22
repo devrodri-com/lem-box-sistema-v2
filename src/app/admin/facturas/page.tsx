@@ -54,6 +54,9 @@ function PageInner() {
   const [creating, setCreating] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [claimsChecked, setClaimsChecked] = useState(false);
+  const [payUrls, setPayUrls] = useState<Record<string, string>>({});
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const shipmentIdFilter = searchParams.get("shipmentId")?.trim() || "";
 
@@ -250,6 +253,103 @@ function PageInner() {
     }
   }
 
+  async function generatePaymentLink(invoiceId: string) {
+    setGeneratingId(invoiceId);
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("Debes estar autenticado para generar el link de pago");
+        return;
+      }
+
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/admin/payments/create-checkout-session", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ invoiceId }),
+      });
+
+      const contentType = res.headers.get("content-type");
+      const isJson = contentType && contentType.includes("application/json");
+
+      let data: any;
+      if (isJson) {
+        try {
+          data = await res.json();
+        } catch (e: any) {
+          console.error("[admin/facturas] Error parsing JSON response:", e);
+          alert("Error al procesar la respuesta del servidor.");
+          return;
+        }
+      } else {
+        const text = await res.text();
+        console.error("[admin/facturas] Received non-JSON response:", text.substring(0, 200));
+        alert("Error del servidor. Por favor, intenta nuevamente.");
+        return;
+      }
+
+      if (!res.ok) {
+        let errorMessage = "Error al generar el link de pago.";
+        if (res.status === 401) {
+          errorMessage = "No estás autenticado. Por favor, inicia sesión nuevamente.";
+        } else if (res.status === 403) {
+          errorMessage = "No tienes permiso para generar este link de pago.";
+        } else if (res.status === 400) {
+          if (data.error === "invoice_not_open") {
+            errorMessage = "Esta factura no está disponible para pago.";
+          } else if (data.error === "invoice_no_items") {
+            errorMessage = "La factura no tiene items.";
+          } else if (data.error) {
+            errorMessage = `Error: ${data.error}`;
+          }
+        } else if (res.status === 500) {
+          if (data.error === "stripe_not_configured") {
+            errorMessage = "El sistema de pagos no está configurado. Contacta al soporte.";
+          } else if (data.error === "stripe_api_error") {
+            errorMessage = "Error al comunicarse con el procesador de pagos. Intenta nuevamente.";
+          } else if (data.error) {
+            errorMessage = `Error del servidor: ${data.error}`;
+          }
+        }
+        alert(errorMessage);
+        return;
+      }
+
+      if (data.url) {
+        setPayUrls((prev) => ({ ...prev, [invoiceId]: data.url }));
+      } else {
+        alert("No se recibió la URL de pago.");
+      }
+    } catch (e: any) {
+      console.error("[admin/facturas] Error generating payment link:", e);
+      alert("Error al generar el link de pago.");
+    } finally {
+      setGeneratingId(null);
+    }
+  }
+
+  async function copyToClipboard(text: string, invoiceId: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(invoiceId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (e) {
+      console.error("Error copying to clipboard:", e);
+      alert("No se pudo copiar al portapapeles");
+    }
+  }
+
+  function copyWhatsAppMessage(invoice: Invoice) {
+    const invoiceId = invoice.id;
+    if (!invoiceId || !payUrls[invoiceId]) return;
+    const shipmentCode = invoice.shipmentCode || invoice.shipmentId || "-";
+    const message = `LEM-BOX: Tenés una factura pendiente por USD ${invoice.totalUsd.toFixed(2)}. Embarque: ${shipmentCode}. Pagá acá: ${payUrls[invoiceId]}`;
+    copyToClipboard(message, invoiceId);
+  }
+
   if (loading) {
     return (
       <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
@@ -306,6 +406,7 @@ function PageInner() {
                   <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Embarque</th>
                   <th className="px-3 py-2 text-right text-white/80 text-xs font-medium">Total</th>
                   <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Estado</th>
+                  <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Pago</th>
                   <th className="px-3 py-2 text-left text-white/80 text-xs font-medium">Acciones</th>
                 </tr>
               </thead>
@@ -329,6 +430,40 @@ function PageInner() {
                       </td>
                       <td className="px-3 py-2">
                         <InvoiceStatusBadge status={inv.status} />
+                      </td>
+                      <td className="px-3 py-2">
+                        {inv.status === "open" ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            {!payUrls[inv.id || ""] ? (
+                              <button
+                                className={btnSecondary}
+                                onClick={() => inv.id && generatePaymentLink(inv.id)}
+                                disabled={generatingId === inv.id || !inv.id}
+                              >
+                                {generatingId === inv.id ? "Generando…" : "Generar link"}
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  className={btnSecondary}
+                                  onClick={() => inv.id && copyToClipboard(payUrls[inv.id], inv.id)}
+                                  disabled={copiedId === inv.id || !inv.id}
+                                >
+                                  {copiedId === inv.id ? "Copiado" : "Copiar link"}
+                                </button>
+                                <button
+                                  className={btnSecondary}
+                                  onClick={() => copyWhatsAppMessage(inv)}
+                                  disabled={!inv.id || !payUrls[inv.id]}
+                                >
+                                  Copiar WhatsApp
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-white/40 text-xs">-</span>
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         <button

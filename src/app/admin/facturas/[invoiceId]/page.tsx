@@ -54,6 +54,9 @@ function PageInner() {
   const [error, setError] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [claimsChecked, setClaimsChecked] = useState(false);
+  const [payUrl, setPayUrl] = useState<string>("");
+  const [generatingLink, setGeneratingLink] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Verificar superadmin
   useEffect(() => {
@@ -100,6 +103,7 @@ function PageInner() {
       const loadedInvoice: Invoice = {
         id: invoiceDoc.id,
         shipmentId: typeof data.shipmentId === "string" ? data.shipmentId : "",
+        shipmentCode: typeof data.shipmentCode === "string" ? data.shipmentCode : undefined,
         clientId: typeof data.clientId === "string" ? data.clientId : "",
         currency: data.currency === "usd" ? "usd" : "usd",
         status: normalizeInvoiceStatus(data.status),
@@ -270,6 +274,105 @@ function PageInner() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function generatePaymentLink() {
+    if (!invoice) return;
+    setGeneratingLink(true);
+    setError(null);
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("Debes estar autenticado para generar el link de pago");
+        return;
+      }
+
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/payments/create-checkout-session", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ invoiceId }),
+      });
+
+      const contentType = res.headers.get("content-type");
+      const isJson = contentType && contentType.includes("application/json");
+
+      let data: any;
+      if (isJson) {
+        try {
+          data = await res.json();
+        } catch (e: any) {
+          console.error("[admin/facturas] Error parsing JSON response:", e);
+          alert("Error al procesar la respuesta del servidor.");
+          return;
+        }
+      } else {
+        const text = await res.text();
+        console.error("[admin/facturas] Received non-JSON response:", text.substring(0, 200));
+        alert("Error del servidor. Por favor, intenta nuevamente.");
+        return;
+      }
+
+      if (!res.ok) {
+        let errorMessage = "Error al generar el link de pago.";
+        if (res.status === 401) {
+          errorMessage = "No estás autenticado. Por favor, inicia sesión nuevamente.";
+        } else if (res.status === 403) {
+          errorMessage = "No tienes permiso para generar este link de pago.";
+        } else if (res.status === 400) {
+          if (data.error === "invoice_not_open") {
+            errorMessage = "Esta factura no está disponible para pago.";
+          } else if (data.error === "invoice_no_items") {
+            errorMessage = "La factura no tiene items.";
+          } else if (data.error) {
+            errorMessage = `Error: ${data.error}`;
+          }
+        } else if (res.status === 500) {
+          if (data.error === "stripe_not_configured") {
+            errorMessage = "El sistema de pagos no está configurado. Contacta al soporte.";
+          } else if (data.error === "stripe_api_error") {
+            errorMessage = "Error al comunicarse con el procesador de pagos. Intenta nuevamente.";
+          } else if (data.error) {
+            errorMessage = `Error del servidor: ${data.error}`;
+          }
+        }
+        alert(errorMessage);
+        return;
+      }
+
+      if (data.url) {
+        setPayUrl(data.url);
+      } else {
+        alert("No se recibió la URL de pago.");
+      }
+    } catch (e: any) {
+      console.error("[admin/facturas] Error generating payment link:", e);
+      alert("Error al generar el link de pago.");
+    } finally {
+      setGeneratingLink(false);
+    }
+  }
+
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error("Error copying to clipboard:", e);
+      alert("No se pudo copiar al portapapeles");
+    }
+  }
+
+  function copyWhatsAppMessage() {
+    if (!invoice || !payUrl) return;
+    const shipmentCode = invoice.shipmentCode || invoice.shipmentId || "-";
+    const total = recalculateTotal();
+    const message = `LEM-BOX: Tenés una factura pendiente por USD ${total.toFixed(2)}. Embarque: ${shipmentCode}. Pagá acá: ${payUrl}`;
+    copyToClipboard(message);
   }
 
   // No renderizar contenido si no es superadmin
@@ -505,6 +608,47 @@ function PageInner() {
         {!canEdit && (
           <div className="pt-4 border-t border-white/10 text-sm text-white/60">
             Esta factura no puede ser editada porque está {invoice.status === "paid" ? "pagada" : "anulada"}.
+          </div>
+        )}
+
+        {/* Payment Link Actions - Solo si status === "open" */}
+        {invoice.status === "open" && (
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            <h3 className="text-sm font-semibold text-white">Link de pago</h3>
+            <div className="flex flex-wrap items-center gap-3">
+              {!payUrl ? (
+                <button
+                  className={btnSecondary}
+                  onClick={generatePaymentLink}
+                  disabled={generatingLink}
+                >
+                  {generatingLink ? "Generando…" : "Generar link de pago"}
+                </button>
+              ) : (
+                <>
+                  <button
+                    className={btnSecondary}
+                    onClick={() => copyToClipboard(payUrl)}
+                    disabled={copied}
+                  >
+                    {copied ? "Copiado" : "Copiar link"}
+                  </button>
+                  <button
+                    className={btnSecondary}
+                    onClick={copyWhatsAppMessage}
+                    disabled={!payUrl}
+                  >
+                    Copiar mensaje WhatsApp
+                  </button>
+                </>
+              )}
+            </div>
+            {payUrl && (
+              <div className="mt-2 p-3 rounded-md border border-[#1f3f36] bg-[#0f2a22]">
+                <div className="text-xs text-white/60 mb-1">Link generado:</div>
+                <div className="text-sm text-white font-mono break-all">{payUrl}</div>
+              </div>
+            )}
           </div>
         )}
       </div>
