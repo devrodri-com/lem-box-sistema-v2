@@ -231,16 +231,21 @@ function PageInner() {
         }
       }
 
-      const docRef = await addDoc(collection(db, "invoices"), {
+      const payload: any = {
         clientId: newClientId,
         shipmentId,
-        shipmentCode: shipmentCode || undefined,
         currency: "usd",
         status: "draft",
         items: [],
         totalUsd: 0,
         createdAt: Date.now(),
-      });
+      };
+
+      if (shipmentCode && shipmentCode.trim()) {
+        payload.shipmentCode = shipmentCode.trim();
+      }
+
+      const docRef = await addDoc(collection(db, "invoices"), payload);
       setShowNewModal(false);
       setNewClientId("");
       setSelectedShipmentId("");
