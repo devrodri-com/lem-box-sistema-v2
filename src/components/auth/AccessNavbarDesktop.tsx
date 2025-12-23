@@ -23,7 +23,7 @@ export default function AccessNavbarDesktop() {
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 md:px-6">
         {/* Logo */}
         <Link
-          href="https://lem-box.com"
+          href="https://portal.lem-box.com/"
           aria-label="Ir a LEM-BOX"
           className="inline-flex items-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#eb6618]"
         >

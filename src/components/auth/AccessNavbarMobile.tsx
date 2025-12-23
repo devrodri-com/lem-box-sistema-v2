@@ -26,7 +26,7 @@ export default function AccessNavbarMobile() {
     <header className="md:hidden fixed inset-x-0 top-0 z-[100] h-16 bg-[#005f40]/10 backdrop-blur-xl backdrop-saturate-150 border-b border-white/10">
       <div className="h-full px-4 flex items-center justify-between">
         {/* Logo */}
-        <Link href="https://lem-box.com" aria-label="Ir a LEM-BOX" className="inline-flex items-center">
+        <Link href="https://portal.lem-box.com/" aria-label="Ir a LEM-BOX" className="inline-flex items-center">
           <img src="/logo.png" alt="LEM-BOX" className="h-9 w-auto" />
         </Link>
 
