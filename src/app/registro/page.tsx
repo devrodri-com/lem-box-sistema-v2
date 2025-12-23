@@ -14,9 +14,14 @@ import AccessNavbarMobile from "@/components/auth/AccessNavbarMobile";
 const btnPrimary =
   "inline-flex items-center justify-center h-11 px-5 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 const btnSecondary =
-  "inline-flex items-center justify-center h-11 px-5 rounded-md border border-slate-300 bg-white text-slate-800 font-medium shadow-sm hover:bg-slate-50 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center h-11 px-5 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
 const inputCls =
-  "h-11 w-full rounded-md border border-slate-300 bg-slate-50 text-slate-900 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005f40] focus:border-[#005f40]";
+  "h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
 const STATES_BY_COUNTRY: Record<string, string[]> = {
   Uruguay: [
     "Artigas","Canelones","Cerro Largo","Colonia","Durazno","Flores","Florida","Lavalleja","Maldonado","Montevideo","Paysandú","Río Negro","Rivera","Rocha","Salto","San José","Soriano","Tacuarembó","Treinta y Tres"
@@ -67,7 +72,7 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
   const showLabel = value || placeholder;
   const baseClasses =
     inputCls +
-    " flex items-center justify-between pr-9 bg-white text-slate-900" +
+    " flex items-center justify-between pr-9" +
     (disabled ? " opacity-60 cursor-not-allowed" : " cursor-pointer");
 
   return (
@@ -82,21 +87,22 @@ function BrandSelect({ value, onChange, options, placeholder, disabled }: BrandS
       <button
         type="button"
         disabled={disabled}
-        className={baseClasses + (!value ? " text-slate-400" : "")}
+        className={baseClasses + (!value ? " text-white/40" : "")}
+        style={INPUT_BG_STYLE}
         onClick={() => {
           if (!disabled) setOpen((prev) => !prev);
         }}
       >
         <span className="truncate text-left">{showLabel}</span>
-        <span className="ml-2 text-slate-500">▾</span>
+        <span className="ml-2 text-white/60">▾</span>
       </button>
       {open && !disabled && options.length > 0 && (
-        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5">
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 py-1 text-sm shadow-lg">
           {options.map((opt) => (
             <li key={opt}>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-slate-900 hover:bg-slate-100"
+                className="block w-full px-3 py-2 text-left text-white hover:bg-white/10"
                 onClick={() => {
                   onChange(opt);
                   setOpen(false);
@@ -209,35 +215,37 @@ export default function RegistroPage() {
       <AccessNavbarMobile />
 
       <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-6 pt-24 md:pt-28">
-        <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-md ring-1 ring-slate-200 text-neutral-900">
-          <h1 className="text-2xl font-semibold">Crear cuenta</h1>
-          <p className="text-sm text-neutral-600">
+        <div className="w-full max-w-lg rounded-xl bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 p-6 text-white">
+          <h1 className="text-2xl font-semibold text-white">Crear cuenta</h1>
+          <p className="text-sm text-white/70">
             Registrate para ver tus envíos, cajas y trackings.
           </p>
 
           {err ? (
-            <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <div className="mt-3 rounded-md border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
               {err}
             </div>
           ) : null}
 
           <form onSubmit={onSubmit} className="mt-4 grid gap-3">
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">
+              <span className="text-xs font-medium text-white/70">
                 Nombre y apellido
               </span>
               <input
                 className={inputCls}
+                style={INPUT_BG_STYLE}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </label>
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">
+              <span className="text-xs font-medium text-white/70">
                 Teléfono
               </span>
               <input
                 className={inputCls}
+                style={INPUT_BG_STYLE}
                 type="tel"
                 inputMode="tel"
                 value={phone}
@@ -247,7 +255,7 @@ export default function RegistroPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1.5fr_1fr] gap-3">
               <label className="grid gap-1">
-                <span className="text-xs font-medium text-neutral-600">
+                <span className="text-xs font-medium text-white/70">
                   País
                 </span>
                 <BrandSelect
@@ -262,7 +270,7 @@ export default function RegistroPage() {
               </label>
 
               <label className="grid gap-1">
-                <span className="text-xs font-medium text-neutral-600">
+                <span className="text-xs font-medium text-white/70">
                   Estado / Depto / Provincia
                 </span>
                 <BrandSelect
@@ -275,11 +283,12 @@ export default function RegistroPage() {
               </label>
 
               <label className="grid gap-1">
-                <span className="text-xs font-medium text-neutral-600">
+                <span className="text-xs font-medium text-white/70">
                   Ciudad
                 </span>
                 <input
                   className={inputCls}
+                  style={INPUT_BG_STYLE}
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                 />
@@ -287,33 +296,36 @@ export default function RegistroPage() {
             </div>
 
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">
+              <span className="text-xs font-medium text-white/70">
                 Dirección (opcional)
               </span>
               <input
                 className={inputCls}
+                style={INPUT_BG_STYLE}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
               />
             </label>
 
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">
+              <span className="text-xs font-medium text-white/70">
                 Email
               </span>
               <input
                 className={inputCls}
+                style={INPUT_BG_STYLE}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </label>
             <label className="grid gap-1">
-              <span className="text-xs font-medium text-neutral-600">
+              <span className="text-xs font-medium text-white/70">
                 Contraseña
               </span>
               <input
                 className={inputCls}
+                style={INPUT_BG_STYLE}
                 type="password"
                 value={pw}
                 onChange={(e) => setPw(e.target.value)}
@@ -327,13 +339,13 @@ export default function RegistroPage() {
                 checked={accept}
                 onChange={(e) => setAccept(e.target.checked)}
               />
-              <span className="text-xs text-neutral-600">
+              <span className="text-xs text-white/70">
                 Acepto los{" "}
-                <a href="https://lem-box.com.uy/terminos" className="underline">
+                <a href="https://lem-box.com.uy/terminos" className="underline text-white/90 hover:text-white">
                   Términos
                 </a>{" "}
                 y la{" "}
-                <a href="https://lem-box.com.uy/privacidad" className="underline">
+                <a href="https://lem-box.com.uy/privacidad" className="underline text-white/90 hover:text-white">
                   Política de Privacidad
                 </a>
                 .

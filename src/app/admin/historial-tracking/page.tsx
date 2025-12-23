@@ -120,6 +120,12 @@ function PageInner() {
     hasMore: boolean;
   } | null>(null);
 
+  // --- Delete modal state ---
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Inbound | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
+
   const clientsById = useMemo(() => {
     const m: Record<string, Client> = {};
     for (const c of clients) if (c.id) m[c.id] = c;
@@ -1100,7 +1106,7 @@ function PageInner() {
     }
   }
 
-  async function deleteTracking(row: Inbound) {
+  function deleteTracking(row: Inbound) {
     if (!isStaffState) {
       alert("Sin permisos para eliminar trackings.");
       return;
@@ -1110,10 +1116,24 @@ function PageInner() {
       alert('Solo se pueden eliminar trackings recibidos y que no estén dentro de una caja.');
       return;
     }
-    const ok = confirm(`¿Seguro que quieres eliminar el tracking ${row.tracking}?`);
-    if (!ok) return;
-    await deleteDoc(doc(db, 'inboundPackages', row.id));
-    setRows(prev => prev.filter(r => r.id !== row.id));
+    setDeleteTarget(row);
+    setDeleteErr(null);
+    setDeleteOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteDoc(doc(db, 'inboundPackages', deleteTarget.id));
+      setRows(prev => prev.filter(r => r.id !== deleteTarget.id));
+      setDeleteOpen(false);
+      setDeleteTarget(null);
+    } catch (e) {
+      setDeleteErr("No se pudo eliminar. Intentá nuevamente.");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   // CSV helpers
@@ -1764,6 +1784,43 @@ function PageInner() {
         )}
 
         <BoxDetailModal {...modalProps} />
+
+        {/* Delete confirmation modal */}
+        {deleteOpen && deleteTarget && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="max-w-md w-full rounded-xl bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 p-4 text-white">
+              <div className="text-lg font-semibold text-white mb-2">Eliminar tracking</div>
+              <div className="text-sm text-white/80 mb-4">
+                ¿Seguro que querés eliminar el tracking {deleteTarget.tracking}?
+              </div>
+              {deleteErr && (
+                <div className="mb-4 text-sm text-rose-300">
+                  {deleteErr}
+                </div>
+              )}
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  className={btnSecondaryCls}
+                  onClick={() => setDeleteOpen(false)}
+                  disabled={deleting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-md border border-rose-400/60 bg-rose-500/20 text-rose-100 hover:bg-rose-500/30 focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:opacity-50"
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? "Eliminando…" : "Eliminar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

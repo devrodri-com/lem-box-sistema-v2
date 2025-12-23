@@ -1,7 +1,7 @@
 // src/components/AdminNav.tsx
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { signOut, onIdTokenChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -42,6 +42,8 @@ export default function AdminNav() {
   const [claimsChecked, setClaimsChecked] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsub = onIdTokenChanged(auth, async (user) => {
@@ -101,6 +103,24 @@ export default function AdminNav() {
 
   useEffect(() => { setMounted(true); }, []);
 
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [menuOpen]);
+
+  // Cerrar menú al cambiar de ruta
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   const showUsuarios = isSuper || (email === "r.opalo@icloud.com" || email === "r.opali@icloud.com");
   const adminTabs = showUsuarios
     ? [...baseTabs, { href: "/admin/facturas", label: "Facturas" }, { href: "/admin/usuarios", label: "Usuarios" }]
@@ -115,7 +135,8 @@ export default function AdminNav() {
         <Link href={isAdmin ? "/admin/ingreso" : "/mi"} className="flex items-center">
           <img src="/logo.png" alt="LEM-BOX Logo" className="h-10 md:h-12 w-auto" />
         </Link>
-        <nav className="flex space-x-6">
+        {/* Desktop navigation - tabs horizontales */}
+        <nav className="hidden lg:flex space-x-6">
           {tabs.map((t) => {
             const active = pathname?.startsWith(t.href);
             return (
@@ -130,6 +151,48 @@ export default function AdminNav() {
             );
           })}
         </nav>
+        {/* Mobile/Tablet - botón hamburguesa */}
+        <div className="lg:hidden relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Abrir menú"
+            className="inline-flex items-center justify-center h-10 w-10 rounded-md text-white/90 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#eb6618] focus-visible:ring-offset-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="h-6 w-6"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+          {/* Dropdown menu */}
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 shadow-lg z-50"
+            >
+              {tabs.map((t) => {
+                const active = pathname?.startsWith(t.href);
+                return (
+                  <Link
+                    key={t.href}
+                    href={t.href}
+                    role="menuitem"
+                    aria-current={active ? "page" : undefined}
+                    className={`block px-4 py-3 text-sm font-medium text-white/90 no-underline hover:bg-white/10 focus:outline-none focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#eb6618] first:rounded-t-xl last:rounded-b-xl ${active ? "text-[#eb6618] bg-white/5" : ""}`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <div className="flex items-center space-x-4">
           <a
             href="https://instagram.com/lem_box"
