@@ -16,27 +16,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Force light theme styles (allow buttons to style themselves) */
-html, body, input, select, textarea {
-  background-color: #ffffff !important;
-  color: #111827 !important;
-}
-
-/* Buttons keep default text color but no forced background */
-button {
-  color: #111827;
-}
-
-input::placeholder, textarea::placeholder {
-  color: #9ca3af !important;
-}
-
-.card, .modal, .dialog, .popover, .dropdown, .menu, .table {
-  background-color: #ffffff !important;
-  color: #111827 !important;
-}
-
 /* Fix global para caret (barra vertical) en inputs y textareas */
 input, textarea, [contenteditable="true"] {
   caret-color: #ffffff !important;
+}
+
+button:disabled, [aria-disabled="true"] {
+  cursor: not-allowed !important;
 }

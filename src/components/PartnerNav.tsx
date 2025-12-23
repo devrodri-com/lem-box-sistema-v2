@@ -1,40 +1,19 @@
-// src/components/AdminNav.tsx
+// src/components/PartnerNav.tsx
 "use client";
+
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { signOut, onIdTokenChanged } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useEffect, useState, useRef } from "react";
 import { MessageCircle } from "lucide-react";
 
-const baseTabs = [
-  { href: "/admin/ingreso", label: "Ingreso" },
-  { href: "/admin/preparado", label: "Preparado de carga" },
-  { href: "/admin/estado-envios", label: "Estado de envíos" },
-  { href: "/admin/historial-tracking", label: "Historial de tracking" },
-  { href: "/admin/clientes", label: "Clientes" },
+const partnerTabs = [
+  { href: "/partner/historial", label: "Historial de Trackings" },
+  { href: "/partner/cajas", label: "Cajas" },
+  { href: "/partner/envios", label: "Envíos" },
+  { href: "/partner/clientes", label: "Clientes" },
 ];
-
-const clientTabs = [
-  { href: "/mi", label: "Mi perfil" },
-];
-
-// Tipos mínimos para parse seguro
-type NavItem = {
-  href: string;
-  label: string;
-};
-
-type UserLike = {
-  role?: string;
-  [key: string]: unknown;
-};
-
-// Helper para parse seguro
-function asRecord(v: unknown): Record<string, unknown> | null {
-  return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
-}
 
 // Helper tipado para determinar si un link está activo
 function isActive(pathname: string | null, href: string): boolean {
@@ -42,73 +21,15 @@ function isActive(pathname: string | null, href: string): boolean {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-export default function AdminNav() {
+export default function PartnerNav() {
   const pathname = usePathname();
-  const [isSuper, setIsSuper] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [claimsChecked, setClaimsChecked] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [email, setEmail] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsub = onIdTokenChanged(auth, async (user) => {
-      if (!user) {
-        setIsSuper(false);
-        setIsAdmin(false);
-        setEmail(null);
-        setClaimsChecked(true);
-        return;
-      }
-      try {
-        const r = await user.getIdTokenResult(true);
-        const c = asRecord(r.claims);
-        const superadmin = Boolean(c?.superadmin === true || c?.role === "superadmin");
-        const claimRole = c?.role;
-        let role: string | null = (typeof claimRole === "string" ? claimRole : null) || (superadmin ? "admin" : null);
-
-        // If no role in claims, try Firestore users collection
-        if (!role) {
-          // First try doc id = uid
-          const snap = await getDoc(doc(db, "users", user.uid));
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data && typeof data === "object") {
-              const rec = data as Record<string, unknown>;
-              const roleValue = rec.role;
-              role = typeof roleValue === "string" ? roleValue : null;
-            }
-          } else {
-            // Fallback: query by uid field
-            const q = query(collection(db, "users"), where("uid", "==", user.uid), limit(1));
-            const s = await getDocs(q);
-            if (!s.empty) {
-              const data = s.docs[0].data();
-              if (data && typeof data === "object") {
-                const rec = data as Record<string, unknown>;
-                const roleValue = rec.role;
-                role = typeof roleValue === "string" ? roleValue : null;
-              }
-            }
-          }
-        }
-
-        setIsSuper(superadmin);
-        setIsAdmin(superadmin || role === "admin" || role === "partner_admin");
-        setEmail(user.email ?? null);
-      } catch {
-        setIsSuper(false);
-        setIsAdmin(false);
-        setEmail(user.email ?? null);
-      } finally {
-        setClaimsChecked(true);
-      }
-    });
-    return () => unsub();
+    setMounted(true);
   }, []);
-
-  useEffect(() => { setMounted(true); }, []);
 
   // Cerrar menú al hacer click fuera
   useEffect(() => {
@@ -128,23 +49,18 @@ export default function AdminNav() {
     setMenuOpen(false);
   }, [pathname]);
 
-  const showUsuarios = isSuper || (email === "r.opalo@icloud.com" || email === "r.opali@icloud.com");
-  const adminTabs = showUsuarios
-    ? [...baseTabs, { href: "/admin/facturas", label: "Facturas" }, { href: "/admin/usuarios", label: "Usuarios" }]
-    : baseTabs;
-  const tabs = isAdmin ? adminTabs : clientTabs;
-
-  if (!mounted || !claimsChecked) return null;
+  if (!mounted) return null;
 
   return (
     <header className="fixed inset-x-0 top-0 z-[100] bg-[#02120f] h-20 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.35)] border-b border-white/10">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 md:px-6">
-        <Link href={isAdmin ? "/admin/ingreso" : "/mi"} className="flex items-center cursor-pointer">
+        <Link href="/partner/historial" className="flex items-center cursor-pointer">
           <img src="/logo.png" alt="LEM-BOX Logo" className="h-10 md:h-12 w-auto" />
         </Link>
+        
         {/* Desktop navigation - tabs horizontales */}
         <nav className="hidden lg:flex space-x-6">
-          {tabs.map((t) => {
+          {partnerTabs.map((t) => {
             const active = isActive(pathname, t.href);
             return (
               <Link
@@ -161,7 +77,25 @@ export default function AdminNav() {
               </Link>
             );
           })}
+          {/* Links externos */}
+          <a
+            href="https://www.lem-box.com.uy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2 py-2 text-[15px] font-semibold uppercase tracking-wide text-white/80 no-underline cursor-pointer hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#eb6618]"
+          >
+            🇺🇾 URUGUAY
+          </a>
+          <a
+            href="https://www.lem-box.com.ar"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2 py-2 text-[15px] font-semibold uppercase tracking-wide text-white/80 no-underline cursor-pointer hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#eb6618]"
+          >
+            🇦🇷 ARGENTINA
+          </a>
         </nav>
+
         {/* Mobile/Tablet - botón hamburguesa */}
         <div className="lg:hidden relative" ref={menuRef}>
           <button
@@ -186,7 +120,7 @@ export default function AdminNav() {
               role="menu"
               className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 shadow-lg z-50"
             >
-              {tabs.map((t) => {
+              {partnerTabs.map((t) => {
                 const active = isActive(pathname, t.href);
                 return (
                   <Link
@@ -205,41 +139,14 @@ export default function AdminNav() {
                   </Link>
                 );
               })}
-              {!isAdmin && (
-                <>
-                  <a
-                    href="https://www.lem-box.com.uy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    role="menuitem"
-                    className="block px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white/90 no-underline cursor-pointer hover:bg-white/10 focus:outline-none focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#eb6618] border-t border-white/10"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    🇺🇾 URUGUAY
-                  </a>
-                  <a
-                    href="https://www.lem-box.com.ar"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    role="menuitem"
-                    className="block px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white/90 no-underline cursor-pointer hover:bg-white/10 focus:outline-none focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#eb6618] last:rounded-b-xl"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    🇦🇷 ARGENTINA
-                  </a>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center space-x-4">
-          {!isAdmin && (
-            <div className="hidden md:flex items-center gap-3">
+              {/* Links externos en mobile */}
               <a
                 href="https://www.lem-box.com.uy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-2 py-2 text-[13px] font-semibold uppercase tracking-wide text-white/80 hover:text-white cursor-pointer transition"
+                role="menuitem"
+                className="block px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white/90 no-underline cursor-pointer hover:bg-white/10 focus:outline-none focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#eb6618] border-t border-white/10"
+                onClick={() => setMenuOpen(false)}
               >
                 🇺🇾 URUGUAY
               </a>
@@ -247,12 +154,17 @@ export default function AdminNav() {
                 href="https://www.lem-box.com.ar"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-2 py-2 text-[13px] font-semibold uppercase tracking-wide text-white/80 hover:text-white cursor-pointer transition"
+                role="menuitem"
+                className="block px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white/90 no-underline cursor-pointer hover:bg-white/10 focus:outline-none focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#eb6618] last:rounded-b-xl"
+                onClick={() => setMenuOpen(false)}
               >
                 🇦🇷 ARGENTINA
               </a>
             </div>
           )}
+        </div>
+
+        <div className="flex items-center space-x-4">
           <a
             href="https://instagram.com/lem_box"
             target="_blank"
@@ -285,3 +197,4 @@ export default function AdminNav() {
     </header>
   );
 }
+

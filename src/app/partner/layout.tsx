@@ -2,37 +2,6 @@
 "use client";
 
 import { PartnerContextProvider, usePartnerContext } from "@/components/PartnerContext";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-const tabBtn = (active: boolean) =>
-  `px-4 h-10 text-sm font-semibold rounded-full flex items-center justify-center transition ${
-    active
-      ? "bg-[#005f40] text-white font-bold shadow"
-      : "text-white/80 hover:text-white hover:bg-white/10"
-  }`;
-
-function PartnerNav() {
-  const pathname = usePathname();
-  const isActive = (path: string) => pathname === path || pathname?.startsWith(path + "/");
-
-  return (
-    <nav className="inline-flex items-center gap-1 rounded-full bg-white/5 backdrop-blur-sm p-1 ring-1 ring-white/10">
-      <Link href="/partner/historial" className={tabBtn(isActive("/partner/historial"))}>
-        Historial de Trackings
-      </Link>
-      <Link href="/partner/cajas" className={tabBtn(isActive("/partner/cajas"))}>
-        Cajas
-      </Link>
-      <Link href="/partner/envios" className={tabBtn(isActive("/partner/envios"))}>
-        Envíos
-      </Link>
-      <Link href="/partner/clientes" className={tabBtn(isActive("/partner/clientes"))}>
-        Clientes
-      </Link>
-    </nav>
-  );
-}
 
 function PartnerLayoutInner({ children }: { children: React.ReactNode }) {
   const { effectiveRole, roleResolved, error } = usePartnerContext();
@@ -68,10 +37,6 @@ function PartnerLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <main className="min-h-[100dvh] bg-[#02120f] text-white p-4 md:p-8 pt-24 md:pt-28">
       <div className="mx-auto w-full max-w-6xl space-y-6">
-        <header className="flex flex-col items-center gap-3">
-          <h1 className="text-2xl font-semibold text-white">Partner</h1>
-          <PartnerNav />
-        </header>
         {children}
       </div>
     </main>
