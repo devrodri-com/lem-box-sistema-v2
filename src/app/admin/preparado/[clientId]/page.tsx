@@ -12,6 +12,7 @@ import { printBoxLabel } from "@/lib/printBoxLabel";
 import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 import { BrandSelect, type BrandOption } from "@/components/ui/BrandSelect";
+import { IconPhoto } from "@/components/ui/icons";
 
 type ShipmentType = "COMERCIAL" | "FRANQUICIA";
 
@@ -681,7 +682,16 @@ function ClienteInner() {
                     </td>
                     <td className="p-2">
                       {r.photoUrl ? (
-                        <a href={r.photoUrl} target="_blank" rel="noreferrer" title="Ver foto" aria-label="Ver foto" className="underline text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm">📷</a>
+                        <a
+                          href={r.photoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label="Ver foto"
+                          title="Ver foto"
+                          className="inline-flex items-center justify-center text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
+                        >
+                          <IconPhoto />
+                        </a>
                       ) : (" ")}
                     </td>
                     <td className="p-2">
