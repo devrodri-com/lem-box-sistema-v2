@@ -18,6 +18,12 @@ const btnSecondary =
 const inputCls =
   "h-10 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[#005f40] focus:ring-1 focus:ring-[#005f40]";
 
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
+
 function InvoiceStatusBadge({ status }: { status: Invoice["status"] }) {
   const config = {
     draft: { label: "Borrador", classes: "bg-slate-100 text-slate-700 border-slate-300" },
@@ -57,6 +63,7 @@ function PageInner() {
   const [payUrls, setPayUrls] = useState<Record<string, string>>({});
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [clientSearch, setClientSearch] = useState("");
 
   const shipmentIdFilter = searchParams.get("shipmentId")?.trim() || "";
 
@@ -86,6 +93,12 @@ function PageInner() {
         label: s.code || s.id!,
       }));
   }, [shipments]);
+
+  const filteredClientOptions = useMemo(() => {
+    const q = clientSearch.trim().toUpperCase();
+    if (!q) return clientOptions;
+    return clientOptions.filter((o) => o.label.toUpperCase().includes(q));
+  }, [clientOptions, clientSearch]);
 
   // Verificar superadmin
   useEffect(() => {
@@ -179,14 +192,12 @@ function PageInner() {
     }
   }, [showNewModal, shipmentIdFilter, selectedShipmentId]);
 
-  function handleShipmentIdFilterChange(value: string) {
-    const trimmed = value.trim();
-    if (trimmed) {
-      router.replace(`/admin/facturas?shipmentId=${encodeURIComponent(trimmed)}`);
-    } else {
-      router.replace("/admin/facturas");
+  // Resetear búsqueda de cliente al abrir el modal
+  useEffect(() => {
+    if (showNewModal) {
+      setClientSearch("");
     }
-  }
+  }, [showNewModal]);
 
   function clearShipmentIdFilter() {
     router.replace("/admin/facturas");
@@ -379,13 +390,18 @@ function PageInner() {
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2">
             <span className="text-sm text-white/60">Filtrar por embarque:</span>
-            <input
-              className="h-9 w-48 rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#005f40] focus:ring-1 focus:ring-[#005f40]"
-              type="text"
-              value={shipmentIdFilter}
-              onChange={(e) => handleShipmentIdFilterChange(e.target.value)}
-              placeholder="ID de embarque"
-            />
+            <div className="w-48">
+              <BrandSelect
+                value={shipmentIdFilter}
+                onChange={(val) => {
+                  const v = String(val || "");
+                  if (!v) router.replace("/admin/facturas");
+                  else router.replace(`/admin/facturas?shipmentId=${encodeURIComponent(v)}`);
+                }}
+                options={[{ value: "", label: "Todos" }, ...shipmentOptions]}
+                placeholder="Todos"
+              />
+            </div>
           </label>
           {shipmentIdFilter && (
             <button
@@ -512,13 +528,23 @@ function PageInner() {
               <div className="space-y-4">
                 <label className="block">
                   <span className="text-xs text-white/60 mb-1 block">Cliente *</span>
-                  <BrandSelect
-                    value={newClientId}
-                    onChange={setNewClientId}
-                    options={clientOptions}
-                    placeholder="Seleccionar cliente"
-                    disabled={creating}
+                  <input
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
+                    type="text"
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
+                    placeholder="Buscar cliente"
                   />
+                  <div className="mt-2">
+                    <BrandSelect
+                      value={newClientId}
+                      onChange={setNewClientId}
+                      options={filteredClientOptions}
+                      placeholder="Seleccionar cliente"
+                      disabled={creating}
+                    />
+                  </div>
                 </label>
                 <label className="block">
                   <span className="text-xs text-white/60 mb-1 block">Embarque (opcional)</span>
