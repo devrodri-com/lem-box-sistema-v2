@@ -6,12 +6,13 @@ import { collection, doc, getDoc, query, where, orderBy, getDocs, addDoc } from 
 import { db } from "@/lib/firebase";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { BrandSelect } from "@/components/ui/BrandSelect";
 import { useMiContext } from "../_context/MiContext";
 import type { Client } from "@/types/lem";
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const btnSecondary =
-  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 text-sm font-medium leading-tight text-center hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
 const inputCls =
   "h-10 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
 const INPUT_BG_STYLE = {
@@ -22,11 +23,13 @@ const INPUT_BG_STYLE = {
 const btnPrimary =
   "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
 
+type StatusFilter = "all" | "alerted" | "received" | "boxed";
+
 export default function MiHistorialPage() {
   const { uid, clientId } = useMiContext();
   const [rows, setRows] = useState<any[]>([]);
   const [qTrack, setQTrack] = useState("");
-  const [statusFilter, setStatusFilter] = useState<'all' | 'alerted' | 'received' | 'boxed'>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [alertedTrackings, setAlertedTrackings] = useState<Set<string>>(new Set());
   const [myAlerts, setMyAlerts] = useState<any[]>([]);
 
@@ -158,17 +161,23 @@ export default function MiHistorialPage() {
           />
         </div>
         <div className="flex gap-2">
-          <select
-            className={inputCls}
-            style={INPUT_BG_STYLE}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-          >
-            <option value="all">Todos</option>
-            <option value="alerted">Alertados</option>
-            <option value="received">Recibidos</option>
-            <option value="boxed">Consolidado</option>
-          </select>
+          <div className="min-w-[220px]">
+            <BrandSelect
+              value={statusFilter}
+              onChange={(val) => {
+                if (val === "all" || val === "alerted" || val === "received" || val === "boxed") {
+                  setStatusFilter(val);
+                }
+              }}
+              options={[
+                { value: "all", label: "Todos" },
+                { value: "alerted", label: "Alertados" },
+                { value: "received", label: "Recibidos" },
+                { value: "boxed", label: "Consolidado" },
+              ]}
+              placeholder="Todos"
+            />
+          </div>
           <button className={btnSecondary} onClick={() => setAlertOpen(true)}>
             Alertar tracking
           </button>
