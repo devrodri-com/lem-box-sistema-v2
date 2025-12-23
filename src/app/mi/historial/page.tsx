@@ -1,3 +1,4 @@
+// src/app/mi/historial/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -5,7 +6,7 @@ import { collection, doc, getDoc, query, where, orderBy, getDocs, addDoc } from 
 import { db } from "@/lib/firebase";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { useMiContext } from "../layout";
+import { useMiContext } from "../_context/MiContext";
 import type { Client } from "@/types/lem";
 
 const CONTROL_BORDER = "border-[#1f3f36]";

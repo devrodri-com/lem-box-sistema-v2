@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
-import { useMiContext } from "../layout";
+import { useMiContext } from "../_context/MiContext";
 import type { Invoice } from "@/types/lem";
 import { normalizeInvoiceStatus } from "@/types/lem";
 
