@@ -79,7 +79,7 @@ function ClienteInner() {
   }
 
   const eligibleBoxes = useMemo(
-    () => boxes.filter(b => b.clientId === clientId && b.type === boxType && !b.shipmentId && b.status !== "closed"),
+    () => boxes.filter(b => b.clientId === clientId && b.type === boxType && !b.shipmentId),
     [boxes, clientId, boxType]
   );
 
@@ -196,7 +196,6 @@ function ClienteInner() {
   async function addItemsToBox(targetBoxId: string, itemIds: string[]): Promise<boolean> {
     const box = boxes.find(b => b.id === targetBoxId);
     if (!box) return false;
-    if (box.status === "closed") { notify("La caja está cerrada.", "error"); return false; }
     const chosen = inbounds.filter(r => itemIds.includes(r.id));
     try {
       await runTransaction(db, async (tx) => {
@@ -205,7 +204,6 @@ function ClienteInner() {
         const boxSnap = await tx.get(boxRef);
         if (!boxSnap.exists()) throw new Error("Caja no encontrada");
         const boxData = boxSnap.data() as Box;
-        if (boxData.status === "closed") throw new Error("La caja está cerrada");
 
         const inRefs = chosen.map(r => doc(db, "inboundPackages", r.id));
         const inSnaps = await Promise.all(inRefs.map(r => tx.get(r)));
@@ -289,7 +287,6 @@ function ClienteInner() {
     if (!box) return;
     if (box.clientId !== clientId) { notify("La caja elegida pertenece a otro cliente.", "error"); return; }
     if (box.type !== boxType) { notify("El tipo de la caja no coincide con el tipo seleccionado.", "error"); return; }
-    if (box.status === "closed") { notify("La caja está cerrada.", "error"); return; }
     const chosenIds = Object.keys(selected).filter(id => selected[id]);
     if (!chosenIds.length) return;
     const chosen = inbounds.filter(r => chosenIds.includes(r.id));
@@ -301,7 +298,6 @@ function ClienteInner() {
         const boxSnap = await tx.get(boxRef);
         if (!boxSnap.exists()) throw new Error("Caja no encontrada");
         const boxData = boxSnap.data() as Box;
-        if (boxData.status === "closed") throw new Error("La caja está cerrada");
 
         const inRefs = chosen.map(r => doc(db, "inboundPackages", r.id));
         const inSnaps = await Promise.all(inRefs.map(r => tx.get(r)));
@@ -352,25 +348,14 @@ function ClienteInner() {
     setBoxes(bs => bs.map(b => b.id === box.id ? { ...b, verifiedWeightLb: actualLb } : b));
   }
 
-  // Cerrar la caja y recalcular peso
-  async function closeCurrentBox() {
+  // Recalcular peso (función auxiliar, no cierra la caja)
+  async function recalcCurrentBoxWeight() {
     if (!boxId) return;
     try {
-      await runTransaction(db, async (tx) => {
-        const boxRef = doc(db, "boxes", boxId);
-        const snap = await tx.get(boxRef);
-        if (!snap.exists()) throw new Error("Caja no encontrada");
-        const data = snap.data() as Box;
-        if ((data.itemIds?.length || 0) === 0) throw new Error("No se puede cerrar una caja vacía");
-        if (data.status === "closed") return;
-        tx.update(boxRef, { status: "closed" });
-      });
       await recalcBoxWeight(boxId);
-      setBoxes(bs => bs.map(b => b.id === boxId ? { ...b, status: "closed" } : b));
-      notify("Caja cerrada", "success");
-      setPrintPromptBoxId(boxId);
+      notify("Peso recalculado", "success");
     } catch (e: any) {
-      notify(e?.message || "No se pudo cerrar la caja", "error");
+      notify(e?.message || "No se pudo recalcular el peso", "error");
     }
   }
 
@@ -410,7 +395,7 @@ function ClienteInner() {
         {printPromptBoxId ? (
           <div className="fixed inset-0 z-[998] flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-md rounded-xl bg-[#071f19] border border-white/10 p-5">
-              <div className="text-lg font-semibold text-white">Caja cerrada</div>
+              <div className="text-lg font-semibold text-white">Imprimir etiqueta</div>
               <div className="mt-2 text-sm text-white/70">¿Querés imprimir la etiqueta ahora?</div>
               <div className="mt-4 flex items-center justify-end gap-2">
                 <button
@@ -453,7 +438,7 @@ function ClienteInner() {
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-sm text-white/70">Caja actual:</span>
                           <span className="ml-2 text-lg font-semibold text-white">{b.code}</span>
-                          <span>{b.status === "closed" ? <StatusBadge scope="box" status="closed" /> : <StatusBadge scope="box" status="open" />}</span>
+                          <span>{b.shipmentId ? null : <StatusBadge scope="box" status="open" />}</span>
                         </div>
                         <div>
                           <span className="text-sm text-white/70">Peso verificado:</span>
@@ -465,13 +450,25 @@ function ClienteInner() {
                     );
                   })()}
                 </div>
-                <div>
-                  <button
-                    className="mt-1 inline-flex items-center gap-2 h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50"
-                    onClick={closeCurrentBox}
-                    disabled={!boxId || boxes.find(b => b.id === boxId)?.status === "closed"}
-                  >Cerrar caja</button>
-                </div>
+                {(() => {
+                  const currentBox = boxes.find(b => b.id === boxId);
+                  const hasItems = (currentBox?.itemIds?.length || 0) > 0;
+                  const hasNoShipment = !currentBox?.shipmentId;
+                  if (hasItems && hasNoShipment) {
+                    return (
+                      <div>
+                        <button
+                          className="mt-1 inline-flex items-center gap-2 h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50"
+                          onClick={() => setPrintPromptBoxId(boxId)}
+                          disabled={!boxId}
+                        >
+                          Imprimir etiqueta
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 <div className="rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-5">
                   <div className="text-sm font-medium mb-2 text-white">Verificar peso</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
