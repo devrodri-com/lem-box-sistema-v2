@@ -35,3 +35,8 @@ input::placeholder, textarea::placeholder {
   background-color: #ffffff !important;
   color: #111827 !important;
 }
+
+/* Fix global para caret (barra vertical) en inputs y textareas */
+input, textarea, [contenteditable="true"] {
+  caret-color: #ffffff !important;
+}
