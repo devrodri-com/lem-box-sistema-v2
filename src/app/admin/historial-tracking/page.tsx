@@ -113,6 +113,18 @@ function PageInner() {
     hasMore: boolean;
   } | null>(null);
 
+  // --- Bootstrap clients state ---
+  const [bootstrapRunning, setBootstrapRunning] = useState(false);
+  const [bootstrapStats, setBootstrapStats] = useState<{
+    processed: number;
+    linked: number;
+    created: number;
+    skipped: number;
+    errors: number;
+    lastId: string | null;
+    hasMore: boolean;
+  } | null>(null);
+
   // --- Delete modal state ---
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Inbound | null>(null);
@@ -865,6 +877,58 @@ function PageInner() {
     }
   }
 
+  async function handleBootstrap() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Debes estar autenticado para vincular clientes.");
+      return;
+    }
+
+    setBootstrapRunning(true);
+    try {
+      const idToken = await user.getIdToken(true);
+      const body: Record<string, unknown> = {
+        batchSize: 200,
+      };
+
+      if (bootstrapStats?.lastId) {
+        body.startAfterId = bootstrapStats.lastId;
+      }
+
+      const res = await fetch("/api/admin/bootstrap-all-clients", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Error: ${data.error || data.message || "Error al vincular clientes"}`);
+        return;
+      }
+
+      const data = await res.json();
+      setBootstrapStats({
+        processed: (bootstrapStats?.processed || 0) + data.processed,
+        linked: (bootstrapStats?.linked || 0) + data.linked,
+        created: (bootstrapStats?.created || 0) + data.created,
+        skipped: (bootstrapStats?.skipped || 0) + data.skipped,
+        errors: (bootstrapStats?.errors || 0) + data.errors,
+        lastId: data.lastId,
+        hasMore: data.hasMore,
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[HistorialTracking] Error bootstrapping clients:", msg);
+      alert(`Error al vincular clientes: ${msg}`);
+    } finally {
+      setBootstrapRunning(false);
+    }
+  }
+
   function deleteTracking(row: Inbound) {
     if (!isStaffState) {
       alert("Sin permisos para eliminar trackings.");
@@ -1093,6 +1157,37 @@ function PageInner() {
           reindexStats={reindexStats && { processed: reindexStats.processed, updated: reindexStats.updated, skipped: reindexStats.skipped, hasMore: reindexStats.hasMore }}
           reindexNamesStats={reindexNamesStats && { processed: reindexNamesStats.processed, updated: reindexNamesStats.updated, skipped: reindexNamesStats.skipped, hasMore: reindexNamesStats.hasMore }}
         />
+
+        {/* Bootstrap clients - Solo superadmin */}
+        {roleState === "superadmin" && (
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            {bootstrapStats && bootstrapStats.hasMore === false ? null : (
+              <button
+                className={btnSecondaryCls}
+                onClick={handleBootstrap}
+                disabled={bootstrapRunning || (bootstrapStats?.hasMore === false)}
+              >
+                {bootstrapRunning ? "Vinculando…" : (bootstrapStats?.hasMore === false) ? "Bootstrap completo" : "Vincular clientes existentes (200)"}
+              </button>
+            )}
+            {bootstrapStats && (
+              <div className="space-y-1 text-sm">
+                <p className="text-white/80">Procesados {bootstrapStats.processed}</p>
+                <p className="text-white/80">Vinculados {bootstrapStats.linked}</p>
+                <p className="text-white/80">Creados {bootstrapStats.created}</p>
+                <p className="text-white/80">Omitidos {bootstrapStats.skipped}</p>
+                {bootstrapStats.errors > 0 && (
+                  <p className="text-rose-300">Errores {bootstrapStats.errors}</p>
+                )}
+                {bootstrapStats.hasMore ? (
+                  <p className="text-white/60">Volvé a apretar para continuar</p>
+                ) : (
+                  <p className="text-white/60">Bootstrap completo</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <BoxDetailModal {...modalProps} />
 
