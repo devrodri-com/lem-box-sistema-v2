@@ -42,6 +42,7 @@ export default function EstadoEnviosPage() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isStaff, setIsStaff] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [roleChecked, setRoleChecked] = useState(false);
 
   // expand / detail state
@@ -51,6 +52,11 @@ export default function EstadoEnviosPage() {
   const [clientsById, setClientsById] = useState<Record<string, Client>>({});
   const [deletingShipmentId, setDeletingShipmentId] = useState<string>("");
   const [generatingInvoices, setGeneratingInvoices] = useState<string>("");
+  
+  // Estado para modal de edición de código
+  const [editCodeModal, setEditCodeModal] = useState<{ id: string; code: string } | null>(null);
+  const [editingCode, setEditingCode] = useState("");
+  const [updatingCode, setUpdatingCode] = useState(false);
 
   // Flatten all boxes for useBoxDetailModal
   const allBoxes = useMemo(() => {
@@ -115,9 +121,14 @@ export default function EstadoEnviosPage() {
           role === "operador" ||
           claims?.admin === true ||
           claims?.superadmin === true;
+        const isSuper = Boolean(claims?.superadmin === true || role === "superadmin");
         setIsStaff(isStaffRole);
+        setIsSuperAdmin(isSuper);
       })
-      .catch(() => setIsStaff(false))
+      .catch(() => {
+        setIsStaff(false);
+        setIsSuperAdmin(false);
+      })
       .finally(() => setRoleChecked(true));
   }, []);
 
@@ -227,6 +238,26 @@ export default function EstadoEnviosPage() {
       alert(e?.message || "No se pudo eliminar el embarque");
     } finally {
       setDeletingShipmentId("");
+    }
+  }
+
+  async function updateShipmentCode(shipmentId: string, newCode: string) {
+    const codeTrimmed = newCode.trim();
+    if (!codeTrimmed) {
+      alert("El código no puede estar vacío");
+      return;
+    }
+    
+    setUpdatingCode(true);
+    try {
+      await updateDoc(doc(db, "shipments", shipmentId), { code: codeTrimmed });
+      setShipments(list => list.map(s => s.id === shipmentId ? { ...s, code: codeTrimmed } : s));
+      setEditCodeModal(null);
+      setEditingCode("");
+    } catch (e: any) {
+      alert(e?.message || "No se pudo actualizar el código");
+    } finally {
+      setUpdatingCode(false);
     }
   }
 
@@ -387,6 +418,17 @@ export default function EstadoEnviosPage() {
                                 Marcar En Destino
                               </button>
                             )}
+                            {(isStaff && s.status === "open") || isSuperAdmin ? (
+                              <button
+                                className="h-9 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50"
+                                onClick={() => {
+                                  setEditCodeModal({ id: s.id, code: s.code });
+                                  setEditingCode(s.code);
+                                }}
+                              >
+                                Editar código
+                              </button>
+                            ) : null}
                             {isStaff && (
                               <button
                                 className="h-9 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50"
@@ -484,6 +526,52 @@ export default function EstadoEnviosPage() {
         </div>
 
         <BoxDetailModal {...modalProps} />
+
+        {/* Modal de edición de código */}
+        {editCodeModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-xl bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 p-6 text-white">
+              <h3 className="text-lg font-semibold text-white mb-2">Editar código de embarque</h3>
+              <label className="block mt-4">
+                <span className="text-xs font-medium text-white/70 mb-1 block">Código de embarque</span>
+                <input
+                  className="h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                  style={{
+                    backgroundColor: "#0f2a22",
+                    WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+                    WebkitTextFillColor: "#ffffff",
+                  }}
+                  type="text"
+                  value={editingCode}
+                  onChange={(e) => setEditingCode(e.target.value)}
+                  autoFocus
+                  placeholder="Código de embarque"
+                />
+              </label>
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  className="h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50"
+                  onClick={() => {
+                    setEditCodeModal(null);
+                    setEditingCode("");
+                  }}
+                  disabled={updatingCode}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50"
+                  onClick={() => updateShipmentCode(editCodeModal.id, editingCode)}
+                  disabled={updatingCode}
+                >
+                  {updatingCode ? "Guardando…" : "Guardar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </RequireAuth>
   );

@@ -107,6 +107,16 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
 
   const [confirmDelete, setConfirmDelete] = useState<null | { id: string; code: string; clientLabel: string }>(null);
   const [deletingBoxId, setDeletingBoxId] = useState<string>("");
+  
+  // Estado para modal de código de embarque
+  const [shipmentCodeModal, setShipmentCodeModal] = useState<{
+    code: string;
+    chosenIds: string[];
+    normalizedCountry: string;
+    normalizedType: string;
+  } | null>(null);
+  const [editingShipmentCode, setEditingShipmentCode] = useState("");
+  const [creatingShipment, setCreatingShipment] = useState(false);
   async function deleteEmptyBox(box: Box) {
     const itemsCount = Array.isArray(box.itemIds) ? box.itemIds.length : 0;
     if (itemsCount > 0) {
@@ -207,10 +217,57 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
     if (!chosen.length) return;
 
     const chosenIds = chosen.map(b => b.id);
+    
+    // Pre-validar país/tipo antes de mostrar el modal (sin transacción)
+    const preCountries = new Set(chosen.map(b => normalizeCountry((b as any).country)));
+    const preTypes = new Set(chosen.map(b => normalizeType((b as any).type)));
+    if (preCountries.size !== 1 || preTypes.size !== 1) {
+      alert("El embarque debe tener cajas del mismo país y tipo.");
+      return;
+    }
+    for (const b of chosen) {
+      if (b.shipmentId) {
+        alert(`Caja ${b.code} ya tiene embarque`);
+        return;
+      }
+    }
+
+    const normalizedCountry = Array.from(preCountries)[0];
+    const normalizedType = Array.from(preTypes)[0];
+    const openedAt = Date.now();
+    const initialCode = formatShipmentCode(openedAt, normalizedCountry, normalizedType);
+
+    // Abrir modal con código inicial
+    setShipmentCodeModal({
+      code: initialCode,
+      chosenIds,
+      normalizedCountry,
+      normalizedType,
+    });
+    setEditingShipmentCode(initialCode);
+  }
+
+  async function confirmCreateShipment() {
+    if (!shipmentCodeModal) return;
+    
+    const codeTrimmed = editingShipmentCode.trim().toUpperCase();
+    if (!codeTrimmed) {
+      alert("El código no puede estar vacío");
+      return;
+    }
+
+    // Validación opcional de formato
+    const formatRegex = /^\d{2}-[A-Z]{3}-\d{4}-[A-Z]{2,3}-(COMERCIAL|FRANQUICIA)$/;
+    if (!formatRegex.test(codeTrimmed)) {
+      const confirmed = confirm("Formato no estándar, ¿guardar igual?");
+      if (!confirmed) return;
+    }
+
+    setCreatingShipment(true);
     try {
       await runTransaction(db, async (tx) => {
         // Validar y cargar cajas dentro de la transacción
-        const boxRefs = chosenIds.map(id => doc(db, "boxes", id));
+        const boxRefs = shipmentCodeModal.chosenIds.map(id => doc(db, "boxes", id));
         const boxSnaps = await Promise.all(boxRefs.map(r => tx.get(r)));
 
         const boxesData = boxSnaps.map(s => {
@@ -218,16 +275,13 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
           return { id: s.id, ...(s.data() as any) } as Box;
         });
 
-        // Validaciones de integridad
+        // Re-validar dentro de la transacción
         const countries = new Set(boxesData.map(b => normalizeCountry((b as any).country)));
         const types = new Set(boxesData.map(b => normalizeType((b as any).type)));
         if (countries.size !== 1 || types.size !== 1) throw new Error("El embarque debe tener cajas del mismo país y tipo.");
         for (const b of boxesData) {
           if (b.shipmentId) throw new Error(`Caja ${b.code} ya tiene embarque`);
         }
-
-        const normalizedCountry = Array.from(countries)[0];
-        const normalizedType = Array.from(types)[0];
 
         const clientIds = Array.from(new Set(boxesData.map(b => b.clientId)));
         // Construir array de managerUids sin duplicados y sin nulos
@@ -237,14 +291,13 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
             .filter((uid): uid is string => uid != null && uid !== "")
         ));
         const openedAt = Date.now();
-        const code = formatShipmentCode(openedAt, normalizedCountry, normalizedType);
 
         // Crear doc de embarque con id auto
         const shipRef = doc(collection(db, "shipments"));
         tx.set(shipRef, {
-          code,
-          country: normalizedCountry,
-          type: normalizedType,
+          code: codeTrimmed,
+          country: shipmentCodeModal.normalizedCountry,
+          type: shipmentCodeModal.normalizedType,
           boxIds: boxesData.map(b => b.id),
           clientIds,
           managerUids,
@@ -259,9 +312,13 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
       // refresh list local
       setBoxes(prev => prev.filter(b => !picked[b.id]));
       setPicked({});
+      setShipmentCodeModal(null);
+      setEditingShipmentCode("");
       alert("Embarque creado");
     } catch (e: any) {
       alert(e?.message || "No se pudo crear el embarque");
+    } finally {
+      setCreatingShipment(false);
     }
   }
 
@@ -520,6 +577,52 @@ export function EmbarquesView({ btnPrimaryCls, btnSecondaryCls, linkCls }: { btn
       ) : null}
 
       <BoxDetailModal {...modalProps} />
+
+      {/* Modal de código de embarque */}
+      {shipmentCodeModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-xl bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 p-6 text-white">
+            <h3 className="text-lg font-semibold text-white mb-2">Código de embarque</h3>
+            <label className="block mt-4">
+              <span className="text-xs font-medium text-white/70 mb-1 block">Código de embarque</span>
+              <input
+                className="h-11 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                style={{
+                  backgroundColor: "#0f2a22",
+                  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+                  WebkitTextFillColor: "#ffffff",
+                }}
+                type="text"
+                value={editingShipmentCode}
+                onChange={(e) => setEditingShipmentCode(e.target.value)}
+                autoFocus
+                placeholder="DD-MMM-YYYY-PAIS-TIPO"
+              />
+            </label>
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50"
+                onClick={() => {
+                  setShipmentCodeModal(null);
+                  setEditingShipmentCode("");
+                }}
+                disabled={creatingShipment}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50"
+                onClick={confirmCreateShipment}
+                disabled={creatingShipment}
+              >
+                {creatingShipment ? "Creando…" : "Crear embarque"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </section>
   );
