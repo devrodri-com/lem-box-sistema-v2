@@ -2,7 +2,7 @@
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId, limit, startAfter, type QueryDocumentSnapshot } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId, limit, startAfter, type QueryDocumentSnapshot, type Query, type DocumentData } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import type { Carrier, Client, Shipment } from "@/types/lem";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -12,6 +12,17 @@ import { useBoxDetailModal } from "@/components/boxes/useBoxDetailModal";
 import { chunk } from "@/lib/utils";
 import { IconPhoto, IconTrash } from "@/components/ui/icons";
 import { BrandSelect, type BrandOption } from "@/components/ui/BrandSelect";
+import { TZ, zonedStartOfDayUtcMs, zonedEndOfDayUtcMs } from "@/lib/timezone";
+import { csvEscape, downloadCsvWithBom } from "@/lib/csv";
+import { DeleteTrackingModal } from "./_components/DeleteTrackingModal";
+import { ReindexSection } from "./_components/ReindexSection";
+import { PaginationFooter } from "./_components/PaginationFooter";
+import { TrackingFilters } from "./_components/TrackingFilters";
+import { BoxesTable } from "./_components/BoxesTable";
+import { InboundsTable } from "./_components/InboundsTable";
+import { loadShipmentsById } from "./_lib/loadShipmentsById";
+import { loadAlertedTrackings } from "./_lib/loadAlertedTrackings";
+import { loadOpenAlerts, type OpenAlert } from "./_lib/loadOpenAlerts";
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const btnPrimaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed";
@@ -22,24 +33,6 @@ const INPUT_BG_STYLE = {
   WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
   WebkitTextFillColor: "#ffffff",
 } as const;
-
-const TZ = "America/New_York";
-function tzOffsetMs(date: Date, timeZone: string): number {
-  const inTz = new Date(date.toLocaleString("en-US", { timeZone }));
-  return inTz.getTime() - date.getTime();
-}
-function zonedStartOfDayUtcMs(yyyyMmDd: string, timeZone = TZ): number {
-  const [y, m, d] = yyyyMmDd.split("-").map(Number);
-  const utc = new Date(Date.UTC(y, (m || 1) - 1, d || 1, 0, 0, 0));
-  const off = tzOffsetMs(utc, timeZone);
-  return utc.getTime() - off;
-}
-function zonedEndOfDayUtcMs(yyyyMmDd: string, timeZone = TZ): number {
-  const [y, m, d] = yyyyMmDd.split("-").map(Number);
-  const utc = new Date(Date.UTC(y, (m || 1) - 1, d || 1, 23, 59, 59, 999));
-  const off = tzOffsetMs(utc, timeZone);
-  return utc.getTime() - off;
-}
 
 
 type Inbound = {
@@ -87,7 +80,7 @@ function PageInner() {
   const [isPartnerState, setIsPartnerState] = useState<boolean>(false);
 
   // --- Pagination state ---
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<any, any> | null>(null);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [managedClientIds, setManagedClientIds] = useState<string[]>([]);
@@ -98,7 +91,7 @@ function PageInner() {
   const [dateTo, setDateTo] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<'all' | 'alerted' | 'received' | 'boxed'>('all');
   const [alertedTrackings, setAlertedTrackings] = useState<Set<string>>(new Set());
-  const [openAlerts, setOpenAlerts] = useState<Array<{ id: string; tracking: string; clientId: string; createdAt?: number; note?: string }>>([]);
+  const [openAlerts, setOpenAlerts] = useState<OpenAlert[]>([]);
   const [shipmentsById, setShipmentsById] = useState<Record<string, Shipment>>({});
 
   // --- Reindex state ---
@@ -173,8 +166,9 @@ function PageInner() {
     try {
       const snap = await getDoc(doc(db, "users", u.uid));
       if (snap.exists()) {
-        const data = snap.data() as any;
-        if (typeof data?.role === "string") firestoreRole = data.role;
+        const data = snap.data() as Record<string, unknown>;
+        const role = typeof data?.role === "string" ? data.role : undefined;
+        if (role) firestoreRole = role;
       }
     } catch {
       // ignore
@@ -195,9 +189,9 @@ function PageInner() {
     try {
       const snap = await getDoc(doc(db, "users", u.uid));
       if (snap.exists()) {
-        const data = snap.data() as any;
+        const data = snap.data() as Record<string, unknown>;
         const ids = Array.isArray(data?.managedClientIds)
-          ? data.managedClientIds.filter((x: any) => typeof x === "string" && x.length > 0)
+          ? data.managedClientIds.filter((x): x is string => typeof x === "string" && x.length > 0)
           : [];
         if (ids.length) return ids;
       }
@@ -301,7 +295,7 @@ function PageInner() {
         console.log("[HistorialTracking] clientKeys(for queries):", clientKeys);
 
         // Inbounds - Búsqueda global o por clientId según searchMode/clientSearchMode
-        let qBase: any;
+        let qBase: Query<DocumentData>;
         if (searchMode) {
           // Búsqueda global por trackingTokens (prioridad más alta - sin filtrar por clientId ni statusFilter)
           qBase = query(
@@ -325,7 +319,7 @@ function PageInner() {
         } else {
           // Listado normal paginado por clientId
           const firstChunk = clientKeys.slice(0, 10);
-          let qBaseStart: any = query(
+          let qBaseStart: Query<DocumentData> = query(
             collection(db, "inboundPackages"),
             where("clientId", "in", firstChunk)
           );
@@ -374,7 +368,7 @@ function PageInner() {
           for (const b of nextBoxes) uniq.set(b.id, b);
           nextBoxes = Array.from(uniq.values());
           if (!alive) return;
-          setBoxes(nextBoxes);
+        setBoxes(nextBoxes);
         } else {
           if (!alive) return;
           setBoxes([]);
@@ -390,121 +384,32 @@ function PageInner() {
             )
           );
 
-          if (shipmentIds.length > 0) {
-            let shipmentDocs: any[] = [];
-            if (shipmentIds.length <= 10) {
-              const q = query(
-                collection(db, "shipments"),
-                where(documentId(), "in", shipmentIds)
-              );
-              const snap = await getDocs(q);
-              shipmentDocs = snap.docs;
-            } else {
-              const chunks = chunk(shipmentIds, 10);
-              const snaps = await Promise.all(
-                chunks.map((ids) =>
-                  getDocs(
-                    query(
-                      collection(db, "shipments"),
-                      where(documentId(), "in", ids)
-                    )
-                  )
-                )
-              );
-              shipmentDocs = snaps.flatMap((s) => s.docs);
-            }
-
-            const shipmentsMap: Record<string, Shipment> = {};
-            shipmentDocs.forEach((d) => {
-              const data = d.data();
-              shipmentsMap[d.id] = {
-                id: d.id,
-                code: typeof data.code === "string" ? data.code : "",
-                status: (["open", "shipped", "arrived", "closed"].includes(
-                  data.status
-                )
-                  ? data.status
-                  : "open") as Shipment["status"],
-                country: typeof data.country === "string" ? data.country : "",
-                type:
-                  data.type === "COMERCIAL" || data.type === "FRANQUICIA"
-                    ? data.type
-                    : "COMERCIAL",
-              };
-            });
-
-            if (!alive) return;
-            setShipmentsById(shipmentsMap);
-          } else {
-            if (!alive) return;
-            setShipmentsById({});
-          }
-        } catch (e) {
+          const shipmentsMap = await loadShipmentsById(db, shipmentIds);
+          if (!alive) return;
+          setShipmentsById(shipmentsMap);
+            } catch (e) {
           console.error("Error loading shipments:", e);
           if (!alive) return;
           setShipmentsById({});
-        }
+            }
 
         // Cargar alertas para los trackings visibles
         const trackings = nextRows.map((r) => r.tracking.toUpperCase());
-        if (trackings.length > 0) {
-          const alertSet = new Set<string>();
-          const trackingChunks = chunk(trackings, 10);
-          for (const chunk of trackingChunks) {
-            try {
-              const alertQuery = query(
-                collection(db, "trackingAlerts"),
-                where("tracking", "in", chunk),
-                where("status", "==", "open")
-              );
-              const alertSnap = await getDocs(alertQuery);
-              alertSnap.docs.forEach((d) => {
-                const data = d.data();
-                if (data.tracking && typeof data.tracking === "string") {
-                  alertSet.add(data.tracking.toUpperCase());
-                }
-              });
-            } catch (e) {
-              console.error("Error loading alerts:", e);
-            }
-          }
-          if (!alive) return;
-          setAlertedTrackings(alertSet);
-        } else {
-          setAlertedTrackings(new Set());
-        }
+        const alertSet = await loadAlertedTrackings(db, trackings);
+        if (!alive) return;
+        setAlertedTrackings(alertSet);
 
         // Cargar todas las alertas abiertas (para partner: solo de sus clientes gestionados)
-        try {
-          const allAlertsQuery = query(
-            collection(db, "trackingAlerts"),
-            where("status", "==", "open")
-          );
-          const allAlertsSnap = await getDocs(allAlertsQuery);
-          let allAlerts = allAlertsSnap.docs.map((d) => {
-            const data = d.data();
-            return {
-              id: d.id,
-              tracking: typeof data.tracking === "string" ? data.tracking.toUpperCase() : "",
-              clientId: typeof data.clientId === "string" ? data.clientId : "",
-              createdAt: typeof data.createdAt === "number" ? data.createdAt : undefined,
-              note: typeof data.note === "string" ? data.note : undefined,
-            };
-          }).filter((a) => a.tracking && a.clientId);
-
-          // Para partner: filtrar en memoria solo alertas de sus clientes gestionados
-          if (isPartner && managedIds.length > 0) {
-            const managedSet = new Set(managedIds);
-            allAlerts = allAlerts.filter((a) => managedSet.has(a.clientId));
-          }
-
-          if (!alive) return;
-          setOpenAlerts(allAlerts);
-        } catch (e) {
-          console.error("Error loading all alerts:", e);
-          if (!alive) return;
-          setOpenAlerts([]);
+        let allAlerts = await loadOpenAlerts(db);
+        
+        // Para partner: filtrar en memoria solo alertas de sus clientes gestionados
+        if (isPartner && managedIds.length > 0) {
+          const managedSet = new Set(managedIds);
+          allAlerts = allAlerts.filter((a) => managedSet.has(a.clientId));
         }
+
+        if (!alive) return;
+        setOpenAlerts(allAlerts);
         return;
       }
 
@@ -518,7 +423,7 @@ function PageInner() {
         return;
       }
       // Staff/admin: búsqueda global o listado normal según searchMode/clientSearchMode
-      let inboundQ: any;
+      let inboundQ: Query<DocumentData>;
       if (searchMode) {
         // Búsqueda global por trackingTokens (prioridad más alta - sin filtrar por statusFilter)
         inboundQ = query(
@@ -527,8 +432,8 @@ function PageInner() {
           orderBy("receivedAt", "desc"),
           limit(PAGE_SIZE)
         );
-        if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
-        if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+      if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+      if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
       } else if (clientSearchMode) {
         // Búsqueda global por clientTokens (sin filtrar por statusFilter - clientSearchMode tiene prioridad)
         inboundQ = query(
@@ -541,7 +446,7 @@ function PageInner() {
         if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
       } else {
         // Listado normal paginado
-        let inboundQStart: any = query(collection(db, "inboundPackages"));
+        let inboundQStart: Query<DocumentData> = query(collection(db, "inboundPackages"));
         // Agregar filtro por status si corresponde (antes de orderBy)
         if (statusFilter === "received" || statusFilter === "boxed") {
           inboundQStart = query(inboundQStart, where("status", "==", statusFilter));
@@ -597,55 +502,9 @@ function PageInner() {
           )
         );
 
-        if (shipmentIds.length > 0) {
-          let shipmentDocs: any[] = [];
-          if (shipmentIds.length <= 10) {
-            const q = query(
-              collection(db, "shipments"),
-              where(documentId(), "in", shipmentIds)
-            );
-            const snap = await getDocs(q);
-            shipmentDocs = snap.docs;
-          } else {
-            const chunks = chunk(shipmentIds, 10);
-            const snaps = await Promise.all(
-              chunks.map((ids) =>
-                getDocs(
-                  query(
-                    collection(db, "shipments"),
-                    where(documentId(), "in", ids)
-                  )
-                )
-              )
-            );
-            shipmentDocs = snaps.flatMap((s) => s.docs);
-          }
-
-          const shipmentsMap: Record<string, Shipment> = {};
-          shipmentDocs.forEach((d) => {
-            const data = d.data();
-            shipmentsMap[d.id] = {
-              id: d.id,
-              code: typeof data.code === "string" ? data.code : "",
-              status: (["open", "shipped", "arrived", "closed"].includes(
-                data.status
-              )
-                ? data.status
-                : "open") as Shipment["status"],
-              country: typeof data.country === "string" ? data.country : "",
-              type:
-                data.type === "COMERCIAL" || data.type === "FRANQUICIA"
-                  ? data.type
-                  : "COMERCIAL",
-            };
-          });
-
-          if (!alive) return;
-          setShipmentsById(shipmentsMap);
-        } else {
-          if (!alive) return;
-          setShipmentsById({});
-        }
+        const shipmentsMap = await loadShipmentsById(db, shipmentIds);
+        if (!alive) return;
+        setShipmentsById(shipmentsMap);
       } catch (e) {
         console.error("Error loading shipments:", e);
         if (!alive) return;
@@ -654,58 +513,14 @@ function PageInner() {
 
       // Cargar alertas para los trackings visibles
       const trackings = nextRows.map((r) => r.tracking.toUpperCase());
-      if (trackings.length > 0) {
-        const alertSet = new Set<string>();
-        const trackingChunks = chunk(trackings, 10);
-        for (const chunk of trackingChunks) {
-          try {
-            const alertQuery = query(
-              collection(db, "trackingAlerts"),
-              where("tracking", "in", chunk),
-              where("status", "==", "open")
-            );
-            const alertSnap = await getDocs(alertQuery);
-            alertSnap.docs.forEach((d) => {
-              const data = d.data();
-              if (data.tracking && typeof data.tracking === "string") {
-                alertSet.add(data.tracking.toUpperCase());
-              }
-            });
-          } catch (e) {
-            console.error("Error loading alerts:", e);
-          }
-        }
-        if (!alive) return;
-        setAlertedTrackings(alertSet);
-      } else {
-        setAlertedTrackings(new Set());
-      }
+      const alertSet = await loadAlertedTrackings(db, trackings);
+      if (!alive) return;
+      setAlertedTrackings(alertSet);
 
       // Cargar todas las alertas abiertas (para staff: todas)
-      try {
-        const allAlertsQuery = query(
-          collection(db, "trackingAlerts"),
-          where("status", "==", "open")
-        );
-        const allAlertsSnap = await getDocs(allAlertsQuery);
-        const allAlerts = allAlertsSnap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            tracking: typeof data.tracking === "string" ? data.tracking.toUpperCase() : "",
-            clientId: typeof data.clientId === "string" ? data.clientId : "",
-            createdAt: typeof data.createdAt === "number" ? data.createdAt : undefined,
-            note: typeof data.note === "string" ? data.note : undefined,
-          };
-        }).filter((a) => a.tracking && a.clientId);
-
-        if (!alive) return;
-        setOpenAlerts(allAlerts);
-      } catch (e) {
-        console.error("Error loading all alerts:", e);
-        if (!alive) return;
-        setOpenAlerts([]);
-      }
+      const allAlerts = await loadOpenAlerts(db);
+      if (!alive) return;
+      setOpenAlerts(allAlerts);
     }
 
     void load();
@@ -718,26 +533,9 @@ function PageInner() {
     // Cargar alertas para los nuevos trackings
     const newTrackings = newRows.map((r) => r.tracking.toUpperCase());
     if (newTrackings.length > 0) {
+      const newAlertSet = await loadAlertedTrackings(db, newTrackings);
       const alertSet = new Set(alertedTrackings);
-      const trackingChunks = chunk(newTrackings, 10);
-      for (const chunk of trackingChunks) {
-        try {
-          const alertQuery = query(
-            collection(db, "trackingAlerts"),
-            where("tracking", "in", chunk),
-            where("status", "==", "open")
-          );
-          const alertSnap = await getDocs(alertQuery);
-          alertSnap.docs.forEach((d) => {
-            const data = d.data();
-            if (data.tracking && typeof data.tracking === "string") {
-              alertSet.add(data.tracking.toUpperCase());
-            }
-          });
-        } catch (e) {
-          console.error("Error loading alerts:", e);
-        }
-      }
+      newAlertSet.forEach((t) => alertSet.add(t));
       setAlertedTrackings(alertSet);
     }
 
@@ -763,49 +561,8 @@ function PageInner() {
       
       if (missingShipmentIds.length > 0) {
         try {
-          let shipmentDocs: any[] = [];
-          if (missingShipmentIds.length <= 10) {
-            const q = query(
-              collection(db, "shipments"),
-              where(documentId(), "in", missingShipmentIds)
-            );
-            const snap = await getDocs(q);
-            shipmentDocs = snap.docs;
-          } else {
-            const chunks = chunk(missingShipmentIds, 10);
-            const snaps = await Promise.all(
-              chunks.map((ids) =>
-                getDocs(
-                  query(
-                    collection(db, "shipments"),
-                    where(documentId(), "in", ids)
-                  )
-                )
-              )
-            );
-            shipmentDocs = snaps.flatMap((s) => s.docs);
-          }
-
-          const newShipmentsMap: Record<string, Shipment> = {};
-          shipmentDocs.forEach((d) => {
-            const data = d.data();
-            newShipmentsMap[d.id] = {
-              id: d.id,
-              code: typeof data.code === "string" ? data.code : "",
-              status: (["open", "shipped", "arrived", "closed"].includes(
-                data.status
-              )
-                ? data.status
-                : "open") as Shipment["status"],
-              country: typeof data.country === "string" ? data.country : "",
-              type:
-                data.type === "COMERCIAL" || data.type === "FRANQUICIA"
-                  ? data.type
-                  : "COMERCIAL",
-            };
-          });
-
-          setShipmentsById((prev) => ({ ...prev, ...newShipmentsMap }));
+          const newMap = await loadShipmentsById(db, missingShipmentIds);
+          setShipmentsById((prev) => ({ ...prev, ...newMap }));
         } catch (e) {
           console.error("Error loading shipments:", e);
         }
@@ -836,7 +593,7 @@ function PageInner() {
           )
         );
 
-        let qBase: any;
+        let qBase: Query<DocumentData>;
         if (searchMode) {
           // Búsqueda global por trackingTokens (prioridad más alta)
           qBase = query(
@@ -862,7 +619,7 @@ function PageInner() {
         } else {
           // Listado normal paginado por clientId
           const firstChunk = clientKeys.slice(0, 10);
-          let qBaseStart: any = query(
+          let qBaseStart: Query<DocumentData> = query(
             collection(db, "inboundPackages"),
             where("clientId", "in", firstChunk)
           );
@@ -918,7 +675,7 @@ function PageInner() {
         await loadAlertsAndShipmentsForRows(uniqueNewRows, updatedBoxes);
       } else if (isStaffState) {
         // Staff: búsqueda global o listado normal según searchMode/clientSearchMode
-        let inboundQ: any;
+        let inboundQ: Query<DocumentData>;
         if (searchMode) {
           // Búsqueda global por trackingTokens (prioridad más alta)
           inboundQ = query(
@@ -943,7 +700,7 @@ function PageInner() {
           if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
         } else {
           // Listado normal paginado
-          let inboundQStart: any = query(collection(db, "inboundPackages"));
+          let inboundQStart: Query<DocumentData> = query(collection(db, "inboundPackages"));
           // Agregar filtro por status si corresponde (antes de orderBy)
           if (statusFilter === "received" || statusFilter === "boxed") {
             inboundQStart = query(inboundQStart, where("status", "==", statusFilter));
@@ -1049,8 +806,9 @@ function PageInner() {
         lastId: data.lastId,
         hasMore: data.hasMore,
       });
-    } catch (e: any) {
-      console.error("[HistorialTracking] Error reindexing:", e);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[HistorialTracking] Error reindexing:", msg);
       alert("Error al reindexar.");
     } finally {
       setReindexing(false);
@@ -1098,8 +856,9 @@ function PageInner() {
         lastId: data.lastId,
         hasMore: data.hasMore,
       });
-    } catch (e: any) {
-      console.error("[HistorialTracking] Error reindexing names:", e);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[HistorialTracking] Error reindexing names:", msg);
       alert("Error al reindexar nombres.");
     } finally {
       setReindexNamesRunning(false);
@@ -1136,27 +895,6 @@ function PageInner() {
     }
   }
 
-  // CSV helpers
-  function csvEscape(value: any): string {
-    const s = String(value ?? "");
-    return '"' + s.replace(/"/g, '""') + '"';
-  }
-  function downloadCsvWithBom(rows: Record<string, any>[], headers: { key: string; label: string }[], filename: string) {
-    const headerLine = headers.map(h => csvEscape(h.label)).join(",");
-    const dataLines = rows.map(r => headers.map(h => csvEscape(r[h.key])).join(","));
-    const csv = "\uFEFF" + [headerLine, ...dataLines].join("\r\n"); // BOM + CRLF
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  // Export CSV handler for boxes
   // Export CSV handler for boxes
   async function handleExportCsv() {
     // Staff only. Partners must not export global data.
@@ -1204,10 +942,10 @@ function PageInner() {
       // Si estamos en modo búsqueda global (searchMode o clientSearchMode), el filtro ya se hizo en Firestore
       // Solo aplicar filtro en memoria si NO estamos en ningún modo de búsqueda global
       if (!searchMode && !clientSearchMode) {
-        const client = clientsById[r.clientId];
-        const clientText = client ? `${client.code} ${client.name}`.toLowerCase() : "";
-        if (qClient && !clientText.includes(qClient.toLowerCase())) return false;
-        if (qTracking && !r.tracking.toLowerCase().includes(qTracking.toLowerCase())) return false;
+      const client = clientsById[r.clientId];
+      const clientText = client ? `${client.code} ${client.name}`.toLowerCase() : "";
+      if (qClient && !clientText.includes(qClient.toLowerCase())) return false;
+      if (qTracking && !r.tracking.toLowerCase().includes(qTracking.toLowerCase())) return false;
       }
       
       // Para "received" y "boxed", el filtro ya se aplicó server-side cuando NO estamos en searchMode/clientSearchMode
@@ -1283,67 +1021,22 @@ function PageInner() {
           Todos los trackings: empacados (en caja) y sin empacar (sueltos en warehouse).
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-          <div className="flex flex-col gap-1">
-            <input
-              className={inputCls}
-              style={INPUT_BG_STYLE}
-              placeholder="Buscar por cliente"
-              value={qClient}
-              onChange={(e) => setQClient(e.target.value)}
-            />
-            {qClient.trim().length > 0 && qClient.trim().length < 3 && (
-              <p className="text-xs text-white/40">Escribí al menos 3 caracteres para búsqueda global por nombre.</p>
-            )}
-            {clientSearchMode && (
-              <p className="text-xs text-white/60">Búsqueda global por nombre (tokens).</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <input
-              className={inputCls}
-              style={INPUT_BG_STYLE}
-              placeholder="Buscar por tracking"
-              value={qTracking}
-              onChange={(e) => setQTracking(e.target.value)}
-            />
-            {qTracking.trim().length > 0 && qTracking.trim().length < 3 && (
-              <p className="text-xs text-white/40">Escribí al menos 3 caracteres para búsqueda global.</p>
-            )}
-            {searchMode && (
-              <p className="text-xs text-white/60">Búsqueda global por tracking (tokens).</p>
-            )}
-          </div>
-          {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
-          <input
-            type="date"
-            className={inputCls + " lem-date"}
-            style={INPUT_BG_STYLE}
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            title="Desde"
-          />
-          {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
-          <input
-            type="date"
-            className={inputCls + " lem-date"}
-            style={INPUT_BG_STYLE}
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            title="Hasta"
-          />
-          <BrandSelect
-            value={statusFilter}
-            onChange={(val) => setStatusFilter(val as any)}
-            options={[
-              { value: "all", label: "Todos" },
-              { value: "alerted", label: "Alertados" },
-              { value: "received", label: "Recibido" },
-              { value: "boxed", label: "Consolidado" },
-            ]}
-            placeholder="Filtrar estado"
-          />
-        </div>
+        <TrackingFilters
+          qClient={qClient}
+          onChangeClient={setQClient}
+          clientHintMode={qClient.trim().length > 0 && qClient.trim().length < 3 ? "min3" : (clientSearchMode ? "global" : "none")}
+          qTracking={qTracking}
+          onChangeTracking={setQTracking}
+          trackingHintMode={qTracking.trim().length > 0 && qTracking.trim().length < 3 ? "min3" : (searchMode ? "global" : "none")}
+          dateFrom={dateFrom}
+          onChangeDateFrom={setDateFrom}
+          dateTo={dateTo}
+          onChangeDateTo={setDateTo}
+          statusFilter={statusFilter}
+          onChangeStatusFilter={setStatusFilter}
+          inputCls={inputCls}
+          inputStyle={INPUT_BG_STYLE}
+        />
 
         <div className="flex flex-row gap-2 mb-2">
           {isStaffState ? (
@@ -1359,468 +1052,59 @@ function PageInner() {
 
         <div className="overflow-x-auto border rounded">
           {statusFilter === "boxed" ? (
-            <table className="w-full text-sm">
-              <thead className="bg-white/5 text-white/80">
-                <tr>
-                  <th className="text-left p-2">Caja</th>
-                  <th className="text-left p-2">Cliente</th>
-                  <th className="text-left p-2">Tipo</th>
-                  <th className="text-left p-2">Items</th>
-                  <th className="text-left p-2">Peso</th>
-                  <th className="text-left p-2">Estado</th>
-                  <th className="text-left p-2">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBoxes.map((b) => {
-                  const c = clientsById[b.clientId];
-                  const cliente = c?.code ? `${c.code} ${c.name}` : b.clientId;
-                  return (
-                    <tr key={b.id} className="border-t border-white/10">
-                      <td className="p-2">
-                        <button
-                          className="underline text-sm text-white/80 hover:text-white"
-                          onClick={() => openBoxDetailByBoxId(b.id)}
-                        >
-                          {b.code}
-                        </button>
-                      </td>
-                      <td className="p-2">{cliente}</td>
-                      <td className="p-2">
-                        {b.type === "FRANQUICIA" ? "Franquicia" : "Comercial"}
-                      </td>
-                      <td className="p-2">{b.itemIds?.length || 0}</td>
-                      <td className="p-2 whitespace-nowrap">{fmtWeightPairFromLb(Number(b.weightLb || 0))}</td>
-                      <td className="p-2">
-                        <StatusBadge scope="package" status="boxed" />
-                      </td>
-                      <td className="p-2">
-                        <button
-                          className="inline-flex items-center justify-center rounded-md border border-[#1f3f36] bg-white/5 px-3 py-1.5 text-white/90 hover:bg-white/10"
-                          onClick={() => openBoxDetailByBoxId(b.id)}
-                        >
-                          Ver
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {!filteredBoxes.length ? (
-                  <tr>
-                    <td className="p-3 text-white/40" colSpan={7}>
-                      Sin cajas.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
+            <BoxesTable
+              boxes={filteredBoxes}
+              clientsById={clientsById}
+              onOpenBox={(boxId) => openBoxDetailByBoxId(boxId)}
+              emptyText="No hay cajas para mostrar."
+            />
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-white/5 text-white/80">
-                <tr>
-                  <th className="text-left p-2">Fecha</th>
-                  <th className="text-left p-2">Cliente</th>
-                  <th className="text-left p-2">Tracking</th>
-                  <th className="text-left p-2">Carrier</th>
-                  <th className="text-left p-2">Peso</th>
-                  <th className="text-left p-2">Caja</th>
-                  <th className="text-left p-2">Estado</th>
-                  <th className="text-left p-2">Foto</th>
-                  <th className="text-left p-2">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  // Para filtro "alerted": mostrar inboundPackages alertados + alertas sin inboundPackage
-                  if (statusFilter === "alerted") {
-                    const rowTrackings = new Set(filtered.map((r) => String(r.tracking || "").toUpperCase()));
-                    const inboundRows = filtered.filter((r) => alertedTrackings.has(String(r.tracking || "").toUpperCase()));
-                    const alertOnlyRows = openAlerts.filter((alert) => !rowTrackings.has(alert.tracking));
-                    
-                    return (
-                      <>
-                        {/* InboundPackages alertados */}
-                        {inboundRows.map((r) => {
-                          const c = clientsById[r.clientId];
-                          const cliente = c?.code
-                            ? `${c.code} ${c.name}`
-                            : r.clientId;
-                          return (
-                            <tr key={r.id} className="border-t border-white/10">
-                              <td className="p-2">
-                                {r.receivedAt
-                                  ? new Date(r.receivedAt).toLocaleDateString()
-                                  : "-"}
-                              </td>
-                              <td className="p-2">{cliente}</td>
-                              <td className="p-2 font-mono text-sm">
-                                <a
-                                  className="underline text-white/80 hover:text-white"
-                                  href={`/admin/trackings/${r.id}`}
-                                >
-                                  {r.tracking}
-                                </a>
-                              </td>
-                              <td className="p-2">{r.carrier}</td>
-                              <td className="p-2 whitespace-nowrap">
-                                {fmtWeightPairFromLb(Number(r.weightLb || 0))}
-                              </td>
-                              <td className="p-2">
-                                {boxByInbound[r.id]?.code ? (
-                                  <button
-                                    className="underline text-sm text-white/80 hover:text-white"
-                                    onClick={() => openBoxDetailByInbound(r.id)}
-                                  >
-                                    {boxByInbound[r.id]?.code}
-                                  </button>
-                                ) : (
-                                  "-"
-                                )}
-                              </td>
-                              <td className="p-2">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  {(() => {
-                                    const box = boxByInbound[r.id];
-                                    const sid = box?.shipmentId;
-                                    const sh = sid ? shipmentsById[sid] : undefined;
-                                    const shipStatus = sh?.status;
-
-                                    if (r.status === "received") {
-                                      return (
-                                        <>
-                                          <StatusBadge scope="package" status="received" />
-                                        </>
-                                      );
-                                    }
-
-                                    if (r.status === "boxed") {
-                                      if (shipStatus === "shipped") {
-                                        return (
-                                          <>
-                                            <StatusBadge scope="shipment" status="shipped" />
-                                          </>
-                                        );
-                                      }
-                                      if (shipStatus === "arrived" || shipStatus === "closed") {
-                                        return (
-                                          <>
-                                            <StatusBadge scope="shipment" status="arrived" />
-                                          </>
-                                        );
-                                      }
-                                      return (
-                                        <>
-                                          <StatusBadge scope="package" status="boxed" />
-                                        </>
-                                      );
-                                    }
-
-                                    return <span className="text-xs">{r.status}</span>;
-                                  })()}
-                                  {alertedTrackings.has(r.tracking.toUpperCase()) && (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">
-                                      Alertado
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="p-2">
-                                {r.photoUrl ? (
-                                  <a
-                                    href={r.photoUrl}
-                                    target="_blank"
-                                    title="Ver foto"
-                                    aria-label="Ver foto"
-                                    className="inline-flex items-center justify-center text-white/80 hover:text-white"
-                                  >
-                                    <IconPhoto />
-                                  </a>
-                                ) : (
-                                  <span className="text-white/40">-</span>
-                                )}
-                              </td>
-                              <td className="p-2">
-                                {isStaffState && !boxByInbound[r.id] && r.status === "received" ? (
-                                  <button
-                                    className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-white/80 hover:text-red-400 hover:border-red-400"
-                                    title="Eliminar"
-                                    onClick={() => deleteTracking(r)}
-                                  >
-                                    <IconTrash />
-                                  </button>
-                                ) : (
-                                  <span className="text-white/40">-</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {/* Alertas sin inboundPackage */}
-                        {alertOnlyRows.map((alert) => {
-                          const c = clientsById[alert.clientId];
-                          const cliente = c?.code
-                            ? `${c.code} ${c.name}`
-                            : alert.clientId;
-                          return (
-                            <tr key={`alert-${alert.id}`} className="border-t border-white/10 opacity-75">
-                              <td className="p-2">
-                                {alert.createdAt
-                                  ? new Date(alert.createdAt).toLocaleDateString()
-                                  : "-"}
-                              </td>
-                              <td className="p-2">{cliente}</td>
-                              <td className="p-2 font-mono text-sm">{alert.tracking}</td>
-                              <td className="p-2 text-white/40">-</td>
-                              <td className="p-2 text-white/40">-</td>
-                              <td className="p-2 text-white/40">-</td>
-                              <td className="p-2">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">
-                                  Alertado
-                                </span>
-                              </td>
-                              <td className="p-2 text-white/40">-</td>
-                              <td className="p-2 text-white/40">-</td>
-                            </tr>
-                          );
-                        })}
-                      </>
-                    );
-                  }
-                  
-                  // Para otros filtros: comportamiento normal
-                  const rowsToShow = statusFilter === "received"
-                    ? filtered.filter((r) => !boxByInbound[r.id])
-                    : filtered;
-                  
-                  return rowsToShow.map((r) => {
-                    const c = clientsById[r.clientId];
-                    const cliente = c?.code
-                      ? `${c.code} ${c.name}`
-                      : r.clientId;
-                    return (
-                      <tr key={r.id} className="border-t border-white/10">
-                        <td className="p-2">
-                          {r.receivedAt
-                            ? new Date(r.receivedAt).toLocaleDateString()
-                            : "-"}
-                        </td>
-                        <td className="p-2">{cliente}</td>
-                        <td className="p-2 font-mono text-sm">
-                          <a
-                            className="underline text-white/80 hover:text-white"
-                            href={`/admin/trackings/${r.id}`}
-                          >
-                            {r.tracking}
-                          </a>
-                        </td>
-                        <td className="p-2">{r.carrier}</td>
-                        <td className="p-2 whitespace-nowrap">
-                          {fmtWeightPairFromLb(Number(r.weightLb || 0))}
-                        </td>
-                        <td className="p-2">
-                          {boxByInbound[r.id]?.code ? (
-                            <button
-                              className="underline text-sm text-white/80 hover:text-white"
-                              onClick={() => openBoxDetailByInbound(r.id)}
-                            >
-                              {boxByInbound[r.id]?.code}
-                            </button>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-                        <td className="p-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {(() => {
-                              const box = boxByInbound[r.id];
-                              const sid = box?.shipmentId;
-                              const sh = sid ? shipmentsById[sid] : undefined;
-                              const shipStatus = sh?.status;
-
-                              if (r.status === "received") {
-                                return (
-                                  <>
-                                    <StatusBadge scope="package" status="received" />
-                                  </>
-                                );
-                              }
-
-                              if (r.status === "boxed") {
-                                if (shipStatus === "shipped") {
-                                  return (
-                                    <>
-                                      <StatusBadge scope="shipment" status="shipped" />
-                                    </>
-                                  );
-                                }
-                                if (shipStatus === "arrived" || shipStatus === "closed") {
-                                  return (
-                                    <>
-                                      <StatusBadge scope="shipment" status="arrived" />
-                                    </>
-                                  );
-                                }
-                                return (
-                                  <>
-                                    <StatusBadge scope="package" status="boxed" />
-                                  </>
-                                );
-                              }
-
-                              return <span className="text-xs">{r.status}</span>;
-                            })()}
-                            {alertedTrackings.has(r.tracking.toUpperCase()) && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">
-                                Alertado
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          {r.photoUrl ? (
-                            <a
-                              href={r.photoUrl}
-                              target="_blank"
-                              title="Ver foto"
-                              aria-label="Ver foto"
-                              className="inline-flex items-center justify-center text-white/80 hover:text-white"
-                            >
-                              <IconPhoto />
-                            </a>
-                          ) : (
-                            <span className="text-white/40">-</span>
-                          )}
-                        </td>
-                        <td className="p-2">
-                          {isStaffState && !boxByInbound[r.id] && r.status === "received" ? (
-                            <button
-                              className="inline-flex items-center justify-center rounded border px-1.5 py-1 text-white/80 hover:text-red-400 hover:border-red-400"
-                              title="Eliminar"
-                              onClick={() => deleteTracking(r)}
-                            >
-                              <IconTrash />
-                            </button>
-                          ) : (
-                            <span className="text-white/40">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
-                {!rows.length ? (
-                  <tr>
-                    <td className="p-3 text-white/40" colSpan={9}>
-                      Sin datos aún.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
+            <InboundsTable
+              rows={filtered}
+              clientsById={clientsById}
+              boxByInbound={boxByInbound}
+              shipmentsById={shipmentsById}
+              alertedTrackings={alertedTrackings}
+              openAlerts={openAlerts}
+              isStaff={isStaffState}
+              statusFilter={statusFilter}
+              onOpenBox={openBoxDetailByInbound}
+              onDelete={deleteTracking}
+            />
           )}
         </div>
 
         {/* Paginación */}
-        <div className="space-y-3 pt-4 border-t border-white/10">
-          <p className="text-sm text-white/60">
-            Buscando en los últimos {rows.length} cargados. Cargar más para ampliar.
-          </p>
-          {hasMore ? (
-            <button
-              className={btnSecondaryCls}
-              onClick={loadMore}
-              disabled={loadingMore}
-            >
-              {loadingMore ? "Cargando…" : "Cargar más"}
-            </button>
-          ) : (
-            <p className="text-sm text-white/40">No hay más registros.</p>
-          )}
-        </div>
+        <PaginationFooter
+          count={rows.length}
+          hasMore={hasMore}
+          loading={loadingMore}
+          onLoadMore={loadMore}
+        />
 
         {/* Reindexación - Solo superadmin */}
-        {roleState === "superadmin" && (
-          <div className="space-y-3 pt-4 border-t border-white/10">
-            <button
-              className={btnSecondaryCls}
-              onClick={handleReindex}
-              disabled={reindexing}
-            >
-              {reindexing ? "Reindexando…" : "Reindexar búsqueda (200)"}
-            </button>
-            {reindexStats && (
-              <div className="space-y-1 text-sm">
-                <p className="text-white/80">Procesados {reindexStats.processed}</p>
-                <p className="text-white/80">Actualizados {reindexStats.updated}</p>
-                <p className="text-white/80">Omitidos {reindexStats.skipped}</p>
-                {reindexStats.hasMore ? (
-                  <p className="text-white/60">Volvé a apretar</p>
-                ) : (
-                  <p className="text-white/60">Reindex completo</p>
-                )}
-              </div>
-            )}
-            
-            <button
-              className={btnSecondaryCls}
-              onClick={handleReindexNames}
-              disabled={reindexNamesRunning}
-            >
-              {reindexNamesRunning ? "Reindexando…" : "Reindexar nombres (200)"}
-            </button>
-            {reindexNamesStats && (
-              <div className="space-y-1 text-sm">
-                <p className="text-white/80">Procesados {reindexNamesStats.processed}</p>
-                <p className="text-white/80">Actualizados {reindexNamesStats.updated}</p>
-                <p className="text-white/80">Omitidos {reindexNamesStats.skipped}</p>
-                {reindexNamesStats.hasMore ? (
-                  <p className="text-white/60">Volvé a apretar</p>
-                ) : (
-                  <p className="text-white/60">Reindex completo</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        <ReindexSection
+          visible={roleState === "superadmin"}
+          btnClassName={btnSecondaryCls}
+          onReindexTracking={handleReindex}
+          onReindexNames={handleReindexNames}
+          reindexing={reindexing}
+          reindexNamesRunning={reindexNamesRunning}
+          reindexStats={reindexStats && { processed: reindexStats.processed, updated: reindexStats.updated, skipped: reindexStats.skipped, hasMore: reindexStats.hasMore }}
+          reindexNamesStats={reindexNamesStats && { processed: reindexNamesStats.processed, updated: reindexNamesStats.updated, skipped: reindexNamesStats.skipped, hasMore: reindexNamesStats.hasMore }}
+        />
 
         <BoxDetailModal {...modalProps} />
 
         {/* Delete confirmation modal */}
-        {deleteOpen && deleteTarget && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="max-w-md w-full rounded-xl bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 p-4 text-white">
-              <div className="text-lg font-semibold text-white mb-2">Eliminar tracking</div>
-              <div className="text-sm text-white/80 mb-4">
-                ¿Seguro que querés eliminar el tracking {deleteTarget.tracking}?
-              </div>
-              {deleteErr && (
-                <div className="mb-4 text-sm text-rose-300">
-                  {deleteErr}
-                </div>
-              )}
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  className={btnSecondaryCls}
-                  onClick={() => setDeleteOpen(false)}
-                  disabled={deleting}
-                >
-                  Cancelar
-                </button>
-                <button
-                  className="inline-flex items-center justify-center h-10 px-4 rounded-md border border-rose-400/60 bg-rose-500/20 text-rose-100 hover:bg-rose-500/30 focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:opacity-50"
-                  onClick={confirmDelete}
-                  disabled={deleting}
-                >
-                  {deleting ? "Eliminando…" : "Eliminar"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteTrackingModal
+          open={deleteOpen}
+          tracking={deleteTarget?.tracking}
+          error={deleteErr}
+          deleting={deleting}
+          onCancel={() => setDeleteOpen(false)}
+          onConfirm={confirmDelete}
+        />
       </div>
     </main>
   );

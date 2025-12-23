@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useMiContext } from "../layout";
+import { useMiContext } from "../_context/MiContext";
 
 
 const CONTROL_BORDER = "border-[#1f3f36]";

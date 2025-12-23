@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { useMiContext } from "../layout";
+import { useMiContext } from "../_context/MiContext";
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const btnSecondary =
