@@ -20,6 +20,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { Client, Carrier } from "@/types/lem";
 import { type BrandOption } from "@/components/ui/BrandSelect";
+import { buildTrackingTokens, buildClientTokens } from "@/lib/searchTokens";
 
 const LB_TO_KG = 0.45359237;
 const KG_TO_LB = 1 / LB_TO_KG;
@@ -432,17 +433,36 @@ function PageInner() {
     const auth = getAuth();
     const adminUid = auth.currentUser?.uid || null;
 
+    // Generar tokens de búsqueda para el tracking
+    const { trackingNorm, trackingTokens } = buildTrackingTokens(trackingUpper);
+
+    // Obtener cliente y generar tokens de búsqueda para el cliente
+    const c = clientsById[form.clientId];
+    const clientTokensRaw = buildClientTokens(c?.name, c?.code, c?.email ?? c?.emailAlt);
+    const clientTokens = Array.isArray(clientTokensRaw) ? clientTokensRaw : [];
+
     // Crear inbound
-    const docRef = await addDoc(collection(db, "inboundPackages"), {
+    const payload: any = {
       tracking: trackingUpper,
+      trackingNorm,
+      trackingTokens,
+      clientTokens,
       carrier: form.carrier,
       clientId: form.clientId,
       weightLb: weightLbVal,
-      photoUrl,
       status: "received",
       receivedAt: Timestamp.now().toMillis(),
-      managerUid: managerUid,
-    });
+    };
+
+    if (photoUrl) {
+      payload.photoUrl = photoUrl;
+    }
+
+    if (managerUid) {
+      payload.managerUid = managerUid;
+    }
+
+    const docRef = await addDoc(collection(db, "inboundPackages"), payload);
 
     // Actualizar alerta si existe
     if (alertDoc && alertData) {

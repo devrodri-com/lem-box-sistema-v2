@@ -37,7 +37,7 @@ export function BrandSelect({ value, onChange, options, placeholder, disabled }:
       <button
         type="button"
         disabled={disabled}
-        className={baseClasses + (!value ? " text-slate-400" : "")}
+        className={baseClasses + (!value ? " text-white/40" : "")}
         onClick={() => {
           if (!disabled) setOpen((prev) => !prev);
         }}

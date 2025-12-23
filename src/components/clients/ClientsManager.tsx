@@ -39,6 +39,18 @@ function asBoolean(v: unknown): boolean | undefined {
 
 const COUNTRIES: string[] = ["Uruguay", "Argentina", "United States"];
 
+// Estilos dark-green LEM-BOX
+const CONTROL_BORDER = "border-[#1f3f36]";
+const inputCls =
+  "h-10 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+const btnSecondaryCls =
+  "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
+const INPUT_BG_STYLE = {
+  backgroundColor: "#0f2a22",
+  WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+  WebkitTextFillColor: "#ffffff",
+} as const;
+
 const STATES_BY_COUNTRY: Record<string, string[]> = {
   Uruguay: [
     "Artigas",
@@ -737,11 +749,11 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
       {/* Modal de creación */}
       {openCreate ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40">
-          <div className="w-[95vw] max-w-3xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-xl p-4 md:p-6 text-white">
+          <div className="w-[95vw] max-w-3xl rounded-xl bg-[#071f19] border border-[#1f3f36] ring-1 ring-white/10 shadow-xl p-4 md:p-6 text-white">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Crear cliente</h2>
+              <h2 className="text-lg font-semibold text-white">Crear cliente</h2>
               <button
-                className="h-9 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                className={btnSecondaryCls}
                 onClick={() => {
                   resetForm();
                   setOpenCreate(false);
@@ -754,7 +766,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
               <div className="grid gap-3 md:grid-cols-4 md:col-span-4">
                 <div className="md:col-span-2">
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     placeholder="Nombre completo"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -791,7 +804,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 </div>
                 <div>
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     placeholder="Nº documento"
                     value={documentNumber}
                     onChange={(e) => setDocumentNumber(e.target.value)}
@@ -799,7 +813,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 </div>
                 <div className="md:col-span-2">
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     type="email"
                     placeholder="Email"
                     value={email}
@@ -809,7 +824,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 </div>
                 <div className="md:col-span-2">
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     type="password"
                     placeholder="Contraseña (provisional)"
                     value={password}
@@ -819,7 +835,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 </div>
                 <div className="md:col-span-2">
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     type="tel"
                     inputMode="tel"
                     placeholder="Teléfono"
@@ -830,7 +847,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
 
                 <div className="md:col-span-3">
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     placeholder="Dirección"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
@@ -838,7 +856,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 </div>
                 <div>
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     placeholder="Contacto / Referente (ej: Danny, IFS)"
                     value={contact}
                     onChange={(e) => setContact(e.target.value)}
@@ -846,7 +865,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 </div>
                 <div>
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     type="email"
                     placeholder="Email adicional (opcional)"
                     value={emailAlt}
@@ -856,7 +876,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
 
                 <div>
                   <select
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     value={stateName}
                     onChange={(e) => setStateName(e.target.value)}
                     hidden={!country || !STATES_BY_COUNTRY[country]}
@@ -865,13 +886,14 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                       Seleccionar…
                     </option>
                     {(STATES_BY_COUNTRY[country] || []).map((s) => (
-                      <option key={s} value={s}>
+                      <option key={s} value={s} className="bg-[#0f2a22] text-white">
                         {s}
                       </option>
                     ))}
                   </select>
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     value={stateName}
                     onChange={(e) => setStateName(e.target.value)}
                     hidden={!!(country && STATES_BY_COUNTRY[country])}
@@ -880,7 +902,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 </div>
                 <div>
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     placeholder="Ciudad"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
@@ -888,7 +911,8 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                 </div>
                 <div>
                   <input
-                    className="h-12 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
                     placeholder="Código postal"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
@@ -928,11 +952,11 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                       resetForm();
                       setOpenCreate(false);
                     }}
-                    className="h-12 px-5 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40]"
+                    className={btnSecondaryCls}
                   >
                     Cancelar
                   </button>
-                  <button className="h-12 px-6 rounded-md text-white bg-[#eb6619] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]">
+                  <button className="h-10 px-6 rounded-md text-white bg-[#eb6619] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]">
                     Crear
                   </button>
                 </div>

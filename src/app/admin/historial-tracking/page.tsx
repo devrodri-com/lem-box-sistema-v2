@@ -2,7 +2,7 @@
 "use client";
 import RequireAuth from "@/components/RequireAuth";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId, limit } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, getDoc, doc, deleteDoc, updateDoc, where, documentId, limit, startAfter, type QueryDocumentSnapshot } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import type { Carrier, Client, Shipment } from "@/types/lem";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -73,6 +73,8 @@ export default function HistorialTrackingPage() {
   );
 }
 
+const PAGE_SIZE = 25;
+
 function PageInner() {
   const [clients, setClients] = useState<Client[]>([]);
   const [rows, setRows] = useState<Inbound[]>([]);
@@ -84,6 +86,12 @@ function PageInner() {
   const [isStaffState, setIsStaffState] = useState<boolean>(false);
   const [isPartnerState, setIsPartnerState] = useState<boolean>(false);
 
+  // --- Pagination state ---
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<any, any> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [managedClientIds, setManagedClientIds] = useState<string[]>([]);
+
   const [qClient, setQClient] = useState("");
   const [qTracking, setQTracking] = useState("");
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -92,6 +100,25 @@ function PageInner() {
   const [alertedTrackings, setAlertedTrackings] = useState<Set<string>>(new Set());
   const [openAlerts, setOpenAlerts] = useState<Array<{ id: string; tracking: string; clientId: string; createdAt?: number; note?: string }>>([]);
   const [shipmentsById, setShipmentsById] = useState<Record<string, Shipment>>({});
+
+  // --- Reindex state ---
+  const [reindexing, setReindexing] = useState(false);
+  const [reindexStats, setReindexStats] = useState<{
+    processed: number;
+    updated: number;
+    skipped: number;
+    lastId: string | null;
+    hasMore: boolean;
+  } | null>(null);
+  
+  const [reindexNamesRunning, setReindexNamesRunning] = useState(false);
+  const [reindexNamesStats, setReindexNamesStats] = useState<{
+    processed: number;
+    updated: number;
+    skipped: number;
+    lastId: string | null;
+    hasMore: boolean;
+  } | null>(null);
 
   const clientsById = useMemo(() => {
     const m: Record<string, Client> = {};
@@ -115,6 +142,13 @@ function PageInner() {
     }
     return m;
   }, [boxes]);
+
+  // Mapeo de inboundId -> receivedAt para ordenamiento de boxes
+  const rowsById = useMemo(() => {
+    const m: Record<string, Inbound> = {};
+    for (const r of rows) if (r.id) m[r.id] = r;
+    return m;
+  }, [rows]);
 
   async function getMyRole(): Promise<string | undefined> {
     const u = auth.currentUser;
@@ -176,8 +210,21 @@ function PageInner() {
     }
   }
 
+  // Normalizar query de tracking
+  const qNorm = qTracking.trim().toUpperCase().replaceAll(" ", "");
+  const searchMode = qNorm.length >= 3;
+
+  // Normalizar query de cliente
+  const qClientNorm = qClient.trim().toUpperCase().replaceAll(" ", "");
+  const clientSearchMode = !searchMode && qClientNorm.length >= 3;
+
   useEffect(() => {
     let alive = true;
+
+    // Resetear paginación cuando cambian los filtros o la query
+    setLastDoc(null);
+    setHasMore(true);
+    setLoadingMore(false);
 
     async function load() {
       const role = await getMyRole();
@@ -206,6 +253,7 @@ function PageInner() {
           managedIds = [];
         }
       }
+      setManagedClientIds(managedIds);
 
       console.log("[HistorialTracking] role:", role, "isStaff:", isStaff, "isPartner:", isPartner);
       console.log("[HistorialTracking] resolved role:", role);
@@ -246,15 +294,48 @@ function PageInner() {
         );
         console.log("[HistorialTracking] clientKeys(for queries):", clientKeys);
 
-        // Inbounds (by clientId)
-        const inboundQueries = chunk(clientKeys, 10).map((ids) => {
-          let qBase: any = query(collection(db, "inboundPackages"), where("clientId", "in", ids), orderBy("receivedAt", "desc"));
+        // Inbounds - Búsqueda global o por clientId según searchMode/clientSearchMode
+        let qBase: any;
+        if (searchMode) {
+          // Búsqueda global por trackingTokens (prioridad más alta - sin filtrar por clientId ni statusFilter)
+          qBase = query(
+            collection(db, "inboundPackages"),
+            where("trackingTokens", "array-contains", qNorm),
+            orderBy("receivedAt", "desc"),
+            limit(PAGE_SIZE)
+          );
           if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
           if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
-          return getDocs(qBase);
-        });
-        const inboundSnaps = await Promise.all(inboundQueries);
-        const inboundDocs = inboundSnaps.flatMap((s) => s.docs);
+        } else if (clientSearchMode) {
+          // Búsqueda global por clientTokens (sin filtrar por clientId ni statusFilter - clientSearchMode tiene prioridad)
+          qBase = query(
+            collection(db, "inboundPackages"),
+            where("clientTokens", "array-contains", qClientNorm),
+            orderBy("receivedAt", "desc"),
+            limit(PAGE_SIZE)
+          );
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        } else {
+          // Listado normal paginado por clientId
+          const firstChunk = clientKeys.slice(0, 10);
+          let qBaseStart: any = query(
+            collection(db, "inboundPackages"),
+            where("clientId", "in", firstChunk)
+          );
+          // Agregar filtro por status si corresponde (antes de orderBy)
+          if (statusFilter === "received" || statusFilter === "boxed") {
+            qBaseStart = query(qBaseStart, where("status", "==", statusFilter));
+          }
+          // Ahora agregar orderBy y limit
+          qBase = query(qBaseStart, orderBy("receivedAt", "desc"), limit(PAGE_SIZE));
+          // Filtros de fecha después de orderBy (están permitidos)
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        }
+        
+        const inboundSnap = await getDocs(qBase);
+        const inboundDocs = inboundSnap.docs;
         const nextRowsRaw = inboundDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) }));
         const seen = new Set<string>();
         const nextRows = nextRowsRaw.filter((r) => {
@@ -264,19 +345,36 @@ function PageInner() {
         });
         nextRows.sort((a, b) => Number(b.receivedAt || 0) - Number(a.receivedAt || 0));
 
-        // Boxes (by clientId)
-        const boxSnaps = await Promise.all(
-          chunk(clientKeys, 10).map((ids) => getDocs(query(collection(db, "boxes"), where("clientId", "in", ids))))
-        );
-        const boxDocs = boxSnaps.flatMap((s) => s.docs);
-        const nextBoxes = boxDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
-
         if (!alive) return;
         setClients(nextClients);
         setRows(nextRows);
-        setBoxes(nextBoxes);
+        const lastDocSnap = inboundDocs[inboundDocs.length - 1] ?? null;
+        setLastDoc(lastDocSnap);
+        setHasMore(inboundDocs.length === PAGE_SIZE);
 
-        // Cargar shipments en batch (sin N+1)
+        // Cargar boxes relevantes para los inbounds cargados
+        const inboundIds = nextRows.map((r) => r.id);
+        let nextBoxes: Box[] = [];
+        if (inboundIds.length > 0) {
+          const chunks = chunk(inboundIds, 10);
+          const boxSnaps = await Promise.all(
+            chunks.map((ids) =>
+              getDocs(query(collection(db, "boxes"), where("itemIds", "array-contains-any", ids)))
+            )
+          );
+          nextBoxes = boxSnaps.flatMap((s) => s.docs).map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
+          // Deduplicar boxes por id
+          const uniq = new Map<string, Box>();
+          for (const b of nextBoxes) uniq.set(b.id, b);
+          nextBoxes = Array.from(uniq.values());
+          if (!alive) return;
+          setBoxes(nextBoxes);
+        } else {
+          if (!alive) return;
+          setBoxes([]);
+        }
+
+        // Cargar shipments en batch (sin N+1) - después de setBoxes
         try {
           const shipmentIds = Array.from(
             new Set(
@@ -413,25 +511,77 @@ function PageInner() {
         setAuthError("Sin permisos para acceder a esta página");
         return;
       }
-      // Staff/admin: existing global behavior
-      let inboundQ: any = query(collection(db, "inboundPackages"), orderBy("receivedAt", "desc"));
-      if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
-      if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+      // Staff/admin: búsqueda global o listado normal según searchMode/clientSearchMode
+      let inboundQ: any;
+      if (searchMode) {
+        // Búsqueda global por trackingTokens (prioridad más alta - sin filtrar por statusFilter)
+        inboundQ = query(
+          collection(db, "inboundPackages"),
+          where("trackingTokens", "array-contains", qNorm),
+          orderBy("receivedAt", "desc"),
+          limit(PAGE_SIZE)
+        );
+        if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+        if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+      } else if (clientSearchMode) {
+        // Búsqueda global por clientTokens (sin filtrar por statusFilter - clientSearchMode tiene prioridad)
+        inboundQ = query(
+          collection(db, "inboundPackages"),
+          where("clientTokens", "array-contains", qClientNorm),
+          orderBy("receivedAt", "desc"),
+          limit(PAGE_SIZE)
+        );
+        if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+        if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+      } else {
+        // Listado normal paginado
+        let inboundQStart: any = query(collection(db, "inboundPackages"));
+        // Agregar filtro por status si corresponde (antes de orderBy)
+        if (statusFilter === "received" || statusFilter === "boxed") {
+          inboundQStart = query(inboundQStart, where("status", "==", statusFilter));
+        }
+        // Ahora agregar orderBy y limit
+        inboundQ = query(inboundQStart, orderBy("receivedAt", "desc"), limit(PAGE_SIZE));
+        // Filtros de fecha después de orderBy (están permitidos)
+        if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+        if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+      }
 
-      const [cs, is, bs] = await Promise.all([
+      const [cs, is] = await Promise.all([
         getDocs(collection(db, "clients")),
         getDocs(inboundQ),
-        getDocs(collection(db, "boxes")),
       ]);
 
       if (!alive) return;
       setClients(cs.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, "id">) })));
       const nextRows = is.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) }));
       setRows(nextRows);
-      const nextBoxes = bs.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
-      setBoxes(nextBoxes);
+      setLastDoc(is.docs[is.docs.length - 1] ?? null);
+      setHasMore(is.docs.length === PAGE_SIZE);
 
-      // Cargar shipments en batch (sin N+1)
+      // Cargar boxes relevantes para los inbounds cargados
+      const inboundIds = nextRows.map((r) => r.id);
+      let nextBoxes: Box[] = [];
+      if (inboundIds.length > 0) {
+        const chunks = chunk(inboundIds, 10);
+        const boxSnaps = await Promise.all(
+          chunks.map((ids) =>
+            getDocs(query(collection(db, "boxes"), where("itemIds", "array-contains-any", ids)))
+          )
+        );
+        nextBoxes = boxSnaps.flatMap((s) => s.docs).map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
+        // Deduplicar boxes por id
+        const uniq = new Map<string, Box>();
+        for (const b of nextBoxes) uniq.set(b.id, b);
+        nextBoxes = Array.from(uniq.values());
+        if (!alive) return;
+        setBoxes(nextBoxes);
+      } else {
+        if (!alive) return;
+        setBoxes([]);
+      }
+
+      // Cargar shipments en batch (sin N+1) - después de setBoxes
       try {
         const shipmentIds = Array.from(
           new Set(
@@ -556,12 +706,398 @@ function PageInner() {
     return () => {
       alive = false;
     };
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, qTracking, qClient, statusFilter]);
+
+  async function loadAlertsAndShipmentsForRows(newRows: Inbound[], currentBoxes?: Box[]) {
+    // Cargar alertas para los nuevos trackings
+    const newTrackings = newRows.map((r) => r.tracking.toUpperCase());
+    if (newTrackings.length > 0) {
+      const alertSet = new Set(alertedTrackings);
+      const trackingChunks = chunk(newTrackings, 10);
+      for (const chunk of trackingChunks) {
+        try {
+          const alertQuery = query(
+            collection(db, "trackingAlerts"),
+            where("tracking", "in", chunk),
+            where("status", "==", "open")
+          );
+          const alertSnap = await getDocs(alertQuery);
+          alertSnap.docs.forEach((d) => {
+            const data = d.data();
+            if (data.tracking && typeof data.tracking === "string") {
+              alertSet.add(data.tracking.toUpperCase());
+            }
+          });
+        } catch (e) {
+          console.error("Error loading alerts:", e);
+        }
+      }
+      setAlertedTrackings(alertSet);
+    }
+
+    // Cargar shipments para las nuevas boxes (usar boxes proporcionadas o estado actual)
+    const boxesToUse = currentBoxes ?? boxes;
+    const currentBoxByInbound: Record<string, Box> = {};
+    for (const b of boxesToUse) {
+      for (const id of b.itemIds || []) currentBoxByInbound[id] = b;
+    }
+
+    const newBoxIds = new Set<string>();
+    newRows.forEach((r) => {
+      const box = currentBoxByInbound[r.id];
+      if (box?.shipmentId) {
+        newBoxIds.add(box.shipmentId);
+      }
+    });
+
+    if (newBoxIds.size > 0) {
+      const shipmentIds = Array.from(newBoxIds);
+      // Filtrar los que ya tenemos cargados
+      const missingShipmentIds = shipmentIds.filter((id) => !shipmentsById[id]);
+      
+      if (missingShipmentIds.length > 0) {
+        try {
+          let shipmentDocs: any[] = [];
+          if (missingShipmentIds.length <= 10) {
+            const q = query(
+              collection(db, "shipments"),
+              where(documentId(), "in", missingShipmentIds)
+            );
+            const snap = await getDocs(q);
+            shipmentDocs = snap.docs;
+          } else {
+            const chunks = chunk(missingShipmentIds, 10);
+            const snaps = await Promise.all(
+              chunks.map((ids) =>
+                getDocs(
+                  query(
+                    collection(db, "shipments"),
+                    where(documentId(), "in", ids)
+                  )
+                )
+              )
+            );
+            shipmentDocs = snaps.flatMap((s) => s.docs);
+          }
+
+          const newShipmentsMap: Record<string, Shipment> = {};
+          shipmentDocs.forEach((d) => {
+            const data = d.data();
+            newShipmentsMap[d.id] = {
+              id: d.id,
+              code: typeof data.code === "string" ? data.code : "",
+              status: (["open", "shipped", "arrived", "closed"].includes(
+                data.status
+              )
+                ? data.status
+                : "open") as Shipment["status"],
+              country: typeof data.country === "string" ? data.country : "",
+              type:
+                data.type === "COMERCIAL" || data.type === "FRANQUICIA"
+                  ? data.type
+                  : "COMERCIAL",
+            };
+          });
+
+          setShipmentsById((prev) => ({ ...prev, ...newShipmentsMap }));
+        } catch (e) {
+          console.error("Error loading shipments:", e);
+        }
+      }
+    }
+  }
+
+  async function loadMore() {
+    if (!hasMore || loadingMore || !lastDoc) return;
+
+    setLoadingMore(true);
+    try {
+      if (isPartnerState) {
+        // Partner: usar managedClientIds
+        if (!managedClientIds.length) {
+          setHasMore(false);
+          return;
+        }
+
+        const clientKeys = Array.from(
+          new Set(
+            [
+              ...managedClientIds,
+              ...clients
+                .map((c: any) => (typeof c?.code === "string" ? c.code : null))
+                .filter((x: any) => typeof x === "string" && x.length > 0),
+            ].filter((x: any) => typeof x === "string" && x.length > 0)
+          )
+        );
+
+        let qBase: any;
+        if (searchMode) {
+          // Búsqueda global por trackingTokens (prioridad más alta)
+          qBase = query(
+            collection(db, "inboundPackages"),
+            where("trackingTokens", "array-contains", qNorm),
+            orderBy("receivedAt", "desc"),
+            startAfter(lastDoc),
+            limit(PAGE_SIZE)
+          );
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        } else if (clientSearchMode) {
+          // Búsqueda global por clientTokens
+          qBase = query(
+            collection(db, "inboundPackages"),
+            where("clientTokens", "array-contains", qClientNorm),
+            orderBy("receivedAt", "desc"),
+            startAfter(lastDoc),
+            limit(PAGE_SIZE)
+          );
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        } else {
+          // Listado normal paginado por clientId
+          const firstChunk = clientKeys.slice(0, 10);
+          let qBaseStart: any = query(
+            collection(db, "inboundPackages"),
+            where("clientId", "in", firstChunk)
+          );
+          // Agregar filtro por status si corresponde (antes de orderBy)
+          if (statusFilter === "received" || statusFilter === "boxed") {
+            qBaseStart = query(qBaseStart, where("status", "==", statusFilter));
+          }
+          // Ahora agregar orderBy, startAfter y limit
+          qBase = query(qBaseStart, orderBy("receivedAt", "desc"), startAfter(lastDoc), limit(PAGE_SIZE));
+          // Filtros de fecha después de orderBy (están permitidos)
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        }
+
+        const inboundSnap = await getDocs(qBase);
+        const inboundDocs = inboundSnap.docs;
+        const newRowsRaw = inboundDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) }));
+
+        // Evitar duplicados
+        const existingIds = new Set(rows.map((r) => r.id));
+        const uniqueNewRows = newRowsRaw.filter((r) => !existingIds.has(r.id));
+        uniqueNewRows.sort((a, b) => Number(b.receivedAt || 0) - Number(a.receivedAt || 0));
+
+        const combinedRows = [...rows, ...uniqueNewRows];
+        combinedRows.sort((a, b) => Number(b.receivedAt || 0) - Number(a.receivedAt || 0));
+        setRows(combinedRows);
+        setLastDoc(inboundDocs[inboundDocs.length - 1] ?? null);
+        setHasMore(inboundDocs.length === PAGE_SIZE);
+
+        // Cargar boxes adicionales para los nuevos inbounds
+        const newInboundIds = uniqueNewRows.map((r) => r.id);
+        let updatedBoxes = boxes;
+        if (newInboundIds.length > 0) {
+          const chunks = chunk(newInboundIds, 10);
+          const boxSnaps = await Promise.all(
+            chunks.map((ids) =>
+              getDocs(query(collection(db, "boxes"), where("itemIds", "array-contains-any", ids)))
+            )
+          );
+          const newBoxes = boxSnaps.flatMap((s) => s.docs).map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
+          
+          // Deduplicar newBoxes por id (una caja puede matchear varios chunks)
+          const uniqNew = Array.from(new Map(newBoxes.map(b => [b.id, b])).values());
+          
+          // Merge sin duplicados
+          const existingBoxIds = new Set(boxes.map((b) => b.id));
+          const uniqueNewBoxes = uniqNew.filter((b) => !existingBoxIds.has(b.id));
+          updatedBoxes = [...boxes, ...uniqueNewBoxes];
+          setBoxes(updatedBoxes);
+        }
+
+        // Cargar alertas y shipments para los nuevos rows (después de setBoxes, usando boxes actualizadas)
+        await loadAlertsAndShipmentsForRows(uniqueNewRows, updatedBoxes);
+      } else if (isStaffState) {
+        // Staff: búsqueda global o listado normal según searchMode/clientSearchMode
+        let inboundQ: any;
+        if (searchMode) {
+          // Búsqueda global por trackingTokens (prioridad más alta)
+          inboundQ = query(
+            collection(db, "inboundPackages"),
+            where("trackingTokens", "array-contains", qNorm),
+            orderBy("receivedAt", "desc"),
+            startAfter(lastDoc),
+            limit(PAGE_SIZE)
+          );
+          if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        } else if (clientSearchMode) {
+          // Búsqueda global por clientTokens
+          inboundQ = query(
+            collection(db, "inboundPackages"),
+            where("clientTokens", "array-contains", qClientNorm),
+            orderBy("receivedAt", "desc"),
+            startAfter(lastDoc),
+            limit(PAGE_SIZE)
+          );
+          if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        } else {
+          // Listado normal paginado
+          let inboundQStart: any = query(collection(db, "inboundPackages"));
+          // Agregar filtro por status si corresponde (antes de orderBy)
+          if (statusFilter === "received" || statusFilter === "boxed") {
+            inboundQStart = query(inboundQStart, where("status", "==", statusFilter));
+          }
+          // Ahora agregar orderBy, startAfter y limit
+          inboundQ = query(inboundQStart, orderBy("receivedAt", "desc"), startAfter(lastDoc), limit(PAGE_SIZE));
+          // Filtros de fecha después de orderBy (están permitidos)
+          if (dateFrom) inboundQ = query(inboundQ, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) inboundQ = query(inboundQ, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        }
+
+        const inboundSnap = await getDocs(inboundQ);
+        const inboundDocs = inboundSnap.docs;
+        const newRows = inboundDocs.map((d) => ({ id: d.id, ...(d.data() as Omit<Inbound, "id">) }));
+
+        // Evitar duplicados
+        const existingIds = new Set(rows.map((r) => r.id));
+        const uniqueNewRows = newRows.filter((r) => !existingIds.has(r.id));
+
+        const combinedRows = [...rows, ...uniqueNewRows];
+        combinedRows.sort((a, b) => Number(b.receivedAt || 0) - Number(a.receivedAt || 0));
+        setRows(combinedRows);
+        setLastDoc(inboundDocs[inboundDocs.length - 1] ?? null);
+        setHasMore(inboundDocs.length === PAGE_SIZE);
+
+        // Cargar boxes adicionales para los nuevos inbounds
+        const newInboundIds = uniqueNewRows.map((r) => r.id);
+        let updatedBoxes = boxes;
+        if (newInboundIds.length > 0) {
+          const chunks = chunk(newInboundIds, 10);
+          const boxSnaps = await Promise.all(
+            chunks.map((ids) =>
+              getDocs(query(collection(db, "boxes"), where("itemIds", "array-contains-any", ids)))
+            )
+          );
+          const newBoxes = boxSnaps.flatMap((s) => s.docs).map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) }));
+          
+          // Deduplicar newBoxes por id (una caja puede matchear varios chunks)
+          const uniqNew = Array.from(new Map(newBoxes.map(b => [b.id, b])).values());
+          
+          // Merge sin duplicados
+          const existingBoxIds = new Set(boxes.map((b) => b.id));
+          const uniqueNewBoxes = uniqNew.filter((b) => !existingBoxIds.has(b.id));
+          updatedBoxes = [...boxes, ...uniqueNewBoxes];
+          setBoxes(updatedBoxes);
+        }
+
+        // Cargar alertas y shipments para los nuevos rows (después de setBoxes, usando boxes actualizadas)
+        await loadAlertsAndShipmentsForRows(uniqueNewRows, updatedBoxes);
+      }
+    } catch (e) {
+      console.error("[HistorialTracking] Error loading more:", e);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function openBoxDetailByInbound(inboundId: string) {
     const b = boxByInbound[inboundId];
     if (!b) return;
     await openBoxDetailByBoxId(b.id);
+  }
+
+  async function handleReindex() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Debes estar autenticado para reindexar.");
+      return;
+    }
+
+    setReindexing(true);
+    try {
+      const idToken = await user.getIdToken();
+      const body: any = {
+        batchSize: 200,
+      };
+
+      if (reindexStats?.lastId) {
+        body.startAfterId = reindexStats.lastId;
+      }
+
+      const res = await fetch("/api/admin/search/reindex-inbounds", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Error: ${data.error || "Error al reindexar"}`);
+        return;
+      }
+
+      const data = await res.json();
+      setReindexStats({
+        processed: (reindexStats?.processed || 0) + data.processed,
+        updated: (reindexStats?.updated || 0) + data.updated,
+        skipped: (reindexStats?.skipped || 0) + data.skipped,
+        lastId: data.lastId,
+        hasMore: data.hasMore,
+      });
+    } catch (e: any) {
+      console.error("[HistorialTracking] Error reindexing:", e);
+      alert("Error al reindexar.");
+    } finally {
+      setReindexing(false);
+    }
+  }
+
+  async function handleReindexNames() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Debes estar autenticado para reindexar.");
+      return;
+    }
+
+    setReindexNamesRunning(true);
+    try {
+      const idToken = await user.getIdToken();
+      const body: any = {
+        batchSize: 200,
+      };
+
+      if (reindexNamesStats?.lastId) {
+        body.startAfterId = reindexNamesStats.lastId;
+      }
+
+      const res = await fetch("/api/admin/search/reindex-inbounds-clienttokens", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Error: ${data.error || "Error al reindexar nombres"}`);
+        return;
+      }
+
+      const data = await res.json();
+      setReindexNamesStats({
+        processed: (reindexNamesStats?.processed || 0) + data.processed,
+        updated: (reindexNamesStats?.updated || 0) + data.updated,
+        skipped: (reindexNamesStats?.skipped || 0) + data.skipped,
+        lastId: data.lastId,
+        hasMore: data.hasMore,
+      });
+    } catch (e: any) {
+      console.error("[HistorialTracking] Error reindexing names:", e);
+      alert("Error al reindexar nombres.");
+    } finally {
+      setReindexNamesRunning(false);
+    }
   }
 
   async function deleteTracking(row: Inbound) {
@@ -645,25 +1181,56 @@ function PageInner() {
   }
   const filtered = useMemo(() => {
     return rows.filter((r) => {
-      const client = clientsById[r.clientId];
-      const clientText = client ? `${client.code} ${client.name}`.toLowerCase() : "";
-      if (qClient && !clientText.includes(qClient.toLowerCase())) return false;
-      if (qTracking && !r.tracking.toLowerCase().includes(qTracking.toLowerCase())) return false;
-      if (statusFilter === 'received') {
-        if (r.status !== 'received') return false;
-        if (boxByInbound[r.id]) return false; // sólo sueltos
+      // Si estamos en modo búsqueda global (searchMode o clientSearchMode), el filtro ya se hizo en Firestore
+      // Solo aplicar filtro en memoria si NO estamos en ningún modo de búsqueda global
+      if (!searchMode && !clientSearchMode) {
+        const client = clientsById[r.clientId];
+        const clientText = client ? `${client.code} ${client.name}`.toLowerCase() : "";
+        if (qClient && !clientText.includes(qClient.toLowerCase())) return false;
+        if (qTracking && !r.tracking.toLowerCase().includes(qTracking.toLowerCase())) return false;
       }
+      
+      // Para "received" y "boxed", el filtro ya se aplicó server-side cuando NO estamos en searchMode/clientSearchMode
+      // Solo aplicar filtro adicional en memoria:
+      // - "received": verificar que no esté en una box (sólo sueltos) - solo cuando NO es searchMode/clientSearchMode
+      // - "alerted": mantener lógica especial de alertas (siempre en memoria)
+      // - searchMode/clientSearchMode: no aplicar filtro por status (búsquedas globales tienen prioridad)
+      if (searchMode || clientSearchMode) {
+        // En búsqueda global, no filtramos por status (búsquedas globales tienen prioridad)
+      } else if (statusFilter === 'received' || statusFilter === 'boxed') {
+        // El status ya está filtrado server-side, pero para "received" verificamos que no esté en box
+        if (statusFilter === 'received' && boxByInbound[r.id]) return false; // sólo sueltos
+        // Para "boxed", el status ya está filtrado server-side, no necesitamos verificación adicional
+      }
+      
       if (statusFilter === 'alerted') {
+        // "alerted" siempre se filtra en memoria (lógica especial)
         if (!alertedTrackings.has(r.tracking.toUpperCase())) return false;
       }
+      
       return true;
     });
-  }, [rows, clientsById, qClient, qTracking, statusFilter, boxByInbound, alertedTrackings]);
+  }, [rows, clientsById, qClient, qTracking, statusFilter, boxByInbound, alertedTrackings, searchMode, clientSearchMode]);
+
+  // Función para obtener timestamp de una box (para ordenamiento)
+  function getBoxTs(b: Box): number {
+    const tsFromItems = Math.max(
+      ...(b.itemIds || []).map((id) => rowsById[id]?.receivedAt || 0),
+      0
+    );
+    return Number(
+      (b as any).updatedAt ||
+      (b as any).closedAt ||
+      (b as any).createdAt ||
+      tsFromItems ||
+      0
+    );
+  }
 
   const filteredBoxes = useMemo(() => {
     if (statusFilter !== 'boxed') return [] as Box[];
     // filtra por cliente y por fechas usando aprox fecha del primer item (si tuviera)
-    return boxes
+    const filtered = boxes
       .filter(b => (b.itemIds?.length || 0) > 0)
       .filter(b => {
         const c = clientsById[b.clientId];
@@ -671,7 +1238,10 @@ function PageInner() {
         if (qClient && !clientText.includes(qClient.toLowerCase())) return false;
         return true;
       });
-  }, [boxes, statusFilter, clientsById, qClient]);
+    // Ordenar por más reciente arriba
+    filtered.sort((a, b) => getBoxTs(b) - getBoxTs(a));
+    return filtered;
+  }, [boxes, statusFilter, clientsById, qClient, rowsById]);
 
   return (
     <main className="min-h-[100dvh] bg-[#02120f] text-white flex flex-col items-center p-4 md:p-8 pt-24 md:pt-28">
@@ -694,20 +1264,36 @@ function PageInner() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-          <input
-            className={inputCls}
-            style={INPUT_BG_STYLE}
-            placeholder="Buscar por cliente"
-            value={qClient}
-            onChange={(e) => setQClient(e.target.value)}
-          />
-          <input
-            className={inputCls}
-            style={INPUT_BG_STYLE}
-            placeholder="Buscar por tracking"
-            value={qTracking}
-            onChange={(e) => setQTracking(e.target.value)}
-          />
+          <div className="flex flex-col gap-1">
+            <input
+              className={inputCls}
+              style={INPUT_BG_STYLE}
+              placeholder="Buscar por cliente"
+              value={qClient}
+              onChange={(e) => setQClient(e.target.value)}
+            />
+            {qClient.trim().length > 0 && qClient.trim().length < 3 && (
+              <p className="text-xs text-white/40">Escribí al menos 3 caracteres para búsqueda global por nombre.</p>
+            )}
+            {clientSearchMode && (
+              <p className="text-xs text-white/60">Búsqueda global por nombre (tokens).</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1">
+            <input
+              className={inputCls}
+              style={INPUT_BG_STYLE}
+              placeholder="Buscar por tracking"
+              value={qTracking}
+              onChange={(e) => setQTracking(e.target.value)}
+            />
+            {qTracking.trim().length > 0 && qTracking.trim().length < 3 && (
+              <p className="text-xs text-white/40">Escribí al menos 3 caracteres para búsqueda global.</p>
+            )}
+            {searchMode && (
+              <p className="text-xs text-white/60">Búsqueda global por tracking (tokens).</p>
+            )}
+          </div>
           {/* Filtro por fecha en TZ America/New_York (consulta en UTC) */}
           <input
             type="date"
@@ -1113,6 +1699,69 @@ function PageInner() {
             </table>
           )}
         </div>
+
+        {/* Paginación */}
+        <div className="space-y-3 pt-4 border-t border-white/10">
+          <p className="text-sm text-white/60">
+            Buscando en los últimos {rows.length} cargados. Cargar más para ampliar.
+          </p>
+          {hasMore ? (
+            <button
+              className={btnSecondaryCls}
+              onClick={loadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? "Cargando…" : "Cargar más"}
+            </button>
+          ) : (
+            <p className="text-sm text-white/40">No hay más registros.</p>
+          )}
+        </div>
+
+        {/* Reindexación - Solo superadmin */}
+        {roleState === "superadmin" && (
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <button
+              className={btnSecondaryCls}
+              onClick={handleReindex}
+              disabled={reindexing}
+            >
+              {reindexing ? "Reindexando…" : "Reindexar búsqueda (200)"}
+            </button>
+            {reindexStats && (
+              <div className="space-y-1 text-sm">
+                <p className="text-white/80">Procesados {reindexStats.processed}</p>
+                <p className="text-white/80">Actualizados {reindexStats.updated}</p>
+                <p className="text-white/80">Omitidos {reindexStats.skipped}</p>
+                {reindexStats.hasMore ? (
+                  <p className="text-white/60">Volvé a apretar</p>
+                ) : (
+                  <p className="text-white/60">Reindex completo</p>
+                )}
+              </div>
+            )}
+            
+            <button
+              className={btnSecondaryCls}
+              onClick={handleReindexNames}
+              disabled={reindexNamesRunning}
+            >
+              {reindexNamesRunning ? "Reindexando…" : "Reindexar nombres (200)"}
+            </button>
+            {reindexNamesStats && (
+              <div className="space-y-1 text-sm">
+                <p className="text-white/80">Procesados {reindexNamesStats.processed}</p>
+                <p className="text-white/80">Actualizados {reindexNamesStats.updated}</p>
+                <p className="text-white/80">Omitidos {reindexNamesStats.skipped}</p>
+                {reindexNamesStats.hasMore ? (
+                  <p className="text-white/60">Volvé a apretar</p>
+                ) : (
+                  <p className="text-white/60">Reindex completo</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <BoxDetailModal {...modalProps} />
       </div>
