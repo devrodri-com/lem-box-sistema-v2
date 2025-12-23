@@ -145,9 +145,9 @@ export default function PartnerEnviosPage() {
           }
         });
 
-        // Filtrar en memoria por clientId si es necesario (para futuro filtro de cliente)
-        // Por ahora, no hay filtro, así que se cargan todas las boxes del partner
-        setBoxes(loadedBoxes);
+        // Filtrar por scopedClientIds para asegurar scope correcto
+        const filteredBoxes = loadedBoxes.filter((b) => scopedClientIds.includes(b.clientId));
+        setBoxes(filteredBoxes);
       } catch (err) {
         console.error("[PartnerEnvios] Error loading boxes:", err);
         setBoxes([]);
@@ -156,7 +156,7 @@ export default function PartnerEnviosPage() {
       }
     }
     void loadBoxes();
-  }, [uid, roleResolved]);
+  }, [uid, roleResolved, scopedClientIds]);
 
   // Derivar shipments desde las cajas
   useEffect(() => {

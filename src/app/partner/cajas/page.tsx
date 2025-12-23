@@ -144,6 +144,9 @@ export default function PartnerCajasPage() {
           );
           const snap = await getDocs(q);
           allBoxes = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Box, "id">) } as Box));
+          
+          // Filtrar por scopedClientIds para asegurar scope correcto
+          allBoxes = allBoxes.filter((b) => scopedClientIds.includes(b.clientId));
         }
 
         // Ordenar: primero por createdAt (si existe), luego por code

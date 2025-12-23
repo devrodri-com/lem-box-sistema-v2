@@ -220,14 +220,17 @@ export default function PartnerHistorialPage() {
             }
           }
         });
-        setBoxes(loadedBoxes);
+        
+        // Filtrar por scopedClientIds para asegurar scope correcto
+        const filteredBoxes = loadedBoxes.filter((b) => scopedClientIds.includes(b.clientId));
+        setBoxes(filteredBoxes);
       } catch (err) {
         console.error("[PartnerHistorial] Error loading boxes:", err);
         setBoxes([]);
       }
     }
     void loadBoxes();
-  }, [uid, roleResolved]);
+  }, [uid, roleResolved, scopedClientIds]);
 
   // Cargar inbounds
   useEffect(() => {
@@ -281,17 +284,20 @@ export default function PartnerHistorialPage() {
           }
         });
 
+        // Filtrar por scopedClientIds para asegurar scope correcto
+        const filteredInbounds = loadedInbounds.filter((i) => scopedClientIds.includes(i.clientId));
+
         // Ordenar en memoria por receivedAt desc
-        loadedInbounds.sort((a, b) => {
+        filteredInbounds.sort((a, b) => {
           const aTime = a.receivedAt || 0;
           const bTime = b.receivedAt || 0;
           return bTime - aTime; // desc
         });
 
         // Aplicar limit después del sort
-        const limited = loadedInbounds.slice(0, LIMIT_INITIAL);
+        const limited = filteredInbounds.slice(0, LIMIT_INITIAL);
         setInbounds(limited);
-        setHasMore(loadedInbounds.length > LIMIT_INITIAL);
+        setHasMore(filteredInbounds.length > LIMIT_INITIAL);
       } catch (err) {
         console.error("[PartnerHistorial] Error loading inbounds:", err);
         setInbounds([]);
@@ -300,7 +306,7 @@ export default function PartnerHistorialPage() {
       }
     }
     void loadInbounds();
-  }, [uid, roleResolved, dateFrom, dateTo]);
+  }, [uid, roleResolved, dateFrom, dateTo, scopedClientIds]);
 
   if (!roleResolved) {
     return (
