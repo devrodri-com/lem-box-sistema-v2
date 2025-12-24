@@ -93,6 +93,8 @@ src/
   components/
     RequireAuth.tsx
     AdminNav.tsx
+    PartnerNav.tsx
+    ConditionalNav.tsx
     PartnerContext.tsx
     clients/
       ClientsManager.tsx
@@ -138,7 +140,8 @@ src/
 - **Shipments**: their **shipments** (visible if their `clientId` ∈ `shipment.clientIds`).
 - **Account**: edit **Name, Phone, Country/State/City, Address, Postal code, Extra email, DocType/DocNumber**. **Code** and **Email** are read‑only.
 - **Report tracking**: creates a document in `trackingAlerts` for admin to handle.
-- **Auto‑linking**: if `users/{uid}` is missing, the system tries to associate by `clients.email == auth.email` and creates the profile.
+- **Account linking**: `/mi` requires `users/{uid}.clientId` to be present. If the user is not linked yet, the portal shows a "not linked" message and blocks access until the account is linked by staff.
+- **Bulk bootstrap (migration)**: legacy clients imported into Firestore can be linked to Firebase Auth using the superadmin tools (see **Data maintenance** below).
 
 Internally, the client portal is split into nested routes: `/mi/historial`, `/mi/cajas`, `/mi/envios`, and `/mi/cuenta`, all sharing a common layout that handles authentication, header, and tabs.
 
@@ -148,7 +151,7 @@ Internally, the client portal is split into nested routes: `/mi/historial`, `/mi
 
 ## 🔒 Security & access
 - **RequireAuth** with `requireAdmin` protects all `/admin/*` routes.
-- **AdminNav** shows menu by **role** (admin ↔ client).
+- **Navigation**: `AdminNav` (admin/staff), `PartnerNav` (partner), and a `ConditionalNav` wrapper at the root layout to ensure partners never see `/admin/*` links.
 - **Firestore rules** (effective summary):
   - `users`: self or staff.
   - `clients`: client reads/updates basic fields **of their own client**; staff full. `code/email` read‑only for client.
@@ -241,9 +244,14 @@ pnpm e2e          # Playwright E2E
 - **Tables**: sticky header, subtle zebra, `tabular-nums`, clear hover.
 - **Weights**: always **`X lb / Y kg`** (util `fmtWeightPairFromLb`).
 - **Accessibility**: visible focus, `role="tablist/tab"`, `aria-current` in steppers.
+- **Large lists**: history pages use pagination (e.g., 25 per page) and token-based search to avoid loading all documents at once.
 
 ## 🧱 Firestore indexes
 - `inboundPackages`: **composite** `clientId ASC, receivedAt DESC` (for `where(clientId) + orderBy(receivedAt)`).
+- `inboundPackages`: (token search) composite indexes may be required for:
+  - `managerUid ASC, trackingTokens ARRAY_CONTAINS_ANY, receivedAt DESC`
+  - `managerUid ASC, clientTokens ARRAY_CONTAINS, receivedAt DESC`
+  (create the exact composite suggested by Firestore when prompted).
 - `boxes`: single index by `clientId`.
 - (Optional) `shipments`: by `status`/`country`/`type` per admin listing needs.
 
@@ -373,6 +381,15 @@ Backend services managed with Firebase (Firestore, Auth, Storage).
 - If Next.js build/dev shows missing `.next` artifacts, clear cache: `rm -rf .next node_modules/.cache`.
 - Partner does not require label printing; label printing is for staff workflows.
 
+## 🧯 Data maintenance (admin tools)
+
+- **Bootstrap legacy clients**: `/api/admin/bootstrap-all-clients` links Firestore `clients` to Firebase Auth users and creates/updates `users/{uid}` docs. Intended as a one-time migration step.
+- **Duplicate client codes**:
+  - Detect: `/api/admin/detect-duplicate-codes`
+  - Fix (dry-run + apply): `/api/admin/fix-duplicate-codes`
+  After fixing, all new client creation goes through server endpoints that guarantee unique codes.
+- **Reindex search tokens**: admin utilities exist to backfill `trackingTokens` / `clientTokens` for legacy `inboundPackages` so global search works without loading all rows at once.
+
 ## 🚀 Release checklist
 - Firestore rules published.
 - `shipments.clientIds` populated (legacy shipments).
@@ -382,8 +399,8 @@ Backend services managed with Firebase (Firestore, Auth, Storage).
 ---
 
 ## 🌐 Portfolio
-Project: [lem-box.com.uy](https://lem-box.com.uy)  
-Repository: [github.com/softbmllc/lem-box-sistema-v2](https://github.com/softbmllc/lem-box-sistema-v2)
+Project: [portal.lem-box.com](https://portal.lem-box.com)  
+Repository: [github.com/devrodri-com/lem-box-sistema-v2](https://github.com/devrodri-com/lem-box-sistema-v2)
 
 LEM-BOX V2 is a modern logistics platform built with performance, accessibility, and data security in mind. 
 
