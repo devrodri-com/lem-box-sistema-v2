@@ -317,11 +317,11 @@ pnpm e2e          # Playwright E2E
 5. Open [http://localhost:3000](http://localhost:3000).
 
 ## 🧪 Useful scripts
-- `pnpm dev` – development mode
-- `pnpm build` – production build
-- `pnpm start` – start local build
-- `pnpm lint` – linter
-- `pnpm format` – code formatting
+- `pnpm dev` - development mode
+- `pnpm build` - production build
+- `pnpm start` - start local build
+- `pnpm lint` - linter
+- `pnpm format` - code formatting
 
 ---
 
@@ -342,7 +342,7 @@ Backend services managed with Firebase (Firestore, Auth, Storage).
 - [x] Role‑based security (RequireAuth + effective Firestore rules).
 - [ ] Rates and reports.
 - [ ] Hybrid scanner (BarcodeDetector + ZXing) with haptics/sounds.
-- [ ] Sub‑clients (managedClientIds) with view selector.
+- [x] Sub‑clients (managedClientIds) with view selector.
 - [ ] Usage telemetry/analytics.
 - [ ] Offline‑first for intake.
 
@@ -362,7 +362,7 @@ Backend services managed with Firebase (Firestore, Auth, Storage).
 - Client portal: tabs History/Boxes/Shipments/Account, edit data, report tracking.
 - Access: admin does not fall into `/mi`; client cannot access `/admin/*`.
 
-## 🖨️ 6×4 printing – notes
+## 🖨️ 6×4 printing - notes
 - Thermal printers: **horizontal** orientation, **None** margins, **100%** scale.
 - If the PDF opens blank: reload jsPDF (CDN) or disable blockers.
 - Long references: text size auto‑adjusts.

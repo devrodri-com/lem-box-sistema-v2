@@ -1,7 +1,19 @@
-# 📦 LEM-BOX Sistema V2
+# 📦 LEM-BOX System V2  
+_Sistema de gestión logística y envíos construido con Next.js 15 + Firebase_  
+Permite la gestión integral de paquetes, cajas y envíos en el almacén de Miami, con acceso para **Admin/Staff**, **Clientes** y **Partners** (vista multi-cliente).
 
-Sistema web de logística para **LEM-BOX**, desarrollado en **Next.js 15 + Firebase**.  
-Permite la gestión completa de paquetes y cajas en el warehouse de Miami, con acceso de administradores, operadores y clientes.
+[![Tests](https://img.shields.io/github/actions/workflow/status/softbmllc/lem-box-sistema-v2/tests.yml?label=Tests&logo=vitest&logoColor=white)]()
+[![Firebase](https://img.shields.io/badge/Firebase-secured-orange?logo=firebase)]()
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
+
+## ✨ Destacados
+- Portal completo **admin + cliente** (Next.js App Router)  
+- Nueva **área Partner** (`/partner/*`) con visibilidad **multi-cliente** (trackings/cajas/envíos/clientes) delimitada a los clientes asignados.
+- **Seguridad basada en roles** (Firestore Rules probadas con Emulator)
+- Suite **Vitest** con tests de integración, unitarios y de reglas
+- **Generación de etiquetas 6×4** (jsPDF) + manejo de **peso dual** (lb/kg)
+- **Mobile-first, accesible, listo para bilingüe**
 
 ---
 
@@ -9,24 +21,25 @@ Permite la gestión completa de paquetes y cajas en el warehouse de Miami, con a
 
 - **Next.js 15** (App Router, TypeScript, TailwindCSS)
 - **Firebase**  
-  - Authentication (Email/Password)  
-  - Firestore Database  
-  - Storage (imágenes de paquetes y documentos)  
+  - Autenticación (Email/Password)  
+  - Base de datos Firestore  
+  - Almacenamiento (imágenes de paquetes y documentos)  
 - **React Hook Form + Zod** para formularios  
-- **ZXing** para escaneo de códigos de tracking  
+- **ZXing** para escanear códigos de barras de tracking  
 
 ## 🧭 Arquitectura (alto nivel)
-- **Next.js (App Router)** como frontend + servidor (rutas `/admin/*` y `/mi`).
-- **Firebase Auth** gestiona sesión (email/contraseña).
+- **Next.js (App Router)** como frontend + servidor (rutas `/admin/*`, portal cliente bajo `/mi/*`, y área partner bajo `/partner/*`).
+- **Firebase Auth** gestiona la sesión (email/password).
 - **Firestore** almacena entidades (`users`, `clients`, `inboundPackages`, `boxes`, `shipments`, `trackingAlerts`).
-- **Storage** guarda fotos (paquetes/documentos), accedidas vía URL.
-- **jsPDF (CDN)** genera PDF 6×4 para etiquetas.
+- **Storage** almacena fotos (paquetes/documentos), accedidas vía URL.
+- **jsPDF (CDN)** genera PDFs 6×4 para etiquetas.
 - **Tailwind** define tokens de color y componentes utilitarios.
 
 ### Flujo (resumen)
-Recibido → Consolidado (caja) → Enviado → En tránsito → En destino.
-- **Admin**: ingresa paquetes, arma cajas, crea embarques y cambia estados.
-- **Cliente**: ve sus trackings/cajas/envíos y edita sus datos.
+Recibido → Consolidado (caja) → Enviado → En tránsito → En destino.  
+- **Admin/Staff**: ingresa paquetes, construye cajas, crea envíos y cambia estados.  
+- **Partner**: gestiona **sus clientes asignados** (crear/editar/activar/desactivar) y ve **trackings/cajas/envíos** de todos los clientes asignados.  
+- **Cliente**: ve sus propios trackings/cajas/envíos y edita sus datos.
 
 ---
 
@@ -36,7 +49,7 @@ Paleta oficial:
 - Verde primario: `#005f40`
 - Naranja secundario: `#eb6619`
 - Naranja oscuro (sombra): `#cf6934`
-- Blanco como color de contraste y fondos.
+- Blanco para contraste y fondos.
 
 Logo oficial disponible en `/public`. Usar verde como primario y naranja para CTAs.
 
@@ -52,54 +65,104 @@ src/
       clientes/
       usuarios/
     mi/
+      layout.tsx
+      page.tsx        (redirects to /mi/historial)
+      historial/
+        page.tsx
+      cajas/
+        page.tsx
+      envios/
+        page.tsx
+      cuenta/
+        page.tsx
+    partner/
+      layout.tsx
+      page.tsx
+      historial/
+        page.tsx
+      cajas/
+        page.tsx
+      envios/
+        page.tsx
+      clientes/
+        page.tsx
+        [id]/
+          page.tsx
     acceder/
     registro/
   components/
     RequireAuth.tsx
     AdminNav.tsx
+    PartnerNav.tsx
+    ConditionalNav.tsx
+    PartnerContext.tsx
+    clients/
+      ClientsManager.tsx
+      ClientProfile.tsx
+    boxes/
+      BoxDetailModal.tsx
+      useBoxDetailModal.ts
     ui/
       StatusBadge.tsx
+      BrandSelect.tsx
+      icons.tsx
   lib/
     firebase.ts
     printBoxLabel.ts
     weight.ts
+    utils.ts   (chunk helper)
 ```
 
 ---
 
-## ⚙️ Funcionalidades
+## ⚙️ Características
 
 ### Panel **Admin**
-- **Ingreso de paquetes**: tracking (escáner físico o manual), selección de cliente, **peso lb↔kg** con conversión automática, **foto** (cámara o archivo) con compresión; listado del día.
-- **Preparado de carga**: búsqueda por cliente, armado de **cajas** (1 caja = 1 cliente), **CSV export**; tabla con **header sticky**, zebra, foco accesible; **peso dual `X lb / Y kg`**.
-- **Embarques**: crear embarque (guarda **`clientIds`**), cambiar estado (**Abierto → En tránsito → En destino → Cerrado**), expandir cajas, imprimir **etiqueta 6×4**.
-- **Historial de tracking**: filtros; modal **CAJA: #** con **Tipo + Aplicar**, **Referencia + Imprimir etiqueta**; items con **peso dual** y **peso total**.
-- **Clientes**: ABM con layout 20 columnas: **Código** (read-only), **Nombre**, **DocType/DocNumber**, **País/Estado/Ciudad**, **Dirección/Código postal**, **Teléfono/Email/Email adicional**.
+- **Ingreso de paquetes**: tracking (escáner de hardware o manual), selección de cliente, **peso lb↔kg** con conversión automática, **foto** (cámara o archivo) con compresión; listado del mismo día.
+- **Preparación de carga**: búsqueda por cliente, construir **cajas** (1 caja = 1 cliente), **exportación CSV**; tabla con **header fijo**, zebra, foco accesible; **peso dual `X lb / Y kg`**.
+- **Envíos**: crear envío (guarda **`clientIds`**), cambiar estado (**Open → In transit → At destination → Closed**), expandir cajas, imprimir **etiqueta 6×4**.
+- **Historial de tracking**: filtros; modal **BOX: #** con **Type + Apply**, **Reference + Print label**; elementos con **peso dual** y **peso total**.
+- **Clientes**: CRUD con diseño de 20 columnas: **Code** (solo lectura), **Name**, **DocType/DocNumber**, **Country/State/City**, **Address/Postal code**, **Phone/Email/Extra email**.
+
+### Área **Partner** (`/partner`)
+- **Historial (multi-cliente)**: trackings recibidos de todos los clientes asignados (solo lectura).
+- **Cajas (multi-cliente)**: cajas de todos los clientes asignados + modal de detalle.
+- **Envíos (multi-cliente)**: envíos derivados de las cajas de los clientes asignados.
+- **Clientes**: usa la misma UI de gestión que admin pero **delimitada** y con acciones restringidas.
+  - Puede **crear/editar/activar/desactivar** clientes.
+  - No puede **eliminar** clientes.
+  - No puede **resetear contraseña** ni cambiar **managerUid**.
+- La navegación mantiene la barra de navegación Partner en todas las secciones.
 
 ### Portal **Cliente** (`/mi`)
 - **Historial**: sus **trackings** (fecha, tracking, carrier, **peso `lb/kg`**, estado, foto).
-- **Cajas**: sus **cajas** y detalle (items con peso dual).
-- **Envíos**: sus **embarques** (visibles si su `clientId` ∈ `shipment.clientIds`).
-- **Cuenta**: edición de **Nombre, Teléfono, País/Estado/Ciudad, Dirección, Código postal, Email adicional, DocType/DocNumber**. **Código** y **Email** son read‑only.
-- **Alertar tracking**: crea documento en `trackingAlerts` para que admin lo gestione.
-- **Auto‑vinculación**: si falta `users/{uid}`, el sistema intenta asociar por `clients.email == auth.email` y crea el perfil.
+- **Cajas**: sus **cajas** y detalle (elementos con peso dual).
+- **Envíos**: sus **envíos** (visibles si su `clientId` ∈ `shipment.clientIds`).
+- **Cuenta**: editar **Name, Phone, Country/State/City, Address, Postal code, Extra email, DocType/DocNumber**. **Code** y **Email** son solo lectura.
+- **Reportar tracking**: crea un documento en `trackingAlerts` para que admin lo gestione.
+- **Vinculación de cuenta**: `/mi` requiere que `users/{uid}.clientId` esté presente. Si el usuario aún no está vinculado, el portal muestra un mensaje de "no vinculado" y bloquea el acceso hasta que el personal vincule la cuenta.
+- **Bootstrap masivo (migración)**: los clientes legados importados a Firestore pueden vincularse a Firebase Auth usando las herramientas de superadmin (ver **Data maintenance** abajo).
+
+Internamente, el portal cliente está dividido en rutas anidadas: `/mi/historial`, `/mi/cajas`, `/mi/envios`, y `/mi/cuenta`, todas compartiendo un layout común que gestiona autenticación, header y pestañas.
 
 ### Impresión de etiquetas 6×4 (horizontal)
 - PDF 6×4 generado con **jsPDF (CDN)** en `src/lib/printBoxLabel.ts`.
-- Layout: **#REFERENCIA** arriba (texto grande auto‑ajuste), abajo dos columnas **#CLIENTE** y **#CAJA**. **Sin peso**.
+- Diseño: **#REFERENCE** arriba (texto grande auto-ajustado), dos columnas abajo **#CLIENT** y **#BOX**. **Sin peso**.
 
-## 🔒 Seguridad & Accesos
+## 🔒 Seguridad y acceso
 - **RequireAuth** con `requireAdmin` protege todas las rutas `/admin/*`.
-- **AdminNav** muestra menú por **rol** (admin ↔ cliente).
-- **Reglas Firestore** (resumen efectivo):
+- **Navegación**: `AdminNav` (admin/staff), `PartnerNav` (partner), y un wrapper `ConditionalNav` en el layout raíz para asegurar que los partners nunca vean links `/admin/*`.
+- **Reglas de Firestore** (resumen efectivo):
   - `users`: propio o staff.
-  - `clients`: cliente lee/actualiza campos básicos **de su cliente**; staff total. `code/email` read‑only para cliente.
-  - `inboundPackages`/`boxes`: cliente sólo los que tengan su `clientId`.
-  - `shipments`: lectura si `clientId` ∈ `shipment.clientIds`.
-  - `trackingAlerts`: cliente **create**, staff lectura/gestión.
+  - `clients`: cliente lee/actualiza campos básicos **de su propio cliente**; staff completo. `code/email` solo lectura para cliente.
+  - `inboundPackages`/`boxes`: cliente solo aquellos con su `clientId`.
+  - `shipments`: legible si `clientId` ∈ `shipment.clientIds`.
+  - `trackingAlerts`: cliente **crear**, staff leer/gestionar.
+- El enrutamiento post-login es basado en roles: **partner_admin → /partner**, **client → /mi**, **staff → /admin/ingreso** (con reconciliación de roles de Firestore para manejar claims obsoletos).
+- Alcance Partner: los datos se filtran a los clientes asignados del partner usando `users/{uid}.managedClientIds` y/o `clients.managerUid == uid` (fallback donde sea necesario).
 
 <details>
-<summary><strong>Reglas Firestore (sugeridas)</strong></summary>
+<summary><strong>Reglas de Firestore (sugeridas)</strong></summary>
 
 ```rules
 rules_version = '2';
@@ -148,21 +211,53 @@ service cloud.firestore {
 
 </details>
 
-## 🧩 Convenciones de UI
-- **CTAs**: **naranja** `#eb6619`; secundarios con borde y focus **verde** `#005f40`.
-- **Estado**: `StatusBadge` (Recibido/Consolidado; Abierto/En tránsito/En destino/Cerrado).
-- **Tablas**: header sticky, zebra sutil, `tabular-nums`, hover claro.
-- **Pesos**: siempre **`X lb / Y kg`** (util `fmtWeightPairFromLb`).
-- **Accesibilidad**: focus visible, `role="tablist/tab"`, `aria-current` en steppers.
+## 🧪 Testing y automatización QA
 
-## 🧱 Índices Firestore
+LEM‑BOX V2 incluye una suite completa de testing automatizado para asegurar precisión funcional, integridad de datos y cumplimiento de reglas en todo el sistema.
+
+### Stack de testing
+- **Vitest** para tests unitarios, de integración y de componentes UI.
+- **Firebase Emulator Suite** para validación de Firestore Rules.
+- **Playwright** para automatización de navegador end‑to‑end (E2E).
+
+### Cobertura
+- Unitario e integración: servicios (`userService`, utilidades como `formatDate`, `weight`).
+- UI: tests visuales y de interacción DOM (`ContactButton`, smoke tests).
+- Firestore Rules: verificadas con Emulator (`users`, `clients`, `boxes`, `inboundPackages`, `shipments`).
+- E2E: login, acceso al panel admin y flujo del portal cliente.
+
+Todos los tests automatizados actualmente **pasan exitosamente** (`pnpm test:all ✅`).
+
+### Scripts de test
+```bash
+pnpm test         # Unit / integration / UI
+pnpm test:rules   # Firestore rules (Emulator)
+pnpm test:all     # Full suite (with Emulator)
+pnpm e2e          # Playwright E2E
+```
+
+---
+
+## 🧩 Convenciones de UI
+- **CTAs**: **naranja** `#eb6619`; secundarios con borde y foco **verde** `#005f40`.
+- **Estado**: `StatusBadge` (Recibido/Consolidado; Abierto/En tránsito/En destino/Cerrado).
+- **Tablas**: header fijo, zebra sutil, `tabular-nums`, hover claro.
+- **Pesos**: siempre **`X lb / Y kg`** (util `fmtWeightPairFromLb`).
+- **Accesibilidad**: foco visible, `role="tablist/tab"`, `aria-current` en steppers.
+- **Listas grandes**: las páginas de historial usan paginación (ej., 25 por página) y búsqueda basada en tokens para evitar cargar todos los documentos a la vez.
+
+## 🧱 Índices de Firestore
 - `inboundPackages`: **compuesto** `clientId ASC, receivedAt DESC` (para `where(clientId) + orderBy(receivedAt)`).
+- `inboundPackages`: (búsqueda por tokens) pueden requerirse índices compuestos para:
+  - `managerUid ASC, trackingTokens ARRAY_CONTAINS_ANY, receivedAt DESC`
+  - `managerUid ASC, clientTokens ARRAY_CONTAINS, receivedAt DESC`
+  (crear el índice compuesto exacto sugerido por Firestore cuando se solicite).
 - `boxes`: índice simple por `clientId`.
 - (Opcional) `shipments`: por `status`/`country`/`type` según necesidades de listado admin.
 
 ## 🗃️ Colecciones (resumen)
-- **users/{uid}**: `uid`, `email`, `displayName`, `clientId`, `managedClientIds:string[]`, `termsAcceptedAt`, `lang:"es"`, `role:"client"|"admin"|"superadmin"`.
-- **clients/{id}**: `code`, `name`, `email`, `phone`, `country`, `state`, `city`, `address`, `emailAlt?`, `postalCode?`, `docType?`, `docNumber?`, `activo`, `createdAt`.
+- **users/{uid}**: `uid`, `email`, `displayName`, `clientId`, `managedClientIds:string[]`, `termsAcceptedAt`, `lang:"es"`, `role:"client"|"admin"|"superadmin"|"partner_admin"`.
+- **clients/{id}**: `code`, `name`, `email`, `phone`, `country`, `state`, `city`, `address`, `emailAlt?`, `postalCode?`, `docType?`, `docNumber?`, `activo`, `createdAt`, `managerUid?`.
 - **inboundPackages/{id}**: `tracking`, `carrier('UPS'|'FedEx'|'USPS'|'DHL'|'Amazon'|'Other')`, `clientId`, `weightLb:number`, `photoUrl?`, `status('received'|'boxed'|'void')`, `receivedAt`.
 - **boxes/{id}**: `code`, `clientId`, `type('COMERCIAL'|'FRANQUICIA')`, `country`, `itemIds:string[]`, `weightLb:number`, `status('open'|'closed')`, `shipmentId?:string|null`, `createdAt?`.
 - **shipments/{id}**: `code`, `country`, `type('COMERCIAL'|'FRANQUICIA')`, `status('open'|'shipped'|'arrived'|'closed')`, `boxIds:string[]`, **`clientIds:string[]`**, `openedAt?`, `arrivedAt?`, `closedAt?`.
@@ -170,15 +265,21 @@ service cloud.firestore {
 
 ## 🔑 Roles
 
-- **Admin**: Acceso completo, gestión de usuarios, cajas, tarifas.
-- **Operador**: Ingreso de paquetes, armado de cajas.
-- **Cliente**: Lectura de sus propios paquetes y cajas.
+- **SuperAdmin**: acceso completo, gestión de usuarios/partners, puede eliminar.
+- **Admin**: acceso operacional completo.
+- **Operador**: ingreso + construcción de cajas (staff).
+- **Partner (partner_admin)**: vista multi-cliente + gestión de clientes para clientes asignados; restringido de módulos solo para staff.
+- **Client**: portal de cliente único bajo /mi.
 
 ---
 
 ## ▶️ Desarrollo local
 
-1. Clonar repositorio y entrar a la carpeta:
+**Prerrequisitos**
+- **pnpm** es recomendado (el repo incluye `pnpm-lock.yaml`).
+- **Node.js 18.17+** (o Node 20+) para coincidir con los requisitos de Next.js 15 y los valores por defecto típicos de Vercel.
+
+1. Clonar el repo y entrar a la carpeta:
    ```bash
    cd /Users/lolo/PROYECTOS/lem-box-sistema-v2
    ```
@@ -188,17 +289,27 @@ service cloud.firestore {
    pnpm install
    ```
 
-3. Crear archivo `.env.local` con credenciales Firebase:
+3. Crear `.env.local` con credenciales de Firebase:
    ```env
+   # Client SDK (required)
    NEXT_PUBLIC_FIREBASE_API_KEY=xxx
    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=xxx
    NEXT_PUBLIC_FIREBASE_PROJECT_ID=lem-box-sistema-v2
    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=xxx
    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=xxx
    NEXT_PUBLIC_FIREBASE_APP_ID=xxx
+
+   # Firebase Admin SDK (required for /api/admin/*)
+   FIREBASE_PROJECT_ID=lem-box-sistema-v2
+   FIREBASE_CLIENT_EMAIL=xxx@xxx.iam.gserviceaccount.com
+   FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
    ```
 
-4. Levantar servidor:
+   Notas:
+   - `FIREBASE_PRIVATE_KEY` debe preservar saltos de línea (`\n`).
+   - Sin las vars del Admin SDK, `/api/admin/*` fallará en deploy.
+
+4. Iniciar el servidor de desarrollo:
    ```bash
    pnpm dev
    ```
@@ -206,18 +317,18 @@ service cloud.firestore {
 5. Abrir [http://localhost:3000](http://localhost:3000).
 
 ## 🧪 Scripts útiles
-- `pnpm dev` – entorno de desarrollo
-- `pnpm build` – build de producción
-- `pnpm start` – iniciar build local
-- `pnpm lint` – linter
-- `pnpm format` – formateo del código
+- `pnpm dev` - modo desarrollo
+- `pnpm build` - build de producción
+- `pnpm start` - iniciar build local
+- `pnpm lint` - linter
+- `pnpm format` - formateo de código
 
 ---
 
 ## 📦 Deploy
 
 El proyecto se desplegará en **Vercel**, conectado al repositorio principal.  
-Servicios de backend gestionados con Firebase (Firestore, Auth, Storage).
+Servicios backend gestionados con Firebase (Firestore, Auth, Storage).
 
 ---
 
@@ -225,69 +336,83 @@ Servicios de backend gestionados con Firebase (Firestore, Auth, Storage).
 
 - [x] Login con Firebase Auth.
 - [x] Ingreso de paquetes (tracking, peso, foto).
-- [x] Armado de cajas (Box Builder) + CSV export.
+- [x] Construcción de cajas (Box Builder) + exportación CSV.
 - [x] Etiquetas PDF **6×4** (jsPDF, CDN).
-- [x] Portal de clientes (MVP: Historial, Cajas, Envíos, Cuenta, Alertar tracking).
-- [x] Seguridad por roles (RequireAuth + reglas Firestore efectivas).
+- [x] Portal cliente (MVP: Historial, Cajas, Envíos, Cuenta, Reportar tracking).
+- [x] Seguridad basada en roles (RequireAuth + reglas efectivas de Firestore).
 - [ ] Tarifas y reportes.
-- [ ] Scanner híbrido (BarcodeDetector + ZXing) con háptica/sonidos.
-- [ ] Subclientes (managedClientIds) con selector de vista.
+- [ ] Escáner híbrido (BarcodeDetector + ZXing) con háptica/sonidos.
+- [x] Sub‑clientes (managedClientIds) con selector de vista.
 - [ ] Telemetría/analytics de uso.
 - [ ] Offline‑first para ingreso.
 
 ---
 
-## 🧵 Hilos de trabajo
+## 🧵 Líneas de trabajo
 
-- **A) Panel admin + Portal cliente**: consolidación, embarques, etiquetas 6×4, UI/UX consistente, peso dual.
-- **B) Mantenimiento de datos**: backfill de `shipments.clientIds` (embarques antiguos) + índices.
-- **C) Futuro**: tarifas/reportes, scanner híbrido, subclientes, analytics.
+- **A) Panel Admin + Portal cliente**: consolidación, envíos, etiquetas 6×4, UI/UX consistente, peso dual.
+- **B) Mantenimiento de datos**: backfill de `shipments.clientIds` (envíos legados) + índices.
+- **C) Futuro**: tarifas/reportes, escáner híbrido, sub‑clientes, analytics.
 
-## ✅ Checklist de QA (rápido)
-- Ingreso: escanear tracking, tomar/capturar foto, conversión lb↔kg.
-- Preparado: crear caja, agregar paquetes, CSV export, etiqueta 6×4.
-- Embarques: crear, agregar cajas, cambiar estado, expandir cajas.
+## ✅ Checklist QA (rápido)
+- Ingreso: escanear tracking, tomar/subir foto, conversión lb↔kg.
+- Preparación: crear caja, agregar paquetes, exportar CSV, etiqueta 6×4.
+- Envíos: crear, agregar cajas, cambiar estado, expandir cajas.
 - Historial: abrir modal de caja, editar referencia, imprimir etiqueta.
-- Portal cliente: tabs Historial/Cajas/Envíos/Cuenta, editar datos, alertar tracking.
-- Accesos: admin no cae en `/mi`; cliente no accede a `/admin/*`.
+- Portal cliente: pestañas Historial/Cajas/Envíos/Cuenta, editar datos, reportar tracking.
+- Acceso: admin no cae en `/mi`; cliente no puede acceder a `/admin/*`.
 
-## 🖨️ Impresión 6×4 – notas
+## 🖨️ Impresión 6×4 - notas
 - Impresoras térmicas: orientación **horizontal**, márgenes **None**, escala **100%**.
-- Si el PDF se abre en blanco: recargar jsPDF (CDN) o desactivar bloqueadores.
+- Si el PDF se abre en blanco: recargar jsPDF (CDN) o deshabilitar bloqueadores.
 - Referencias largas: el tamaño del texto se auto‑ajusta.
 
 ## ♿ Accesibilidad (checklist)
-- Focus visible en todos los controles.
+- Foco visible en todos los controles.
 - `aria-current="step"` en steppers; `role="tablist/tab"` en tabs.
-- Tamaños de toque ≥ 44px en botones y celdas interactivas.
+- Objetivos táctiles ≥ 44px en botones y celdas interactivas.
 
 ## 🧰 Convenciones de código
-- TypeScript **sin `any`**; utilidades tipadas (e.g., `weight.ts`).
-- Componentes puros, sin side‑effects en render.
-- Commit style: **Conventional Commits** (`feat:`, `fix:`, `chore:`…).
+- TypeScript con política de lint **core-strict**: `no-explicit-any` es **error** en `src/components/**` y `src/app/partner/**`, y **warn** en áreas legacy (`admin/mi/api/tests/lib`).
+- Componentes puros, sin efectos secundarios en render.
+- Estilo de commits: **Conventional Commits** (`feat:`, `fix:`, `chore:`…).
 
-## 🚀 Release checklist
-- Reglas Firestore publicadas.
-- `shipments.clientIds` poblado (embarques antiguos).
-- Índices creados (ver sección **Índices Firestore**).
-- Smoke test de admin y cliente completo.
+## 🧯 Notas operacionales
+- Si Next.js build/dev muestra artefactos faltantes `.next`, limpiar caché: `rm -rf .next node_modules/.cache`.
+- Partner no requiere impresión de etiquetas; la impresión de etiquetas es para flujos de trabajo de staff.
+
+## 🧯 Mantenimiento de datos (herramientas admin)
+
+- **Bootstrap de clientes legados**: `/api/admin/bootstrap-all-clients` vincula clientes de Firestore `clients` a usuarios de Firebase Auth y crea/actualiza docs `users/{uid}`. Intendido como paso de migración único.
+- **Códigos duplicados de clientes**:
+  - Detectar: `/api/admin/detect-duplicate-codes`
+  - Arreglar (dry-run + aplicar): `/api/admin/fix-duplicate-codes`
+  Después de arreglar, toda la creación nueva de clientes pasa por endpoints del servidor que garantizan códigos únicos.
+- **Reindexar tokens de búsqueda**: existen utilidades admin para hacer backfill de `trackingTokens` / `clientTokens` para `inboundPackages` legados para que la búsqueda global funcione sin cargar todas las filas a la vez.
+
+## 🚀 Checklist de release
+- Reglas de Firestore publicadas.
+- `shipments.clientIds` poblado (envíos legados).
+- Índices creados (ver sección **Índices de Firestore**).
+- Smoke test completo de flujos admin y cliente.
 
 ---
 
-## 👨‍💻 Equipo
+## 🌐 Portfolio
+Proyecto: [portal.lem-box.com](https://portal.lem-box.com)  
+Repositorio: [github.com/devrodri-com/lem-box-sistema-v2](https://github.com/devrodri-com/lem-box-sistema-v2)
 
-- Dirección técnica: **Rodrigo**  
-- Desarrollo asistido con **IA + VSCode (OBOE)**  
+LEM-BOX V2 es una plataforma logística moderna construida con rendimiento, accesibilidad y seguridad de datos en mente. 
 
 ---
 
 ## 📤 Migración de datos (fase final)
 
 - **Origen**: Base de datos MySQL del sistema actual (`tracking.users`).
-- **Estado**: Migración diferida hasta el cierre del sprint de desarrollo.
+- **Estado**: Migración diferida hasta el final del sprint de desarrollo.
 - **Procedimiento seguro**:
-  - Crear snapshot del Droplet en DigitalOcean.
-  - Conexión a la base en modo solo lectura.
-  - Exportación de tabla `users` a CSV (`/root/users.csv`).
-  - Descarga y posterior import a Firestore mediante script.
-- **Política**: Ningún cambio en producción hasta que el sistema nuevo esté validado.
+  - Crear un snapshot del Droplet en DigitalOcean.
+  - Conectar a la base de datos en modo solo lectura.
+  - Exportar tabla `users` a CSV (`/root/users.csv`).
+  - Descargar y luego importar a Firestore vía script.
+- **Política**: Sin cambios en producción hasta que el nuevo sistema sea validado.
