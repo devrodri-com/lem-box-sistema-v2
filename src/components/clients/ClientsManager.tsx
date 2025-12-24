@@ -202,6 +202,18 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
   }> | null>(null);
   const [detectingDuplicates, setDetectingDuplicates] = useState(false);
 
+  // Estado para fix de duplicados
+  const [fixProposedChanges, setFixProposedChanges] = useState<Array<{
+    oldCode: string;
+    keepClientId: string;
+    recode: Array<{ clientId: string }>;
+  }> | null>(null);
+  const [fixingDuplicates, setFixingDuplicates] = useState(false);
+  const [fixSummary, setFixSummary] = useState<{
+    fixedCodesCount: number;
+    updatedClientsCount: number;
+  } | null>(null);
+
   function resetForm() {
     setName("");
     setCountry("");
@@ -723,6 +735,116 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
     }
   }
 
+  async function simulateFixDuplicates() {
+    try {
+      setFixingDuplicates(true);
+      setFixProposedChanges(null);
+      setFixSummary(null);
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        alert("No se pudo obtener el token de autenticación");
+        return;
+      }
+
+      const res = await fetch("/api/admin/fix-duplicate-codes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ dryRun: true }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "unknown_error" }));
+        alert(`Error al simular arreglo: ${errorData.error || res.statusText}`);
+        return;
+      }
+
+      const result = (await res.json()) as {
+        ok: boolean;
+        dryRun: boolean;
+        changes?: Array<{
+          oldCode: string;
+          keepClientId: string;
+          recode: Array<{ clientId: string }>;
+        }>;
+      };
+
+      if (result.ok && result.changes) {
+        setFixProposedChanges(result.changes);
+        if (result.changes.length === 0) {
+          alert("No hay cambios propuestos. No se encontraron duplicados para arreglar.");
+        }
+      } else {
+        alert("Error: respuesta inválida del servidor");
+      }
+    } catch (e: unknown) {
+      console.error("Error simulating fix:", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      alert(`Error al simular arreglo: ${msg}`);
+    } finally {
+      setFixingDuplicates(false);
+    }
+  }
+
+  async function applyFixDuplicates() {
+    const confirmed = confirm(
+      "Esto reasigna códigos a clientes duplicados. ¿Continuar?"
+    );
+    if (!confirmed) return;
+
+    try {
+      setFixingDuplicates(true);
+      setFixSummary(null);
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        alert("No se pudo obtener el token de autenticación");
+        return;
+      }
+
+      const res = await fetch("/api/admin/fix-duplicate-codes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ dryRun: false }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "unknown_error" }));
+        alert(`Error al aplicar arreglo: ${errorData.error || res.statusText}`);
+        return;
+      }
+
+      const result = (await res.json()) as {
+        ok: boolean;
+        dryRun: boolean;
+        fixedCodesCount?: number;
+        updatedClientsCount?: number;
+      };
+
+      if (result.ok && typeof result.fixedCodesCount === "number" && typeof result.updatedClientsCount === "number") {
+        setFixSummary({
+          fixedCodesCount: result.fixedCodesCount,
+          updatedClientsCount: result.updatedClientsCount,
+        });
+        
+        // Ejecutar automáticamente detect-duplicate-codes después de aplicar el fix
+        await detectDuplicateCodes();
+      } else {
+        alert("Error: respuesta inválida del servidor");
+      }
+    } catch (e: unknown) {
+      console.error("Error applying fix:", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      alert(`Error al aplicar arreglo: ${msg}`);
+    } finally {
+      setFixingDuplicates(false);
+    }
+  }
+
   // Mostrar "Sin permisos" si roleResolved pero no hay effectiveRole
   if (roleResolved && !effectiveRole) {
     return (
@@ -767,14 +889,32 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
         <h1 className="text-2xl font-semibold text-white">Clientes</h1>
         <div className="flex items-center gap-3">
           {isSuperAdmin && (
-            <button
-              type="button"
-              onClick={detectDuplicateCodes}
-              disabled={detectingDuplicates}
-              className="h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 shadow hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {detectingDuplicates ? "Detectando…" : "Detectar clientes duplicados"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={detectDuplicateCodes}
+                disabled={detectingDuplicates}
+                className="h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 shadow hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {detectingDuplicates ? "Detectando…" : "Detectar clientes duplicados"}
+              </button>
+              <button
+                type="button"
+                onClick={simulateFixDuplicates}
+                disabled={fixingDuplicates}
+                className="h-10 px-4 rounded-md border border-yellow-500/50 bg-yellow-500/10 text-yellow-300 shadow hover:bg-yellow-500/20 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-yellow-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {fixingDuplicates ? "Simulando…" : "Simular arreglo (dryRun)"}
+              </button>
+              <button
+                type="button"
+                onClick={applyFixDuplicates}
+                disabled={fixingDuplicates}
+                className="h-10 px-4 rounded-md border border-green-500/50 bg-green-500/10 text-green-300 shadow hover:bg-green-500/20 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {fixingDuplicates ? "Aplicando…" : "Aplicar arreglo"}
+              </button>
+            </>
           )}
           <button
             type="button"
@@ -839,6 +979,83 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
                     </tr>
                   ))
                 )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Resumen de fix aplicado */}
+      {fixSummary && (
+        <section className="rounded-xl bg-green-500/10 border border-green-500/50 backdrop-blur-sm p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-green-300">Arreglo aplicado exitosamente</h2>
+            <button
+              type="button"
+              onClick={() => setFixSummary(null)}
+              className="h-8 px-3 rounded-md border border-green-500/50 bg-green-500/20 text-green-300 hover:bg-green-500/30 focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div className="space-y-2 text-sm text-white/90">
+            <p>
+              <span className="font-semibold">Códigos arreglados:</span> {fixSummary.fixedCodesCount}
+            </p>
+            <p>
+              <span className="font-semibold">Clientes actualizados:</span> {fixSummary.updatedClientsCount}
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Tabla de cambios propuestos (simulación) */}
+      {fixProposedChanges && fixProposedChanges.length > 0 && (
+        <section className="rounded-xl bg-yellow-500/10 border border-yellow-500/50 backdrop-blur-sm p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-yellow-300">
+              Cambios propuestos (simulación): {fixProposedChanges.length} código{fixProposedChanges.length > 1 ? "s" : ""}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setFixProposedChanges(null)}
+              className="h-8 px-3 rounded-md border border-yellow-500/50 bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 text-sm"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left p-3 text-white/80 font-semibold">Código antiguo</th>
+                  <th className="text-left p-3 text-white/80 font-semibold">Mantener (ID Cliente)</th>
+                  <th className="text-left p-3 text-white/80 font-semibold">Recodificar (IDs Clientes)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fixProposedChanges.map((change) => (
+                  <tr
+                    key={change.oldCode}
+                    className="border-b border-white/5 hover:bg-white/5"
+                  >
+                    <td className="p-3 text-yellow-300 font-mono font-semibold">{change.oldCode}</td>
+                    <td className="p-3 text-white/90 font-mono text-xs">{change.keepClientId}</td>
+                    <td className="p-3 text-white/70">
+                      <div className="flex flex-wrap gap-1">
+                        {change.recode.map((r, idx) => (
+                          <span
+                            key={r.clientId}
+                            className="inline-block px-2 py-1 rounded bg-white/5 font-mono text-xs"
+                          >
+                            {r.clientId}
+                            {idx < change.recode.length - 1 ? "," : ""}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
