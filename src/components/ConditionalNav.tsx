@@ -6,10 +6,10 @@ import AdminNav from "@/components/AdminNav";
 import PartnerNav from "@/components/PartnerNav";
 
 export function ConditionalNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   // Si la ruta empieza con /partner, usar PartnerNav
-  if (pathname?.startsWith("/partner")) {
+  if (pathname.startsWith("/partner")) {
     return <PartnerNav />;
   }
 

@@ -16,13 +16,13 @@ const partnerTabs = [
 ];
 
 // Helper tipado para determinar si un link está activo
-function isActive(pathname: string | null, href: string): boolean {
+function isActive(pathname: string, href: string): boolean {
   if (!pathname) return false;
   return pathname === href || pathname.startsWith(href + "/");
 }
 
 export default function PartnerNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

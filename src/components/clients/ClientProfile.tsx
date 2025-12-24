@@ -407,7 +407,8 @@ export function ClientProfile({
     })();
   }, [clientId]);
 
-  const canSave = useMemo(() => !!form?.name && !!form?.code && !!form?.country, [form]);
+  // code ya no es editable, solo validar name y country
+  const canSave = useMemo(() => !!form?.name && !!form?.country, [form]);
 
   const canSetPassword = useMemo(
     () => permissions.canResetPassword && pw1.length >= 8 && pw1 === pw2,
@@ -419,7 +420,7 @@ export function ClientProfile({
     setSaving(true);
     try {
       const patch: Partial<ClientForm> = {
-        code: form.code!,
+        // code NO se puede editar - se genera automáticamente en el servidor
         name: form.name!,
         email: form.email || undefined,
         phone: form.phone || undefined,
@@ -442,8 +443,9 @@ export function ClientProfile({
 
       await updateDoc(doc(db, "clients", String(client.id)), sanitized);
 
-      setClient({ ...client, ...patch });
-      setForm((f) => ({ ...f, ...patch }));
+      // Mantener code original (no se puede editar)
+      setClient({ ...client, ...patch, code: client.code });
+      setForm((f) => ({ ...f, ...patch, code: client.code }));
     } finally {
       setSaving(false);
     }

@@ -3,16 +3,13 @@
 
 import { db, auth } from "@/lib/firebase";
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   orderBy,
   query,
-  Timestamp,
   updateDoc,
-  runTransaction,
   where,
   limit,
   type QueryConstraint,
@@ -196,6 +193,15 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
   >([]);
 
   const [openCreate, setOpenCreate] = useState(false);
+  
+  // Estado para detección de duplicados
+  const [duplicates, setDuplicates] = useState<Array<{
+    code: string;
+    clientIds: string[];
+    clients: Array<{ id: string; name?: string }>;
+  }> | null>(null);
+  const [detectingDuplicates, setDetectingDuplicates] = useState(false);
+
   function resetForm() {
     setName("");
     setCountry("");
@@ -532,87 +538,96 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
   const totalRows = filteredRows.length;
   const totalPages = totalRows === 0 ? 1 : Math.ceil(totalRows / pageSize);
 
-  async function nextClientCode(): Promise<string> {
-    const counterRef = doc(db, "counters", "clients");
-    const n = await runTransaction(db, async (tx) => {
-      const snap = await tx.get(counterRef);
-      const data = snap.data() as { seq?: unknown };
-      const curr = snap.exists() && typeof data.seq === "number" ? data.seq : 1200;
-      const next = curr + 1;
-      tx.set(counterRef, { seq: next }, { merge: true });
-      return next;
-    });
-    return String(n);
-  }
-
   async function createClient(e: React.FormEvent) {
     e.preventDefault();
     if (!name || !country || !email || !password) return;
 
-    let code: string;
-    // Staff: usa contador global (transacción)
-    if (isStaff) {
-      try {
-        code = await nextClientCode();
-      } catch (err) {
-        alert(
-          "No se pudo generar un número correlativo (counters/clients). Revisá reglas de Firestore / App Check."
-        );
-        return;
-      }
-    } else {
-      // Partner: correlativo LOCAL dentro de sus clientes (no toca counters)
-      const nums = rows
-        .map((r) => parseInt(String(r.code ?? ""), 10))
-        .filter((n) => Number.isFinite(n));
-      let next = (nums.length ? Math.max(...nums) : 1200) + 1;
-      // Asegurar que no choque con un número ya usado en su lista local
-      const used = new Set(nums);
-      while (used.has(next)) next += 1;
-      code = String(next);
-    }
+    // Determinar endpoint según rol
+    const isPartner = effectiveRole === "partner_admin";
+    const endpoint = isPartner ? "/api/partner/clients/create" : "/api/admin/clients/create";
 
-    // Si es partner_admin, setear automáticamente managerUid
-    let finalManagerUid: string | null = null;
-    if (effectiveRole === "partner_admin" && userId) {
-      finalManagerUid = userId;
-    } else if (isStaff && managerUid) {
-      finalManagerUid = managerUid || null;
-    }
-
-    const payload: Omit<Client, "id"> & {
-      documento: { tipo: string; numero: string | null };
-    } = {
-      code,
+    // Preparar payload SIN code (se genera en el servidor)
+    const payload: Record<string, unknown> = {
       name,
       country,
-      documento: { tipo: documentType, numero: documentNumber || null },
       email: email,
-      emailAlt: emailAlt || undefined,
       phone: phone || undefined,
       address: address || undefined,
       state: stateName || undefined,
       city: city || undefined,
       postalCode: postalCode || undefined,
       contact: contact || undefined,
-      activo: true,
-      createdAt: Timestamp.now().toMillis(),
-      ...(finalManagerUid ? { managerUid: finalManagerUid } : {}),
+      docType: documentType || undefined,
+      docNumber: documentNumber || undefined,
+      emailAlt: emailAlt || undefined,
     };
 
+    // Solo staff puede setear managerUid (partner siempre se asigna automáticamente)
+    if (isStaff && managerUid) {
+      payload.managerUid = managerUid;
+    }
+
+    // Limpiar valores undefined/null
     const sanitized: Record<string, unknown> = Object.fromEntries(
-      Object.entries(payload).filter(([, v]) => v != null)
+      Object.entries(payload).filter(([, v]) => v !== undefined && v !== null)
     );
 
     try {
-      const ref = await addDoc(collection(db, "clients"), sanitized);
-      setRows([{ id: ref.id, ...sanitized } as Client, ...rows]);
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        alert("No se pudo obtener el token de autenticación");
+        return;
+      }
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(sanitized),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "unknown_error" }));
+        alert(`Error al crear cliente: ${errorData.error || res.statusText}`);
+        return;
+      }
+
+      const result = (await res.json()) as { ok: boolean; clientId: string; code: string };
+      if (!result.ok || !result.clientId || !result.code) {
+        alert("Error: respuesta inválida del servidor");
+        return;
+      }
+
+      // Crear objeto cliente con el code devuelto por el servidor
+      const newClient: Client = {
+        id: result.clientId,
+        code: result.code,
+        name,
+        country,
+        email,
+        phone: phone || undefined,
+        address: address || undefined,
+        state: stateName || undefined,
+        city: city || undefined,
+        postalCode: postalCode || undefined,
+        contact: contact || undefined,
+        docType: documentType || undefined,
+        docNumber: documentNumber || undefined,
+        emailAlt: emailAlt || undefined,
+        activo: true,
+        createdAt: Date.now(),
+        ...(isPartner && userId ? { managerUid: userId } : {}),
+        ...(isStaff && managerUid ? { managerUid } : {}),
+      };
+
+      setRows([newClient, ...rows]);
       resetForm();
       setOpenCreate(false);
     } catch (err) {
-      alert(
-        "Error de permisos al crear el cliente en la colección clients. Revisar reglas de Firestore."
-      );
+      console.error("Error creating client:", err);
+      alert("Error al crear el cliente. Revisá la consola para más detalles.");
     }
   }
 
@@ -658,6 +673,56 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
     }
   }
 
+  async function detectDuplicateCodes() {
+    try {
+      setDetectingDuplicates(true);
+      setDuplicates(null);
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        alert("No se pudo obtener el token de autenticación");
+        return;
+      }
+
+      const res = await fetch("/api/admin/detect-duplicate-codes", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "unknown_error" }));
+        alert(`Error al detectar duplicados: ${errorData.error || res.statusText}`);
+        return;
+      }
+
+      const result = (await res.json()) as {
+        ok: boolean;
+        stats?: { duplicateCodesCount: number; totalDuplicateClients: number };
+        duplicateList?: Array<{
+          code: string;
+          clientIds: string[];
+          clients: Array<{ id: string; name?: string }>;
+        }>;
+      };
+
+      if (result.ok && result.duplicateList) {
+        setDuplicates(result.duplicateList);
+        if (result.duplicateList.length === 0) {
+          alert("No se encontraron códigos duplicados.");
+        }
+      } else {
+        alert("Error: respuesta inválida del servidor");
+      }
+    } catch (e: unknown) {
+      console.error("Error detecting duplicates:", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      alert(`Error al detectar duplicados: ${msg}`);
+    } finally {
+      setDetectingDuplicates(false);
+    }
+  }
+
   // Mostrar "Sin permisos" si roleResolved pero no hay effectiveRole
   if (roleResolved && !effectiveRole) {
     return (
@@ -700,14 +765,85 @@ export function ClientsManager({ detailHref = (id) => `/admin/clientes/${id}` }:
     <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-white">Clientes</h1>
-        <button
-          type="button"
-          onClick={() => setOpenCreate(true)}
-          className="h-10 px-4 rounded-md bg-[#eb6619] text-white shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
-        >
-          + Crear nuevo cliente
-        </button>
+        <div className="flex items-center gap-3">
+          {isSuperAdmin && (
+            <button
+              type="button"
+              onClick={detectDuplicateCodes}
+              disabled={detectingDuplicates}
+              className="h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 shadow hover:bg-white/5 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {detectingDuplicates ? "Detectando…" : "Detectar clientes duplicados"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setOpenCreate(true)}
+            className="h-10 px-4 rounded-md bg-[#eb6619] text-white shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
+          >
+            + Crear nuevo cliente
+          </button>
+        </div>
       </div>
+
+      {/* Tabla de duplicados */}
+      {duplicates && duplicates.length > 0 && (
+        <section className="rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">
+              Códigos duplicados encontrados: {duplicates.length}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setDuplicates(null)}
+              className="h-8 px-3 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40] text-sm"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left p-3 text-white/80 font-semibold">Código</th>
+                  <th className="text-left p-3 text-white/80 font-semibold">Clientes duplicados</th>
+                  <th className="text-left p-3 text-white/80 font-semibold">ID Cliente</th>
+                  <th className="text-left p-3 text-white/80 font-semibold">Nombre</th>
+                </tr>
+              </thead>
+              <tbody>
+                {duplicates.map((dup) =>
+                  dup.clients.map((client, idx) => (
+                    <tr
+                      key={`${dup.code}-${client.id}`}
+                      className="border-b border-white/5 hover:bg-white/5"
+                    >
+                      {idx === 0 && (
+                        <td
+                          className="p-3 text-white font-mono font-semibold"
+                          rowSpan={dup.clients.length}
+                        >
+                          {dup.code}
+                        </td>
+                      )}
+                      {idx === 0 && (
+                        <td
+                          className="p-3 text-white/70"
+                          rowSpan={dup.clients.length}
+                        >
+                          {dup.clients.length} cliente{dup.clients.length > 1 ? "s" : ""}
+                        </td>
+                      )}
+                      <td className="p-3 text-white/90 font-mono text-xs">{client.id}</td>
+                      <td className="p-3 text-white/90">{client.name || "-"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-3 md:grid-cols-3">
         <div className="relative">

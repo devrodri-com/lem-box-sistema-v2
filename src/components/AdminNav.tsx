@@ -37,13 +37,13 @@ function asRecord(v: unknown): Record<string, unknown> | null {
 }
 
 // Helper tipado para determinar si un link está activo
-function isActive(pathname: string | null, href: string): boolean {
+function isActive(pathname: string, href: string): boolean {
   if (!pathname) return false;
   return pathname === href || pathname.startsWith(href + "/");
 }
 
 export default function AdminNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [isSuper, setIsSuper] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [claimsChecked, setClaimsChecked] = useState(false);
