@@ -2,9 +2,10 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, orderBy, limit, startAfter, type QueryDocumentSnapshot, type Query, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { fmtWeightPairFromLb } from "@/lib/weight";
+import { ngrams, normalizeText } from "@/lib/searchTokens";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { BrandSelect } from "@/components/ui/BrandSelect";
 import { IconPhoto } from "@/components/ui/icons";
@@ -28,7 +29,7 @@ function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
 }
 
-const LIMIT_INITIAL = 100;
+const PAGE_SIZE = 25;
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const inputCls = `h-10 w-full rounded-md border ${CONTROL_BORDER} bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]`;
@@ -69,13 +70,39 @@ export default function PartnerHistorialPage() {
   };
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Paginación
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const [qClient, setQClient] = useState("");
   const [qTracking, setQTracking] = useState("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "received" | "boxed">("all");
+  
+  type StatusFilter = "all" | "received" | "boxed";
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  // Normalizar query de tracking y generar tokens para búsqueda multi-token
+  const qTrackingNorm = normalizeText(qTracking);
+  const trackingSearchMode = qTrackingNorm.length >= 3;
+  
+  // Generar tokens con ngrams (máximo 10 por límite de Firestore)
+  const trackingTokens = useMemo(() => {
+    if (!trackingSearchMode) return [];
+    const tokens = ngrams(qTrackingNorm, 3, 8).slice(0, 10);
+    // Si qTrackingNorm está entre 3 y 8 caracteres, asegurarse de incluir el token completo
+    if (qTrackingNorm.length >= 3 && qTrackingNorm.length <= 8 && !tokens.includes(qTrackingNorm)) {
+      tokens.unshift(qTrackingNorm);
+      return tokens.slice(0, 10); // Mantener máximo 10
+    }
+    return tokens;
+  }, [qTrackingNorm, trackingSearchMode]);
+
+  // Normalizar query de cliente
+  const qClientNorm = qClient.trim().toUpperCase().replaceAll(" ", "");
+  const clientSearchMode = !trackingSearchMode && qClientNorm.length >= 3;
 
   const clientsById = useMemo(() => {
     const m: Record<string, Client> = {};
@@ -242,13 +269,53 @@ export default function PartnerHistorialPage() {
 
     async function loadInbounds() {
       setLoading(true);
+      setInbounds([]);
+      setLastDoc(null);
+      setHasMore(false);
       try {
-        let qBase = query(
-          collection(db, "inboundPackages"),
-          where("managerUid", "==", uid)
-        );
-        if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
-        if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        // Búsqueda global o por managerUid según searchMode/clientSearchMode
+        let qBase: Query<DocumentData>;
+        if (trackingSearchMode) {
+          // A) Búsqueda global por trackingTokens usando array-contains-any (multi-token)
+          qBase = query(
+            collection(db, "inboundPackages"),
+            where("managerUid", "==", uid),
+            where("trackingTokens", "array-contains-any", trackingTokens),
+            orderBy("receivedAt", "desc"),
+            limit(PAGE_SIZE)
+          );
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        } else if (clientSearchMode) {
+          // B) Búsqueda global por clientTokens
+          qBase = query(
+            collection(db, "inboundPackages"),
+            where("managerUid", "==", uid),
+            where("clientTokens", "array-contains", qClientNorm),
+            orderBy("receivedAt", "desc"),
+            limit(PAGE_SIZE)
+          );
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        } else {
+          // C) Query normal (con statusFilter server-side)
+          let qBaseStart = query(
+            collection(db, "inboundPackages"),
+            where("managerUid", "==", uid)
+          );
+          
+          // Agregar filtro de status si corresponde (antes de orderBy)
+          if (statusFilter === "received" || statusFilter === "boxed") {
+            qBaseStart = query(qBaseStart, where("status", "==", statusFilter));
+          }
+          
+          // Ahora agregar orderBy y limit
+          qBase = query(qBaseStart, orderBy("receivedAt", "desc"), limit(PAGE_SIZE));
+          
+          // Filtros de fecha después de orderBy (están permitidos)
+          if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+          if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+        }
 
         const snap = await getDocs(qBase);
         const loadedInbounds: Inbound[] = [];
@@ -284,29 +351,156 @@ export default function PartnerHistorialPage() {
           }
         });
 
+        // Filtrar por precisión cuando trackingSearchMode está activo (evitar falsos positivos)
+        let preciseInbounds = loadedInbounds;
+        if (trackingSearchMode) {
+          const needle = qTrackingNorm;
+          preciseInbounds = loadedInbounds.filter((i) => {
+            const tn = (i.tracking || "").toUpperCase().replaceAll(" ", "");
+            return tn.includes(needle);
+          });
+        }
+
         // Filtrar por scopedClientIds para asegurar scope correcto
-        const filteredInbounds = loadedInbounds.filter((i) => scopedClientIds.includes(i.clientId));
+        const filteredInbounds = preciseInbounds.filter((i) => scopedClientIds.includes(i.clientId));
 
-        // Ordenar en memoria por receivedAt desc
-        filteredInbounds.sort((a, b) => {
-          const aTime = a.receivedAt || 0;
-          const bTime = b.receivedAt || 0;
-          return bTime - aTime; // desc
-        });
-
-        // Aplicar limit después del sort
-        const limited = filteredInbounds.slice(0, LIMIT_INITIAL);
-        setInbounds(limited);
-        setHasMore(filteredInbounds.length > LIMIT_INITIAL);
+        // Guardar el último documento para paginación
+        const lastDocSnap = snap.docs[snap.docs.length - 1] ?? null;
+        setLastDoc(lastDocSnap);
+        setHasMore(snap.docs.length === PAGE_SIZE);
+        setInbounds(filteredInbounds);
       } catch (err) {
         console.error("[PartnerHistorial] Error loading inbounds:", err);
         setInbounds([]);
+        setLastDoc(null);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     }
     void loadInbounds();
-  }, [uid, roleResolved, dateFrom, dateTo, scopedClientIds]);
+  }, [uid, roleResolved, dateFrom, dateTo, statusFilter, scopedClientIds, qTracking, qClient, trackingTokens]);
+
+  // Función para cargar más inbounds
+  async function loadMore() {
+    if (!hasMore || loadingMore || !lastDoc || !uid || scopedClientIds.length === 0) return;
+
+    setLoadingMore(true);
+    try {
+      // Construir query con el mismo orden que loadInbounds pero con startAfter
+      let qBase: Query<DocumentData>;
+      if (trackingSearchMode) {
+        // A) Búsqueda global por trackingTokens usando array-contains-any (multi-token)
+        qBase = query(
+          collection(db, "inboundPackages"),
+          where("managerUid", "==", uid),
+          where("trackingTokens", "array-contains-any", trackingTokens),
+          orderBy("receivedAt", "desc"),
+          startAfter(lastDoc),
+          limit(PAGE_SIZE)
+        );
+        if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+        if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+      } else if (clientSearchMode) {
+        // B) Búsqueda global por clientTokens
+        qBase = query(
+          collection(db, "inboundPackages"),
+          where("managerUid", "==", uid),
+          where("clientTokens", "array-contains", qClientNorm),
+          orderBy("receivedAt", "desc"),
+          startAfter(lastDoc),
+          limit(PAGE_SIZE)
+        );
+        if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+        if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+      } else {
+        // C) Query normal (con statusFilter server-side)
+        let qBaseStart = query(
+          collection(db, "inboundPackages"),
+          where("managerUid", "==", uid)
+        );
+        
+        // Agregar filtro de status si corresponde (antes de orderBy)
+        if (statusFilter === "received" || statusFilter === "boxed") {
+          qBaseStart = query(qBaseStart, where("status", "==", statusFilter));
+        }
+        
+        // Ahora agregar orderBy, startAfter y limit
+        qBase = query(qBaseStart, orderBy("receivedAt", "desc"), startAfter(lastDoc), limit(PAGE_SIZE));
+        
+        // Filtros de fecha después de orderBy (están permitidos)
+        if (dateFrom) qBase = query(qBase, where("receivedAt", ">=", zonedStartOfDayUtcMs(dateFrom)));
+        if (dateTo) qBase = query(qBase, where("receivedAt", "<=", zonedEndOfDayUtcMs(dateTo)));
+      }
+
+      const snap = await getDocs(qBase);
+      const newInbounds: Inbound[] = [];
+
+      snap.docs.forEach((d) => {
+        const inboundId = d.id;
+        if (inboundId) {
+          const rec = asRecord(d.data());
+          if (rec) {
+            const tracking = asString(rec.tracking) ?? "";
+            const carrierRaw = asString(rec.carrier);
+            const carrier = carrierRaw as Inbound["carrier"] | undefined;
+            const clientId = asString(rec.clientId) ?? "";
+            if (!clientId) {
+              return;
+            }
+            const weightLb = asNumber(rec.weightLb) ?? 0;
+            const photoUrl = asString(rec.photoUrl);
+            const status = asString(rec.status);
+            const receivedAt = asNumber(rec.receivedAt);
+            newInbounds.push({
+              id: inboundId,
+              tracking,
+              carrier: carrier || "Other",
+              clientId,
+              weightLb,
+              photoUrl,
+              status: status as Inbound["status"] | undefined,
+              receivedAt,
+            });
+          }
+        }
+      });
+
+      // Filtrar por precisión cuando trackingSearchMode está activo (evitar falsos positivos)
+      let preciseNewInbounds = newInbounds;
+      if (trackingSearchMode) {
+        const needle = qTrackingNorm;
+        preciseNewInbounds = newInbounds.filter((i) => {
+          const tn = (i.tracking || "").toUpperCase().replaceAll(" ", "");
+          return tn.includes(needle);
+        });
+      }
+
+      // Filtrar por scopedClientIds
+      const filteredNewInbounds = preciseNewInbounds.filter((i) => scopedClientIds.includes(i.clientId));
+
+      // Evitar duplicados por id
+      const existingIds = new Set(inbounds.map((i) => i.id));
+      const uniqueNewInbounds = filteredNewInbounds.filter((i) => !existingIds.has(i.id));
+
+      // Combinar y ordenar
+      const combined = [...inbounds, ...uniqueNewInbounds];
+      combined.sort((a, b) => {
+        const aTime = a.receivedAt || 0;
+        const bTime = b.receivedAt || 0;
+        return bTime - aTime; // desc
+      });
+
+      const lastDocSnap = snap.docs[snap.docs.length - 1] ?? null;
+      setLastDoc(lastDocSnap);
+      setHasMore(snap.docs.length === PAGE_SIZE);
+      setInbounds(combined);
+    } catch (err) {
+      console.error("[PartnerHistorial] Error loading more inbounds:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   if (!roleResolved) {
     return (
@@ -327,24 +521,22 @@ export default function PartnerHistorialPage() {
     );
   }
 
+  // Filtro en memoria solo para qClient y qTracking cuando NO están en modo búsqueda global
+  // statusFilter se aplica server-side, no aquí
+  // trackingSearchMode y clientSearchMode ya vienen filtrados desde el servidor
   const filteredInbounds = useMemo(() => {
     return inbounds.filter((r) => {
-      const c = clientsById[r.clientId];
-      const clientText = c ? `${c.code} ${c.name}`.toLowerCase() : r.clientId.toLowerCase();
-      if (qClient && !clientText.includes(qClient.toLowerCase())) return false;
-      if (qTracking && !r.tracking.toLowerCase().includes(qTracking.toLowerCase())) return false;
-
-      const box = r.id ? boxByInbound[r.id] : undefined;
-      if (statusFilter === "received") {
-        if (r.status === "void") return false;
-        if (box) return false;
-      }
-      if (statusFilter === "boxed") {
-        if (!box) return false;
+      // Si estamos en modo búsqueda global, el filtro ya se hizo en Firestore
+      // Solo aplicar filtro en memoria si NO estamos en ningún modo de búsqueda global
+      if (!trackingSearchMode && !clientSearchMode) {
+        const c = clientsById[r.clientId];
+        const clientText = c ? `${c.code} ${c.name}`.toLowerCase() : r.clientId.toLowerCase();
+        if (qClient && !clientText.includes(qClient.toLowerCase())) return false;
+        if (qTracking && !r.tracking.toLowerCase().includes(qTracking.toLowerCase())) return false;
       }
       return true;
     });
-  }, [inbounds, clientsById, qClient, qTracking, statusFilter, boxByInbound]);
+  }, [inbounds, clientsById, qClient, qTracking, trackingSearchMode, clientSearchMode]);
 
   return (
     <div className="w-full max-w-6xl rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 space-y-4">
@@ -359,20 +551,36 @@ export default function PartnerHistorialPage() {
       `}</style>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-        <input
-          className={inputCls}
-          style={INPUT_BG_STYLE}
-          placeholder="Buscar por cliente"
-          value={qClient}
-          onChange={(e) => setQClient(e.target.value)}
-        />
-        <input
-          className={inputCls}
-          style={INPUT_BG_STYLE}
-          placeholder="Buscar por tracking"
-          value={qTracking}
-          onChange={(e) => setQTracking(e.target.value)}
-        />
+        <div className="flex flex-col gap-1">
+          <input
+            className={inputCls}
+            style={INPUT_BG_STYLE}
+            placeholder="Buscar por cliente"
+            value={qClient}
+            onChange={(e) => setQClient(e.target.value)}
+          />
+          {qClient.trim().length > 0 && qClient.trim().length < 3 && (
+            <p className="text-xs text-white/40">Escribí al menos 3 caracteres para búsqueda global por nombre.</p>
+          )}
+          {clientSearchMode && (
+            <p className="text-xs text-white/60">Búsqueda global por nombre (tokens).</p>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <input
+            className={inputCls}
+            style={INPUT_BG_STYLE}
+            placeholder="Buscar por tracking"
+            value={qTracking}
+            onChange={(e) => setQTracking(e.target.value)}
+          />
+          {qTracking.trim().length > 0 && qTracking.trim().length < 3 && (
+            <p className="text-xs text-white/40">Escribí al menos 3 caracteres para búsqueda global.</p>
+          )}
+          {trackingSearchMode && (
+            <p className="text-xs text-white/60">Búsqueda global por tracking (multi-token).</p>
+          )}
+        </div>
         <input
           type="date"
           className={inputCls + " lem-date"}
@@ -391,7 +599,11 @@ export default function PartnerHistorialPage() {
         />
         <BrandSelect
           value={statusFilter}
-          onChange={(val) => setStatusFilter(val as "all" | "received" | "boxed")}
+          onChange={(val) => {
+            if (val === "all" || val === "received" || val === "boxed") {
+              setStatusFilter(val);
+            }
+          }}
           options={[
             { value: "all", label: "Todos" },
             { value: "received", label: "Recibido" },
@@ -495,11 +707,24 @@ export default function PartnerHistorialPage() {
             </table>
           </div>
 
-          {hasMore && (
-            <div className="text-sm text-white/60 text-center">
-              Mostrando los primeros {LIMIT_INITIAL} trackings.
-            </div>
-          )}
+          {/* Paginación */}
+          <div className="flex flex-col items-center justify-center gap-3 pt-4">
+            <p className="text-sm text-white/60">
+              Mostrando últimos {inbounds.length}. Cargar más para ampliar.
+            </p>
+            {hasMore ? (
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="h-10 px-4 rounded-md border border-[#1f3f36] bg-[#0f2a22] text-white/90 font-medium hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loadingMore ? "Cargando…" : "Cargar más"}
+              </button>
+            ) : (
+              <p className="text-sm text-white/40">No hay más</p>
+            )}
+          </div>
         </>
       )}
 
