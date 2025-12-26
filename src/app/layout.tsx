@@ -11,6 +11,12 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "LEM-BOX Sistema V2",
   description: "Ingreso de paquetes, armado de cajas y portal de clientes",
+  icons: {
+    icon: "/icons/favicon.ico",
+    shortcut: "/icons/favicon.ico",
+    apple: "/icons/apple-icon-180x180.png",
+  },
+  manifest: "/icons/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
