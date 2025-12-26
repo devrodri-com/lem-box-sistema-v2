@@ -226,6 +226,26 @@ function PageInner() {
   const [rows, setRows] = useState<InboundRow[]>([]);
   const [errMsg, setErrMsg] = useState("");
   const [selectedInbound, setSelectedInbound] = useState<InboundRow | null>(null);
+
+  async function handleInboundSave(
+    inboundId: string,
+    updates: { carrier: Carrier; weightLb: number; clientId: string }
+  ) {
+    await updateDoc(doc(db, "inboundPackages", inboundId), {
+      ...updates,
+      updatedAt: Date.now(),
+    });
+    
+    // Actualizar rows en memoria
+    setRows((prev) =>
+      prev.map((r) => (r.id === inboundId ? { ...r, ...updates } : r))
+    );
+    
+    // Actualizar selectedInbound si es el que se editó
+    setSelectedInbound((prev) =>
+      prev && prev.id === inboundId ? { ...prev, ...updates } : prev
+    );
+  }
   const midnight = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -780,7 +800,12 @@ function PageInner() {
           clientLabel={clientsById[selectedInbound.clientId]?.code 
             ? `${clientsById[selectedInbound.clientId]?.code} ${clientsById[selectedInbound.clientId]?.name}`
             : selectedInbound.clientId}
+          clients={clients}
           onClose={() => setSelectedInbound(null)}
+          onSave={async (updates) => {
+            await handleInboundSave(selectedInbound.id, updates);
+            setSelectedInbound(null);
+          }}
         />
       )}
           </>
@@ -790,15 +815,19 @@ function PageInner() {
   );
 }
 
-// Modal de detalle de inbound (readonly)
+// Modal de detalle de inbound
 function InboundDetailModal({
   inbound,
   clientLabel,
+  clients,
   onClose,
+  onSave,
 }: {
   inbound: InboundRow;
   clientLabel: string;
+  clients: Client[];
   onClose: () => void;
+  onSave?: (updates: { carrier: Carrier; weightLb: number; clientId: string }) => Promise<void>;
 }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -813,7 +842,69 @@ function InboundDetailModal({
     };
   }, [onClose]);
 
+  // Estados para edición (solo si onSave existe)
+  const [formCarrier, setFormCarrier] = useState<Carrier>(inbound.carrier);
+  const [formWeightLb, setFormWeightLb] = useState<number>(inbound.weightLb);
+  const [formClientId, setFormClientId] = useState<string>(inbound.clientId);
+  const [saving, setSaving] = useState(false);
+
+  // Inicializar estados cuando cambia inbound
+  useEffect(() => {
+    setFormCarrier(inbound.carrier);
+    setFormWeightLb(inbound.weightLb);
+    setFormClientId(inbound.clientId);
+  }, [inbound]);
+
+  // Peso en kg calculado
+  const weightKg = useMemo(() => {
+    return Number((formWeightLb * LB_TO_KG).toFixed(2));
+  }, [formWeightLb]);
+
+  // Cliente actual (para mostrar)
+  const currentClientLabel = useMemo(() => {
+    if (onSave) {
+      const clientId = formClientId;
+      const client = clients.find((c) => c.id === clientId);
+      return client ? `${client.code} ${client.name}` : clientId;
+    }
+    return clientLabel;
+  }, [formClientId, clients, onSave, clientLabel]);
+
+  async function handleSave() {
+    if (!onSave) return;
+
+    // Validaciones
+    if (formWeightLb <= 0) {
+      alert("El peso debe ser mayor a 0");
+      return;
+    }
+    if (!formClientId || !formClientId.trim()) {
+      alert("Debe seleccionarse un cliente");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await onSave({
+        carrier: formCarrier,
+        weightLb: formWeightLb,
+        clientId: formClientId,
+      });
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      alert("Error al guardar los cambios");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const btnSecondaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+  const INPUT_BG_STYLE = {
+    backgroundColor: "#0f2a22",
+    WebkitBoxShadow: "0 0 0px 1000px #0f2a22 inset",
+    WebkitTextFillColor: "#ffffff",
+  } as const;
+  const inputCls = "h-10 w-full rounded-md border border-[#1f3f36] bg-[#0f2a22] px-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#005f40]";
 
   const receivedDate = inbound.receivedAt 
     ? new Date(inbound.receivedAt).toLocaleString("es-ES", {
@@ -834,6 +925,15 @@ function InboundDetailModal({
               TRACKING: {inbound.tracking}
             </h3>
             <div className="flex items-center gap-2">
+              {onSave && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving || formWeightLb <= 0 || !formClientId || !formClientId.trim()}
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
+                >
+                  {saving ? "Guardando…" : "Guardar cambios"}
+                </button>
+              )}
               <Link
                 href={`/admin/trackings/${inbound.id}`}
                 className="inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
@@ -850,15 +950,64 @@ function InboundDetailModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-medium text-white/60">Carrier</label>
-              <div className="mt-1 text-sm text-white">{inbound.carrier}</div>
+              {onSave ? (
+                <BrandSelect
+                  value={formCarrier}
+                  onChange={(val) => setFormCarrier(val as Carrier)}
+                  options={carriers.map((c) => ({ value: c, label: c }))}
+                  placeholder="Seleccionar carrier"
+                />
+              ) : (
+                <div className="mt-1 text-sm text-white">{inbound.carrier}</div>
+              )}
             </div>
             <div>
               <label className="text-xs font-medium text-white/60">Peso</label>
-              <div className="mt-1 text-sm text-white">{fmtWeightPairFromLb(inbound.weightLb)}</div>
+              {onSave ? (
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <input
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
+                    type="number"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={formWeightLb}
+                    onChange={(e) => setFormWeightLb(Number(e.target.value || 0))}
+                    placeholder="0.00"
+                  />
+                  <input
+                    className={inputCls}
+                    style={INPUT_BG_STYLE}
+                    type="number"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={weightKg}
+                    onChange={(e) => {
+                      const v = Number(e.target.value || 0);
+                      const lb = Number((v / LB_TO_KG).toFixed(2));
+                      setFormWeightLb(lb);
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+              ) : (
+                <div className="mt-1 text-sm text-white">{fmtWeightPairFromLb(inbound.weightLb)}</div>
+              )}
             </div>
             <div>
               <label className="text-xs font-medium text-white/60">Cliente</label>
-              <div className="mt-1 text-sm text-white">{clientLabel}</div>
+              {onSave ? (
+                <BrandSelect
+                  value={formClientId}
+                  onChange={(val) => setFormClientId(val)}
+                  options={clients
+                    .filter((c) => Boolean(c.id))
+                    .map((c) => ({ value: String(c.id), label: `${c.code} ${c.name}` }))}
+                  placeholder="Seleccionar cliente"
+                />
+              ) : (
+                <div className="mt-1 text-sm text-white">{currentClientLabel}</div>
+              )}
             </div>
             <div>
               <label className="text-xs font-medium text-white/60">Estado</label>
