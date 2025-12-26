@@ -1,6 +1,7 @@
 // src/app/admin/ingreso/page.tsx
 "use client";
 import RequireAuth from "@/components/RequireAuth";
+import Link from "next/link";
 import { db, storage } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import {
@@ -21,9 +22,21 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { Client, Carrier } from "@/types/lem";
 import { type BrandOption } from "@/components/ui/BrandSelect";
 import { buildTrackingTokens, buildClientTokens } from "@/lib/searchTokens";
+import { fmtWeightPairFromLb } from "@/lib/weight";
 
 const LB_TO_KG = 0.45359237;
 const KG_TO_LB = 1 / LB_TO_KG;
+
+type InboundRow = { 
+  id: string; 
+  tracking: string; 
+  carrier: Carrier; 
+  clientId: string; 
+  weightLb: number; 
+  photoUrl?: string; 
+  receivedAt: number; 
+  status: string 
+};
 
 // Resize/compress using a canvas. Returns a JPEG Blob.
 async function processImage(file: File): Promise<Blob> {
@@ -210,9 +223,9 @@ function PageInner() {
     photo: null,
   });
   const [saving, setSaving] = useState(false);
-  type InboundRow = { id: string; tracking: string; carrier: Carrier; clientId: string; weightLb: number; photoUrl?: string; receivedAt: number; status: string };
   const [rows, setRows] = useState<InboundRow[]>([]);
   const [errMsg, setErrMsg] = useState("");
+  const [selectedInbound, setSelectedInbound] = useState<InboundRow | null>(null);
   const midnight = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -731,7 +744,8 @@ function PageInner() {
           {rows.map((r) => (
             <div
               key={r.id}
-              className="border border-[#1f3f36] rounded-lg bg-white/5 p-3 flex items-center gap-3"
+              className="border border-[#1f3f36] rounded-lg bg-white/5 p-3 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition"
+              onClick={() => setSelectedInbound(r)}
             >
               {r.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -758,9 +772,129 @@ function PageInner() {
           ))}
         </div>
       </section>
+
+      {/* Modal de detalle de inbound */}
+      {selectedInbound && (
+        <InboundDetailModal
+          inbound={selectedInbound}
+          clientLabel={clientsById[selectedInbound.clientId]?.code 
+            ? `${clientsById[selectedInbound.clientId]?.code} ${clientsById[selectedInbound.clientId]?.name}`
+            : selectedInbound.clientId}
+          onClose={() => setSelectedInbound(null)}
+        />
+      )}
           </>
         ) : null}
       </div>
     </main>
+  );
+}
+
+// Modal de detalle de inbound (readonly)
+function InboundDetailModal({
+  inbound,
+  clientLabel,
+  onClose,
+}: {
+  inbound: InboundRow;
+  clientLabel: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => {
+      window.removeEventListener("keydown", handler);
+    };
+  }, [onClose]);
+
+  const btnSecondaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md border border-[#1f3f36] bg-white/5 text-white/90 font-medium hover:bg-white/10 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#005f40] disabled:opacity-50 disabled:cursor-not-allowed";
+
+  const receivedDate = inbound.receivedAt 
+    ? new Date(inbound.receivedAt).toLocaleString("es-ES", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-";
+
+  return (
+    <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center p-4">
+      <div className="w-[95vw] max-w-3xl max-h-[90vh] rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm shadow-xl p-4 md:p-6 text-white overflow-y-auto">
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-xl font-semibold text-white">
+              TRACKING: {inbound.tracking}
+            </h3>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/admin/trackings/${inbound.id}`}
+                className="inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619]"
+                onClick={() => onClose()}
+              >
+                Editar
+              </Link>
+              <button className={btnSecondaryCls} onClick={onClose}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-white/60">Carrier</label>
+              <div className="mt-1 text-sm text-white">{inbound.carrier}</div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-white/60">Peso</label>
+              <div className="mt-1 text-sm text-white">{fmtWeightPairFromLb(inbound.weightLb)}</div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-white/60">Cliente</label>
+              <div className="mt-1 text-sm text-white">{clientLabel}</div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-white/60">Estado</label>
+              <div className="mt-1">
+                <span className="text-xs px-2 py-1 rounded bg-emerald-600 text-white">
+                  {inbound.status}
+                </span>
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-xs font-medium text-white/60">Fecha recibido</label>
+              <div className="mt-1 text-sm text-white">{receivedDate}</div>
+            </div>
+          </div>
+
+          {inbound.photoUrl && (
+            <div>
+              <label className="text-xs font-medium text-white/60 mb-2 block">Foto</label>
+              <a
+                href={inbound.photoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={inbound.photoUrl}
+                  alt={`Foto del tracking ${inbound.tracking}`}
+                  className="w-full max-h-96 object-contain rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10"
+                />
+              </a>
+              <p className="mt-1 text-xs text-white/40">Click en la imagen para abrir en nueva pestaña</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
