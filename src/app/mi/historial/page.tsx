@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, doc, getDoc, query, where, orderBy, getDocs, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { fmtWeightPairFromLb } from "@/lib/weight";
+import { getPhotoUrls } from "@/lib/inboundPhotos";
+import { PhotoGalleryModal } from "@/components/inbounds/PhotoGalleryModal";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { BrandSelect } from "@/components/ui/BrandSelect";
 import { useMiContext } from "../_context/MiContext";
@@ -30,6 +32,7 @@ export default function MiHistorialPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [qTrack, setQTrack] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [gallery, setGallery] = useState<{ photoUrls: string[]; tracking?: string; initialIndex?: number } | null>(null);
   const [alertedTrackings, setAlertedTrackings] = useState<Set<string>>(new Set());
   const [myAlerts, setMyAlerts] = useState<any[]>([]);
 
@@ -218,13 +221,34 @@ export default function MiHistorialPage() {
                   </div>
                 </td>
                 <td className="p-2 text-white/80">
-                  {r.photoUrl ? (
-                    <a href={r.photoUrl} target="_blank" className="underline hover:text-white">
-                      Ver
-                    </a>
-                  ) : (
-                    " "
-                  )}
+                  {(() => {
+                    const photoUrls = getPhotoUrls(r);
+                    const primaryPhoto = photoUrls[0];
+                    const extraCount = photoUrls.length - 1;
+                    
+                    if (!primaryPhoto) {
+                      return " ";
+                    }
+                    
+                    if (extraCount === 0) {
+                      // Una sola foto: comportamiento actual
+                      return (
+                        <a href={primaryPhoto} target="_blank" className="underline hover:text-white">
+                          Ver
+                        </a>
+                      );
+                    }
+                    
+                    // Múltiples fotos: texto + badge, click abre galería
+                    return (
+                      <button
+                        onClick={() => setGallery({ photoUrls, tracking: r.tracking, initialIndex: 0 })}
+                        className="underline hover:text-white inline-flex items-center gap-1"
+                      >
+                        Ver <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-600 text-white">+{extraCount}</span>
+                      </button>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}
@@ -317,6 +341,16 @@ export default function MiHistorialPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Modal de galería de fotos */}
+      {gallery && (
+        <PhotoGalleryModal
+          photoUrls={gallery.photoUrls}
+          initialIndex={gallery.initialIndex}
+          tracking={gallery.tracking}
+          onClose={() => setGallery(null)}
+        />
       )}
     </section>
   );

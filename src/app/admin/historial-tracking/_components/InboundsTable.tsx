@@ -5,6 +5,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import { IconPhoto, IconTrash } from "@/components/ui/icons";
 import type { Carrier, Client, Shipment } from "@/types/lem";
+import { getPhotoUrls } from "@/lib/inboundPhotos";
 
 type Inbound = {
   id: string;
@@ -40,6 +41,7 @@ type InboundsTableProps = {
   statusFilter: 'all' | 'alerted' | 'received' | 'boxed';
   onOpenBox: (inboundId: string) => void;
   onDelete: (row: Inbound) => void;
+  onOpenGallery?: (photoUrls: string[], tracking?: string) => void;
 };
 
 export function InboundsTable({
@@ -53,6 +55,7 @@ export function InboundsTable({
   statusFilter,
   onOpenBox,
   onDelete,
+  onOpenGallery,
 }: InboundsTableProps) {
   return (
     <table className="w-full text-sm">
@@ -165,20 +168,44 @@ export function InboundsTable({
                         </div>
                       </td>
                       <td className="p-2">
-                        {r.photoUrl ? (
-                          <a
-                            href={r.photoUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="Ver foto"
-                            aria-label="Ver foto"
-                            className="inline-flex items-center justify-center text-white/80 hover:text-white"
-                          >
-                            <IconPhoto />
-                          </a>
-                        ) : (
-                          <span className="text-white/40">-</span>
-                        )}
+                        {(() => {
+                          const photoUrls = getPhotoUrls(r);
+                          const primaryPhoto = photoUrls[0];
+                          const extraCount = photoUrls.length - 1;
+                          
+                          if (!primaryPhoto) {
+                            return <span className="text-white/40">-</span>;
+                          }
+                          
+                          if (extraCount === 0) {
+                            // Una sola foto: comportamiento actual
+                            return (
+                              <a
+                                href={primaryPhoto}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Ver foto"
+                                aria-label="Ver foto"
+                                className="inline-flex items-center justify-center text-white/80 hover:text-white"
+                              >
+                                <IconPhoto />
+                              </a>
+                            );
+                          }
+                          
+                          // Múltiples fotos: icono + badge, click abre galería
+                          return (
+                            <button
+                              onClick={() => onOpenGallery?.(photoUrls, r.tracking)}
+                              title={`Ver ${photoUrls.length} fotos`}
+                              aria-label={`Ver ${photoUrls.length} fotos`}
+                              className="inline-flex items-center gap-1 text-white/80 hover:text-white"
+                            >
+                              <IconPhoto />
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-600 text-white">+{extraCount}</span>
+                            </button>
+                          );
+                        })()}
                       </td>
                       <td className="p-2">
                         {isStaff && !boxByInbound[r.id] && r.status === "received" ? (
@@ -318,20 +345,44 @@ export function InboundsTable({
                   </div>
                 </td>
                 <td className="p-2">
-                  {r.photoUrl ? (
-                    <a
-                      href={r.photoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="Ver foto"
-                      aria-label="Ver foto"
-                      className="inline-flex items-center justify-center text-white/80 hover:text-white"
-                    >
-                      <IconPhoto />
-                    </a>
-                  ) : (
-                    <span className="text-white/40">-</span>
-                  )}
+                  {(() => {
+                    const photoUrls = getPhotoUrls(r);
+                    const primaryPhoto = photoUrls[0];
+                    const extraCount = photoUrls.length - 1;
+                    
+                    if (!primaryPhoto) {
+                      return <span className="text-white/40">-</span>;
+                    }
+                    
+                    if (extraCount === 0) {
+                      // Una sola foto: comportamiento actual
+                      return (
+                        <a
+                          href={primaryPhoto}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="Ver foto"
+                          aria-label="Ver foto"
+                          className="inline-flex items-center justify-center text-white/80 hover:text-white"
+                        >
+                          <IconPhoto />
+                        </a>
+                      );
+                    }
+                    
+                    // Múltiples fotos: icono + badge, click abre galería
+                    return (
+                      <button
+                        onClick={() => onOpenGallery?.(photoUrls, r.tracking)}
+                        title={`Ver ${photoUrls.length} fotos`}
+                        aria-label={`Ver ${photoUrls.length} fotos`}
+                        className="inline-flex items-center gap-1 text-white/80 hover:text-white"
+                      >
+                        <IconPhoto />
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-600 text-white">+{extraCount}</span>
+                      </button>
+                    );
+                  })()}
                 </td>
                 <td className="p-2">
                   {isStaff && !boxByInbound[r.id] && r.status === "received" ? (

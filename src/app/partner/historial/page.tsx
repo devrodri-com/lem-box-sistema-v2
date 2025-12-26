@@ -9,6 +9,8 @@ import { ngrams, normalizeText } from "@/lib/searchTokens";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { BrandSelect } from "@/components/ui/BrandSelect";
 import { IconPhoto } from "@/components/ui/icons";
+import { getPhotoUrls } from "@/lib/inboundPhotos";
+import { PhotoGalleryModal } from "@/components/inbounds/PhotoGalleryModal";
 import { usePartnerContext } from "@/components/PartnerContext";
 import type { Client, Inbound, Box } from "@/types/lem";
 import { chunk } from "@/lib/utils";
@@ -61,6 +63,7 @@ export default function PartnerHistorialPage() {
   const { scopedClientIds, effectiveRole, uid, roleResolved } = usePartnerContext();
   const [inbounds, setInbounds] = useState<Inbound[]>([]);
   const [boxes, setBoxes] = useState<Box[]>([]);
+  const [gallery, setGallery] = useState<{ photoUrls: string[]; tracking?: string; initialIndex?: number } | null>(null);
   const setBoxesWrapper = (updater: React.SetStateAction<Box[]>) => {
     if (typeof updater === "function") {
       setBoxes((prev) => updater(prev.filter((b) => b.id && typeof b.id === "string")));
@@ -678,20 +681,44 @@ export default function PartnerHistorialPage() {
                         )}
                       </td>
                       <td className="p-2">
-                        {r.photoUrl ? (
-                          <a
-                            href={r.photoUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="Ver foto"
-                            aria-label="Ver foto"
-                            className="inline-flex items-center justify-center text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
-                          >
-                            <IconPhoto />
-                          </a>
-                        ) : (
-                          <span className="text-white/40">-</span>
-                        )}
+                        {(() => {
+                          const photoUrls = getPhotoUrls(r);
+                          const primaryPhoto = photoUrls[0];
+                          const extraCount = photoUrls.length - 1;
+                          
+                          if (!primaryPhoto) {
+                            return <span className="text-white/40">-</span>;
+                          }
+                          
+                          if (extraCount === 0) {
+                            // Una sola foto: comportamiento actual
+                            return (
+                              <a
+                                href={primaryPhoto}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Ver foto"
+                                aria-label="Ver foto"
+                                className="inline-flex items-center justify-center text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
+                              >
+                                <IconPhoto />
+                              </a>
+                            );
+                          }
+                          
+                          // Múltiples fotos: icono + badge, click abre galería
+                          return (
+                            <button
+                              onClick={() => setGallery({ photoUrls, tracking: r.tracking, initialIndex: 0 })}
+                              title={`Ver ${photoUrls.length} fotos`}
+                              aria-label={`Ver ${photoUrls.length} fotos`}
+                              className="inline-flex items-center gap-1 text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005f40] rounded-sm"
+                            >
+                              <IconPhoto />
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-600 text-white">+{extraCount}</span>
+                            </button>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );
@@ -739,6 +766,16 @@ export default function PartnerHistorialPage() {
       )}
 
       <BoxDetailModal {...modalProps} />
+
+      {/* Modal de galería de fotos */}
+      {gallery && (
+        <PhotoGalleryModal
+          photoUrls={gallery.photoUrls}
+          initialIndex={gallery.initialIndex}
+          tracking={gallery.tracking}
+          onClose={() => setGallery(null)}
+        />
+      )}
     </div>
   );
 }

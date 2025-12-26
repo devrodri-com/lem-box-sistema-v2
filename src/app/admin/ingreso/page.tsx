@@ -23,7 +23,8 @@ import type { Client, Carrier } from "@/types/lem";
 import { type BrandOption } from "@/components/ui/BrandSelect";
 import { buildTrackingTokens, buildClientTokens } from "@/lib/searchTokens";
 import { fmtWeightPairFromLb } from "@/lib/weight";
-import { getPrimaryPhotoUrl } from "@/lib/inboundPhotos";
+import { getPrimaryPhotoUrl, getPhotoUrls } from "@/lib/inboundPhotos";
+import { PhotoGalleryModal } from "@/components/inbounds/PhotoGalleryModal";
 
 const LB_TO_KG = 0.45359237;
 const KG_TO_LB = 1 / LB_TO_KG;
@@ -77,7 +78,6 @@ type Row = {
   clientId: string;
   weightLb: number;
   weightKg: number;
-  photo?: File | null;
 };
 
 
@@ -222,12 +222,18 @@ function PageInner() {
     clientId: "",
     weightLb: 0,
     weightKg: 0,
-    photo: null,
   });
   const [saving, setSaving] = useState(false);
   const [rows, setRows] = useState<InboundRow[]>([]);
   const [errMsg, setErrMsg] = useState("");
   const [selectedInbound, setSelectedInbound] = useState<InboundRow | null>(null);
+  const [gallery, setGallery] = useState<{ photoUrls: string[]; tracking?: string; initialIndex?: number } | null>(null);
+  
+  // Estados para múltiples fotos
+  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+  const [selectedPhotoPreviews, setSelectedPhotoPreviews] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   async function handleInboundSave(
     inboundId: string,
@@ -257,7 +263,6 @@ function PageInner() {
   // inputs ocultos para foto: cámara y archivo
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   // Cámara embebida (getUserMedia)
   const videoRefPhoto = useRef<HTMLVideoElement | null>(null);
@@ -336,22 +341,49 @@ function PageInner() {
     return 0;
   }, [form.weightLb, form.weightKg]);
 
-  // Manejo de archivos
+  // Manejo de archivos - múltiples fotos
+  const MAX_PHOTOS = 3;
+  
+  function addPhoto(file: File) {
+    if (selectedPhotos.length >= MAX_PHOTOS) {
+      setPhotoError(`Máximo ${MAX_PHOTOS} fotos permitidas`);
+      return;
+    }
+    setPhotoError(null);
+    const preview = URL.createObjectURL(file);
+    setSelectedPhotos((prev) => [...prev, file]);
+    setSelectedPhotoPreviews((prev) => [...prev, preview]);
+  }
+  
+  function removePhoto(index: number) {
+    // Revocar ObjectURL antes de remover
+    const preview = selectedPhotoPreviews[index];
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+    setSelectedPhotos((prev) => prev.filter((_, i) => i !== index));
+    setSelectedPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
+    setPhotoError(null);
+  }
+  
   function onCameraPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] || null;
     if (!f) return;
-    setForm((x) => ({ ...x, photo: f }));
-    const reader = new FileReader();
-    reader.onload = () => setPhotoPreview(String(reader.result));
-    reader.readAsDataURL(f);
+    addPhoto(f);
+    // Limpiar input para permitir seleccionar la misma foto de nuevo
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
   }
+  
   function onFilePick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] || null;
     if (!f) return;
-    setForm((x) => ({ ...x, photo: f }));
-    const reader = new FileReader();
-    reader.onload = () => setPhotoPreview(String(reader.result));
-    reader.readAsDataURL(f);
+    addPhoto(f);
+    // Limpiar input para permitir seleccionar la misma foto de nuevo
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }
 
   // --- Inline camera/photo functions ---
@@ -390,7 +422,7 @@ function PageInner() {
     );
     if (!blob) return null;
     const file = new File([blob], `photo-${Date.now()}.jpg`, { type: "image/jpeg" });
-    setPhotoPreview(URL.createObjectURL(blob));
+    addPhoto(file);
     return file;
   }
 
@@ -456,13 +488,32 @@ function PageInner() {
       }
     }
 
+    // Subir múltiples fotos
+    let photoUrls: string[] = [];
     let photoUrl: string | undefined;
-    if (form.photo) {
-      const blob = await processImage(form.photo);
-      const dest = `inbound/${Date.now()}-${trackingUpper}.jpg`;
-      const r = ref(storage, dest);
-      await uploadBytes(r, blob, { contentType: "image/jpeg" });
-      photoUrl = await getDownloadURL(r);
+    
+    if (selectedPhotos.length > 0) {
+      setUploadingPhotos(true);
+      try {
+        const uploadPromises = selectedPhotos.map(async (file) => {
+          const blob = await processImage(file);
+          const randomSuffix = Math.random().toString(36).substring(2, 9);
+          const dest = `inbound/${Date.now()}-${trackingUpper}-${randomSuffix}.jpg`;
+          const r = ref(storage, dest);
+          await uploadBytes(r, blob, { contentType: "image/jpeg" });
+          return await getDownloadURL(r);
+        });
+        
+        photoUrls = await Promise.all(uploadPromises);
+        photoUrl = photoUrls[0]; // Primera foto como legacy
+      } catch (error) {
+        console.error("Error al subir fotos:", error);
+        setErrMsg("Error al subir las fotos. Intente nuevamente.");
+        setUploadingPhotos(false);
+        return false;
+      } finally {
+        setUploadingPhotos(false);
+      }
     }
 
     // Obtener uid del admin actual
@@ -490,10 +541,10 @@ function PageInner() {
       receivedAt: Timestamp.now().toMillis(),
     };
 
-    if (photoUrl) {
-      // Nuevo: guardar en photoUrls
-      payload.photoUrls = [photoUrl];
-      // Legacy: mantener photoUrl por compatibilidad
+    if (photoUrls.length > 0) {
+      // Nuevo: guardar en photoUrls (array completo)
+      payload.photoUrls = photoUrls;
+      // Legacy: mantener photoUrl por compatibilidad (primera foto)
       payload.photoUrl = photoUrl;
     }
 
@@ -524,11 +575,21 @@ function PageInner() {
       }
     }
 
-    setRows([{ id: docRef.id, tracking: trackingUpper, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, photoUrls: photoUrl ? [photoUrl] : undefined, receivedAt: Date.now(), status: "received" }, ...rows]);
-    setForm({ tracking: "", carrier: form.carrier, clientId: form.clientId, weightLb: 0, weightKg: 0, photo: null });
-    setPhotoPreview(null);
+    setRows([{ id: docRef.id, tracking: trackingUpper, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, photoUrls: photoUrls.length > 0 ? photoUrls : undefined, receivedAt: Date.now(), status: "received" }, ...rows]);
+    
+    // Limpiar formulario y fotos
+    setForm({ tracking: "", carrier: form.carrier, clientId: form.clientId, weightLb: 0, weightKg: 0 });
+    
+    // Limpiar fotos: revocar ObjectURLs y resetear estados
+    selectedPhotoPreviews.forEach((preview) => {
+      URL.revokeObjectURL(preview);
+    });
+    setSelectedPhotos([]);
+    setSelectedPhotoPreviews([]);
+    setPhotoError(null);
+    
     return true;
-  }, [form.carrier, form.clientId, form.photo, rows, computeWeightLb, clientsById]);
+  }, [form.carrier, form.clientId, selectedPhotos, selectedPhotoPreviews, rows, computeWeightLb, clientsById]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -716,8 +777,8 @@ function PageInner() {
             </button>
             <button
               type="button"
-              onClick={async () => { const f = await capturePhoto(); if (f) setForm((x) => ({ ...x, photo: f })); }}
-              disabled={!photoActive}
+              onClick={async () => { await capturePhoto(); }}
+              disabled={!photoActive || selectedPhotos.length >= MAX_PHOTOS}
               className={btnPrimaryCls}
             >
               Capturar
@@ -725,9 +786,10 @@ function PageInner() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
+              disabled={selectedPhotos.length >= MAX_PHOTOS}
               className={btnSecondaryCls}
             >
-              Adjuntar foto
+              Agregar foto{selectedPhotos.length > 0 ? ` (${selectedPhotos.length}/${MAX_PHOTOS})` : ""}
             </button>
             <input
               ref={cameraInputRef}
@@ -744,10 +806,42 @@ function PageInner() {
               className="hidden"
               onChange={onFilePick}
             />
-            {photoPreview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoPreview} alt="preview" className="h-12 w-12 object-cover rounded-md border border-[#1f3f36]" />
-            ) : null}
+            
+            {/* Miniaturas de fotos */}
+            {selectedPhotoPreviews.length > 0 && (
+              <div className="w-full mt-2 flex flex-wrap gap-2 justify-center">
+                {selectedPhotoPreviews.map((preview, index) => (
+                  <div key={index} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="h-16 w-16 object-cover rounded-md border border-[#1f3f36]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-600 text-white text-xs font-bold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
+                      aria-label={`Eliminar foto ${index + 1}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {selectedPhotos.length === MAX_PHOTOS && (
+                  <div className="w-full text-xs text-white/60 text-center mt-1">
+                    Máximo {MAX_PHOTOS} fotos permitidas
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Mensaje de error */}
+            {photoError && (
+              <div className="w-full text-xs text-red-400 text-center mt-1">
+                {photoError}
+              </div>
+            )}
             {photoActive ? (
               <div className="mt-2">
                 <video ref={videoRefPhoto} className="w-full rounded-md border border-[#1f3f36]" autoPlay muted playsInline />
@@ -774,16 +868,34 @@ function PageInner() {
               onClick={() => setSelectedInbound(r)}
             >
               {(() => {
-                const primaryPhoto = getPrimaryPhotoUrl(r);
-                return primaryPhoto ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={primaryPhoto}
-                    alt=""
-                    className="w-16 h-16 object-cover rounded border border-[#1f3f36]"
-                  />
-                ) : (
-                  <div className="w-16 h-16 bg-white/5 rounded border border-[#1f3f36]" />
+                const photoUrls = getPhotoUrls(r);
+                const primaryPhoto = photoUrls[0];
+                const extraCount = photoUrls.length - 1;
+                
+                if (!primaryPhoto) {
+                  return <div className="w-16 h-16 bg-white/5 rounded border border-[#1f3f36]" />;
+                }
+                
+                return (
+                  <div className="flex items-center gap-1.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={primaryPhoto}
+                      alt=""
+                      className="w-16 h-16 object-cover rounded border border-[#1f3f36]"
+                    />
+                    {extraCount > 0 && (
+                      <span
+                        className="text-xs px-1.5 py-0.5 rounded bg-emerald-600 text-white cursor-pointer hover:bg-emerald-700 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setGallery({ photoUrls, tracking: r.tracking, initialIndex: 0 });
+                        }}
+                      >
+                        +{extraCount}
+                      </span>
+                    )}
+                  </div>
                 );
               })()}
               <div className="flex-1">
@@ -817,6 +929,16 @@ function PageInner() {
           }}
         />
       )}
+
+      {/* Modal de galería de fotos */}
+      {gallery && (
+        <PhotoGalleryModal
+          photoUrls={gallery.photoUrls}
+          initialIndex={gallery.initialIndex}
+          tracking={gallery.tracking}
+          onClose={() => setGallery(null)}
+        />
+      )}
           </>
         ) : null}
       </div>
@@ -831,12 +953,14 @@ function InboundDetailModal({
   clients,
   onClose,
   onSave,
+  onOpenGallery,
 }: {
   inbound: InboundRow;
   clientLabel: string;
   clients: Client[];
   onClose: () => void;
   onSave?: (updates: { carrier: Carrier; weightLb: number; clientId: string }) => Promise<void>;
+  onOpenGallery?: (photoUrls: string[], tracking?: string) => void;
 }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1033,26 +1157,57 @@ function InboundDetailModal({
           </div>
 
           {(() => {
-            const primaryPhoto = getPrimaryPhotoUrl(inbound);
-            return primaryPhoto ? (
+            const photoUrls = getPhotoUrls(inbound);
+            const primaryPhoto = photoUrls[0];
+            const extraCount = photoUrls.length - 1;
+            
+            if (!primaryPhoto) {
+              return null;
+            }
+            
+            return (
               <div>
-                <label className="text-xs font-medium text-white/60 mb-2 block">Foto</label>
-                <a
-                  href={primaryPhoto}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={primaryPhoto}
-                    alt={`Foto del tracking ${inbound.tracking}`}
-                    className="w-full max-h-96 object-contain rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10"
-                  />
-                </a>
-                <p className="mt-1 text-xs text-white/40">Click en la imagen para abrir en nueva pestaña</p>
+                <label className="text-xs font-medium text-white/60 mb-2 block">
+                  Foto{extraCount > 0 ? ` (${photoUrls.length})` : ""}
+                </label>
+                <div className="relative">
+                  <a
+                    href={primaryPhoto}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={primaryPhoto}
+                      alt={`Foto del tracking ${inbound.tracking}`}
+                      className="w-full max-h-96 object-contain rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10"
+                    />
+                  </a>
+                  {extraCount > 0 && onOpenGallery && (
+                    <button
+                      onClick={() => onOpenGallery(photoUrls, inbound.tracking)}
+                      className="absolute top-2 right-2 px-2 py-1 rounded bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-[#005f40] transition-colors"
+                    >
+                      Ver todas ({photoUrls.length})
+                    </button>
+                  )}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <a href={primaryPhoto} target="_blank" rel="noopener noreferrer" className="text-xs text-white/60 hover:text-white">
+                    Abrir en nueva pestaña
+                  </a>
+                  {extraCount > 0 && onOpenGallery && (
+                    <button
+                      onClick={() => onOpenGallery(photoUrls, inbound.tracking)}
+                      className="text-xs text-white/60 hover:text-white"
+                    >
+                      Ver galería ({photoUrls.length} fotos)
+                    </button>
+                  )}
+                </div>
               </div>
-            ) : null;
+            );
           })()}
         </div>
       </div>

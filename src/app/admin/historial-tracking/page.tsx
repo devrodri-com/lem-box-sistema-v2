@@ -23,6 +23,7 @@ import { InboundsTable } from "./_components/InboundsTable";
 import { loadShipmentsById } from "./_lib/loadShipmentsById";
 import { loadAlertedTrackings } from "./_lib/loadAlertedTrackings";
 import { loadOpenAlerts, type OpenAlert } from "./_lib/loadOpenAlerts";
+import { PhotoGalleryModal } from "@/components/inbounds/PhotoGalleryModal";
 
 const CONTROL_BORDER = "border-[#1f3f36]";
 const btnPrimaryCls = "inline-flex items-center justify-center h-10 px-4 rounded-md bg-[#eb6619] text-white font-medium shadow-md hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#eb6619] disabled:opacity-50 disabled:cursor-not-allowed";
@@ -72,6 +73,7 @@ function PageInner() {
   const [clients, setClients] = useState<Client[]>([]);
   const [rows, setRows] = useState<Inbound[]>([]);
   const [boxes, setBoxes] = useState<Box[]>([]);
+  const [gallery, setGallery] = useState<{ photoUrls: string[]; tracking?: string; initialIndex?: number } | null>(null);
 
   // --- Auth state for clearer behavior ---
   const [authError, setAuthError] = useState<string | null>(null);
@@ -1134,6 +1136,9 @@ function PageInner() {
               statusFilter={statusFilter}
               onOpenBox={openBoxDetailByInbound}
               onDelete={deleteTracking}
+              onOpenGallery={(photoUrls, tracking) => {
+                setGallery({ photoUrls, tracking, initialIndex: 0 });
+              }}
             />
           )}
         </div>
@@ -1200,6 +1205,16 @@ function PageInner() {
           onCancel={() => setDeleteOpen(false)}
           onConfirm={confirmDelete}
         />
+
+        {/* Modal de galería de fotos */}
+        {gallery && (
+          <PhotoGalleryModal
+            photoUrls={gallery.photoUrls}
+            initialIndex={gallery.initialIndex}
+            tracking={gallery.tracking}
+            onClose={() => setGallery(null)}
+          />
+        )}
       </div>
     </main>
   );
