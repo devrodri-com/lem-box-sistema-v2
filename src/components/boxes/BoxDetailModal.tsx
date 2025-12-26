@@ -1,5 +1,6 @@
 // src/components/boxes/BoxDetailModal.tsx
 "use client";
+import { useEffect } from "react";
 import { fmtWeightPairFromLb } from "@/lib/weight";
 import { BrandSelect } from "@/components/ui/BrandSelect";
 import { IconPhoto } from "@/components/ui/icons";
@@ -84,6 +85,21 @@ export function BoxDetailModal({
   canEditAdminFields,
   onClose,
 }: BoxDetailModalProps) {
+  useEffect(() => {
+    if (!open) return;
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => {
+      window.removeEventListener("keydown", handler);
+    };
+  }, [open, onClose]);
+
   if (!open || !box) return null;
 
   return (
