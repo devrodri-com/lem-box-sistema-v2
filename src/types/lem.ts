@@ -29,7 +29,8 @@ export interface Inbound {
   clientId: string;
   weightLb: number;
   weightKg?: number;
-  photoUrl?: string;
+  photoUrl?: string; // legacy, mantener para compatibilidad
+  photoUrls?: string[]; // nuevo, array de URLs
   invoiceUrl?: string;
   status?: "received" | "boxed" | "void";
   receivedAt?: number;

@@ -23,6 +23,7 @@ import type { Client, Carrier } from "@/types/lem";
 import { type BrandOption } from "@/components/ui/BrandSelect";
 import { buildTrackingTokens, buildClientTokens } from "@/lib/searchTokens";
 import { fmtWeightPairFromLb } from "@/lib/weight";
+import { getPrimaryPhotoUrl } from "@/lib/inboundPhotos";
 
 const LB_TO_KG = 0.45359237;
 const KG_TO_LB = 1 / LB_TO_KG;
@@ -33,7 +34,8 @@ type InboundRow = {
   carrier: Carrier; 
   clientId: string; 
   weightLb: number; 
-  photoUrl?: string; 
+  photoUrl?: string; // legacy
+  photoUrls?: string[]; // nuevo
   receivedAt: number; 
   status: string 
 };
@@ -309,6 +311,7 @@ function PageInner() {
             clientId: string;
             weightLb: number;
             photoUrl?: string;
+            photoUrls?: string[];
             receivedAt: number;
             status: string;
           };
@@ -488,6 +491,9 @@ function PageInner() {
     };
 
     if (photoUrl) {
+      // Nuevo: guardar en photoUrls
+      payload.photoUrls = [photoUrl];
+      // Legacy: mantener photoUrl por compatibilidad
       payload.photoUrl = photoUrl;
     }
 
@@ -518,7 +524,7 @@ function PageInner() {
       }
     }
 
-    setRows([{ id: docRef.id, tracking: trackingUpper, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, receivedAt: Date.now(), status: "received" }, ...rows]);
+    setRows([{ id: docRef.id, tracking: trackingUpper, carrier: form.carrier, clientId: form.clientId, weightLb: weightLbVal, photoUrl, photoUrls: photoUrl ? [photoUrl] : undefined, receivedAt: Date.now(), status: "received" }, ...rows]);
     setForm({ tracking: "", carrier: form.carrier, clientId: form.clientId, weightLb: 0, weightKg: 0, photo: null });
     setPhotoPreview(null);
     return true;
@@ -767,16 +773,19 @@ function PageInner() {
               className="border border-[#1f3f36] rounded-lg bg-white/5 p-3 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition"
               onClick={() => setSelectedInbound(r)}
             >
-              {r.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={r.photoUrl}
-                  alt=""
-                  className="w-16 h-16 object-cover rounded border border-[#1f3f36]"
-                />
-              ) : (
-                <div className="w-16 h-16 bg-white/5 rounded border border-[#1f3f36]" />
-              )}
+              {(() => {
+                const primaryPhoto = getPrimaryPhotoUrl(r);
+                return primaryPhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={primaryPhoto}
+                    alt=""
+                    className="w-16 h-16 object-cover rounded border border-[#1f3f36]"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-white/5 rounded border border-[#1f3f36]" />
+                );
+              })()}
               <div className="flex-1">
                 <div className="text-sm text-white">
                   #{r.tracking} · {r.carrier} · {r.weightLb} lb
@@ -1023,25 +1032,28 @@ function InboundDetailModal({
             </div>
           </div>
 
-          {inbound.photoUrl && (
-            <div>
-              <label className="text-xs font-medium text-white/60 mb-2 block">Foto</label>
-              <a
-                href={inbound.photoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={inbound.photoUrl}
-                  alt={`Foto del tracking ${inbound.tracking}`}
-                  className="w-full max-h-96 object-contain rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10"
-                />
-              </a>
-              <p className="mt-1 text-xs text-white/40">Click en la imagen para abrir en nueva pestaña</p>
-            </div>
-          )}
+          {(() => {
+            const primaryPhoto = getPrimaryPhotoUrl(inbound);
+            return primaryPhoto ? (
+              <div>
+                <label className="text-xs font-medium text-white/60 mb-2 block">Foto</label>
+                <a
+                  href={primaryPhoto}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={primaryPhoto}
+                    alt={`Foto del tracking ${inbound.tracking}`}
+                    className="w-full max-h-96 object-contain rounded-md border border-[#1f3f36] bg-[#071f19] ring-1 ring-white/10"
+                  />
+                </a>
+                <p className="mt-1 text-xs text-white/40">Click en la imagen para abrir en nueva pestaña</p>
+              </div>
+            ) : null;
+          })()}
         </div>
       </div>
     </div>
